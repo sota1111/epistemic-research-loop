@@ -1,0 +1,21 @@
+{
+  "experiment_id": "EXP-3053-roundtrip",
+  "run_id": "sot3053-verify",
+  "attempt": 1,
+  "status": "completed",
+  "exit_code": 0,
+  "commit_sha": "483190062e07041d3f5fcafe294c9d4ccfe9478f",
+  "environment_hash": "bc97f3ecd992892df1aa986d95803dda818b3d58da2771a4a881733b9f1d351f",
+  "dataset_fingerprint": "fc9b38f7fa88756686f368c5db39d3279307d96dfa5053fbce95e5a27ebbac00",
+  "metrics": {
+    "contract_checks_passed": 7.0,
+    "issues_created": 1.0
+  },
+  "artifact_refs": [
+    ".results/sot3053-verify/EXP-3053-roundtrip/metrics.json"
+  ],
+  "runtime": {
+    "wall_seconds": 41.0
+  },
+  "external_ref": "SOT-3054"
+}

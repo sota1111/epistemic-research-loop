@@ -54,8 +54,17 @@ executor:
   adapter: ai_dev_control_plane
   queue: kaggle-research
   retry_infrastructure_failures: 2
-  linear_team_id: ${LINEAR_TEAM_ID}
-  linear_project_id: ${LINEAR_PROJECT_ID}
+  # Real ids of the Linear workspace ai-dev-control-plane watches. They are workspace identifiers,
+  # not credentials; the only secret is LINEAR_API_KEY, which is read from the environment.
+  linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
+  linear_project_id: 19e32e9a-7e87-465a-949b-8ff67c3eb15a # project ai-dev-control-plane
+  # Todo is the state the control plane's scan treats as executable; a ticket filed in any other
+  # state is never picked up.
+  linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
+  # Parsed by the control plane out of the ticket body: which worker runs it, and where.
+  worker: claude:opus
+  handoff: false
+  target_repo: /workspaces/epistemic-research-loop
   result_root: .results
   container_image: ghcr.io/example/kaggle-solver:latest
   dataset_mounts: [competition-data]
