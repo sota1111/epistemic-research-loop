@@ -206,9 +206,7 @@ def test_observed_runtime_exposes_the_gap_between_estimate_and_actual(
     from epistemic_loop.domain.models import CostEstimate, DecisionRecord, Observation
 
     repository.append("run-001", EventType.RUN_CREATED, run)
-    cheap_looking = clone_proposal(
-        proposal, estimated_cost=CostEstimate(cpu_hours=1.0, wall_hours=0.05).model_dump()
-    )
+    cheap_looking = clone_proposal(proposal, estimated_cost=CostEstimate(cpu_hours=1.0, wall_hours=0.05).model_dump())
     repository.append("run-001", EventType.EXPERIMENT_PROPOSED, cheap_looking)
     repository.append(
         "run-001",
