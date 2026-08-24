@@ -189,3 +189,60 @@ def test_belief_updates_move_confidence_without_a_revision_event(
     state = _state(repository)
     assert state.hypotheses["H-001"].current_confidence == pytest.approx(0.62)
     assert state.hypotheses["H-001"].version == 2
+
+
+def test_observed_runtime_exposes_the_gap_between_estimate_and_actual(
+    repository: ResearchRepository,
+    run: ResearchRun,
+    proposal: ExperimentProposal,
+    clone_proposal,
+) -> None:
+    """Budgets are spent against declared estimates, and nothing ever checked them.
+
+    An experiment that estimates a fraction of what it costs still passes every budget gate, so a
+    run can consume several times its nominal compute unnoticed -- and two runs compared "at the
+    same budget" can differ by a large factor in what they actually used.
+    """
+    from epistemic_loop.domain.models import CostEstimate, DecisionRecord, Observation
+
+    repository.append("run-001", EventType.RUN_CREATED, run)
+    cheap_looking = clone_proposal(
+        proposal, estimated_cost=CostEstimate(cpu_hours=1.0, wall_hours=0.05).model_dump()
+    )
+    repository.append("run-001", EventType.EXPERIMENT_PROPOSED, cheap_looking)
+    repository.append(
+        "run-001",
+        EventType.EXPERIMENT_SELECTED,
+        DecisionRecord(
+            id="DR-1",
+            run_id="run-001",
+            candidate_experiment_ids=["EXP-001"],
+            utility_breakdown={},
+            selected_experiment_ids=["EXP-001"],
+            rejected_reasons={},
+            phase=Phase.DISCOVERY,
+            remaining_budget={},
+            policy_version="selection/v1",
+        ),
+    )
+    repository.append(
+        "run-001",
+        EventType.OBSERVATION_RECORDED,
+        Observation(
+            id="OB-1",
+            experiment_id="EXP-001",
+            run_id="run-001",
+            code_commit_sha="abc123",
+            environment_hash="e" * 64,
+            dataset_fingerprint="f" * 64,
+            exit_status="completed",
+            runtime={"wall_seconds": 540.0},  # 0.15 h against a declared 0.05 h
+        ),
+    )
+
+    observed = _state(repository).observed_runtime()
+
+    assert observed["estimated_wall_hours"] == 0.05
+    assert observed["wall_hours"] == 0.15
+    assert observed["estimate_ratio"] == 3.0, "the run spent three times what its gate charged it"
+    assert observed["experiments_observed"] == 1

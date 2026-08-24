@@ -81,6 +81,24 @@ class RunState:
             identifier for identifier in self.proposals if self.experiment_statuses.get(identifier) in SETTLED_STATUSES
         )
 
+    def observed_runtime(self) -> dict[str, float]:
+        """What the experiments actually cost, as opposed to what they were estimated to cost.
+
+        Budget gates spend the *estimate* a proposal declared, and nothing has ever compared that
+        against the observation that came back. A run whose estimates are optimistic can therefore
+        consume several times its nominal compute without any gate noticing, which also silently
+        breaks the equal-budget premise of any A/B comparison built on those runs.
+        """
+        wall_seconds = sum(
+            float(observation.runtime.get("wall_seconds", 0.0)) for observation in self.observations.values()
+        )
+        return {
+            "wall_hours": round(wall_seconds / 3600, 4),
+            "estimated_wall_hours": round(self.usage.wall_hours, 4),
+            "estimate_ratio": round(wall_seconds / 3600 / self.usage.wall_hours, 2) if self.usage.wall_hours else 0.0,
+            "experiments_observed": len(self.observations),
+        }
+
     def validation_reuse(self) -> dict[str, int]:
         """Selecting queries already spent against each validation scheme in this run."""
         return compute_validation_reuse(self.proposals, self.settled_experiment_ids())

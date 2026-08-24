@@ -255,6 +255,9 @@ def run_status(run_id: str = typer.Option(..., "--run-id")) -> None:
             "observations": len(state.observations),
             "violations": state.violations,
             "validation_reuse": state.validation_reuse(),
+            # Estimates gate the budget; observations say what was actually spent. A ratio far from
+            # 1.0 means the run is not operating inside the budget it believes it has.
+            "observed_runtime": state.observed_runtime(),
             "research_brief": state.brief.model_dump(mode="json") if state.brief else None,
             "phase_evidence": derive_phase_evidence(state).__dict__,
             "remaining_budget": BudgetManager(state.run.budgets, state.usage).remaining(),
