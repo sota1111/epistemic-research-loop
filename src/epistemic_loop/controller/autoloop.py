@@ -210,6 +210,7 @@ class AutonomousLoop:
                 minimum_utility=self.config.selection.minimum_utility,
                 source_policy_strict=self.config.contamination.require_source_provenance,
                 max_validation_reuse=self.config.loop.max_validation_reuse,
+                max_consecutive_optimization=self.config.loop.max_consecutive_optimization_experiments,
             )
             outcome.selected = list(decision.selected_experiment_ids)
             utilities = [

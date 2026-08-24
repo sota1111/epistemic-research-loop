@@ -155,6 +155,7 @@ class RunState:
         *,
         source_policy_strict: bool = True,
         max_validation_reuse: int = 0,
+        max_consecutive_optimization: int = 3,
     ) -> GateContext:
         return GateContext(
             hypothesis_ids=frozenset(self.hypotheses),
@@ -162,10 +163,11 @@ class RunState:
             usage=self.usage,
             holdout_policy=self.run.holdout_policy.policy,
             prior_fingerprints=self.settled_fingerprints(),
-            recent_experiment_types=self.recent_experiment_types(),
+            recent_experiment_types=self.recent_experiment_types(window=max(max_consecutive_optimization, 1)),
             source_policy_strict=source_policy_strict,
             validation_reuse=self.validation_reuse(),
             max_validation_reuse=max_validation_reuse,
+            max_consecutive_optimization=max_consecutive_optimization,
         )
 
 

@@ -167,6 +167,7 @@ class ResearchController:
         similarity_penalty: float = 0.25,
         source_policy_strict: bool = True,
         max_validation_reuse: int = 0,
+        max_consecutive_optimization: int = 3,
     ) -> DecisionRecord:
         state = self.state(run_id)
         candidates = state.open_candidates()
@@ -177,6 +178,7 @@ class ResearchController:
             state.gate_context(
                 source_policy_strict=source_policy_strict,
                 max_validation_reuse=max_validation_reuse,
+                max_consecutive_optimization=max_consecutive_optimization,
             ),
             weights,
             cost_lambda,
@@ -229,6 +231,11 @@ class ResearchController:
             dataset_mounts=dataset_mounts,
             network_policy=network_policy,
         )
+        # Enter `executing` before recording the attempt. Recording first would mark the experiment
+        # running even when the transition is refused, burning it: the status check above then only
+        # allows a retry under a new attempt number, so a call that never reached the executor would
+        # cost a real attempt every time it was repeated.
+        self._advance(run_id, state.loop_state, LoopState.EXECUTING, {LoopState.SELECTING})
         self.repository.append(
             run_id,
             EventType.EXPERIMENT_STARTED,
@@ -239,7 +246,6 @@ class ResearchController:
                 "attempt": attempt,
             },
         )
-        self._advance(run_id, state.loop_state, LoopState.EXECUTING, {LoopState.SELECTING})
         return request, executor.submit(request)
 
     def import_result(

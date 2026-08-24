@@ -1,0 +1,94 @@
+# Epistemic arm of the IEEE-CIS verification.
+#
+# The executor is `linear_local_worker`: it files the real Linear ticket the loop decided to file,
+# then runs it locally in place of the ai-dev-control-plane worker fleet, which is not running in
+# this environment. The auto-filing half is genuine; the execution half is a local stand-in.
+run:
+  id: ieee-epistemic-001
+  mode: epistemic
+  seed: 101
+competition:
+  slug: ieee-fraud-detection
+  metric_direction: maximize
+  primary_metric: roc_auc
+  data_path: .data/ieee-cis/parquet
+  sample_submission: .data/ieee-cis/sample_submission.csv
+budgets:
+  max_experiments: 40
+  max_cpu_hours: 40
+  max_gpu_hours: 0
+  max_wall_hours: 12
+  max_llm_tokens: 4000000
+  max_cost: 0
+  max_final_submissions: 2
+  # Kaggle's own allowance for this competition. The loop spends none of it on its own; a
+  # submission happens only when an experiment's preregistered question needs one.
+  max_daily_submissions: 5
+loop:
+  phase_policy: adaptive
+  max_active_hypotheses: 30
+  max_priority_hypotheses: 10
+  max_consecutive_optimization_experiments: 3
+  minimum_replications_for_support: 1
+  max_validation_reuse: 8
+  max_rounds_without_information: 3
+  anomaly_instability_threshold: 0.05
+selection:
+  cost_lambda: 0.15
+  minimum_utility: 0.0
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+holdout:
+  # There is no separate internal sealed holdout in this run; the Kaggle private score plays that
+  # role and is never unsealed by the loop.
+  policy: strict_blind
+  max_queries: 0
+  reveal_scores: after_all_paired_runs
+  sealed_store: .sealed
+leaderboard:
+  # numeric, not the gated_binary default: the research question under test is whether local CV
+  # ranks candidates the way the hidden split does, and a threshold verdict cannot answer that.
+  # The budget equals Kaggle's daily submission allowance, so a leaderboard read is never free.
+  public_feedback: numeric
+  max_public_queries: 5
+  query_ledger: .state/leaderboard-queries.jsonl
+  sealed_store: .sealed-scores
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: false
+  worker_network: disabled
+executor:
+  adapter: linear_local_worker
+  queue: kaggle-research
+  retry_infrastructure_failures: 2
+  linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
+  linear_project_id: 313cac7a-545e-4fe6-84ba-1e8a1eaecab6 # project "ERL IEEE-CIS 自動起票検証"
+  linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
+  worker: claude:opus
+  handoff: false
+  target_repo: /workspaces/epistemic-research-loop
+  result_root: .results
+  container_image: python:3.11-slim
+  dataset_mounts: [ieee-cis-parquet]
+  workspace: .
+artifacts:
+  adapter: local
+  root: .runs
+storage:
+  event_store: jsonl
+  projection: sqlite
+  sqlite_path: .state/epistemic-loop.db
+llm:
+  # No ANTHROPIC_API_KEY in this environment, so the proposal slot is filled through the file
+  # bridge. Gates, selection, dispositions, belief updates, phase decisions, and ticket filing stay
+  # exactly as they are under the automatic adapter.
+  adapter: file_bridge
+  model: claude-opus-5
+  max_tokens: 16000
+  effort: high
+  structured_output_required: true
+  store_raw_response: true

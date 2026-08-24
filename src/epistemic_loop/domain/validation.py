@@ -22,6 +22,9 @@ class GateContext:
     source_policy_strict: bool = True
     validation_reuse: Mapping[str, int] = field(default_factory=dict)
     max_validation_reuse: int = 0
+    #: Consecutive optimization experiments allowed before a non-optimization run is required.
+    #: 0 disables the rule, which is what an exploiter-only control arm needs.
+    max_consecutive_optimization: int = 3
 
 
 @dataclass(frozen=True)
@@ -90,12 +93,14 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
     if context.budget.max_cost and context.usage.cost + cost.monetary_cost > context.budget.max_cost:
         reasons.append("monetary budget exceeded")
 
-    tail = context.recent_experiment_types[-3:]
+    limit = context.max_consecutive_optimization
+    tail = context.recent_experiment_types[-limit:] if limit else ()
     if (
-        len(tail) == 3
+        limit
+        and len(tail) == limit
         and all(kind == ExperimentType.OPTIMIZATION for kind in tail)
         and experiment.experiment_type == ExperimentType.OPTIMIZATION
     ):
-        reasons.append("three consecutive optimization runs require a diagnostic, replication, or falsification run")
+        reasons.append(f"{limit} consecutive optimization runs require a diagnostic, replication, or falsification run")
 
     return GateResult(passed=not reasons, reasons=tuple(reasons), fingerprint=fingerprint)

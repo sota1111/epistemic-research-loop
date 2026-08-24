@@ -37,4 +37,20 @@ def test_fourth_optimization_is_forced_out(proposal: ExperimentProposal) -> None
     recent = (ExperimentType.OPTIMIZATION,) * 3
     result = hard_gate(optimization, context(recent_experiment_types=recent))
     assert not result.passed
-    assert any("three consecutive" in reason for reason in result.reasons)
+    assert any("3 consecutive" in reason for reason in result.reasons)
+
+
+def test_the_consecutive_optimization_limit_is_configurable(proposal: ExperimentProposal) -> None:
+    """`max_consecutive_optimization_experiments` was a documented knob the gate never read.
+
+    An exploiter-only control arm has to be allowed to be an exploiter, or the comparison it exists
+    to provide cannot be run at all -- so 0 disables the rule, and any other value sets the run.
+    """
+    optimization = proposal.model_copy(update={"experiment_type": ExperimentType.OPTIMIZATION})
+    recent = (ExperimentType.OPTIMIZATION,) * 5
+
+    assert hard_gate(optimization, context(recent_experiment_types=recent, max_consecutive_optimization=0)).passed
+
+    stricter = hard_gate(optimization, context(recent_experiment_types=recent, max_consecutive_optimization=2))
+    assert not stricter.passed
+    assert any("2 consecutive" in reason for reason in stricter.reasons)

@@ -55,7 +55,9 @@ class LoopConfig(StrictModel):
     phase_policy: str = "adaptive"
     max_active_hypotheses: int = Field(default=30, ge=1)
     max_priority_hypotheses: int = Field(default=10, ge=1)
-    max_consecutive_optimization_experiments: int = Field(default=3, ge=1)
+    #: Consecutive optimization experiments allowed before a non-optimization run is required.
+    #: 0 disables the rule; an exploiter-only control arm sets it to 0 so it can be an exploiter.
+    max_consecutive_optimization_experiments: int = Field(default=3, ge=0)
     minimum_replications_for_support: int = Field(default=1, ge=1)
     #: Selecting queries one validation scheme may answer before it must be rotated. 0 disables.
     max_validation_reuse: int = Field(default=8, ge=0)
@@ -97,7 +99,9 @@ class ContaminationConfig(StrictModel):
 
 
 class ExecutorConfig(StrictModel):
-    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane)$")
+    # `linear_local_worker` files the real Linear ticket and runs it locally. It is a verification
+    # harness for the auto-filing half of the contract, never a production executor.
+    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane|linear_local_worker)$")
     queue: str = "kaggle-research"
     retry_infrastructure_failures: int = Field(default=2, ge=0)
     linear_team_id: str | None = None

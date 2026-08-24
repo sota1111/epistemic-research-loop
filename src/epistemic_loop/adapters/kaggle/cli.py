@@ -12,6 +12,17 @@ from pathlib import Path
 from epistemic_loop.adapters.kaggle.score_parser import parse_optional_score
 
 
+def _reference(stdout: str) -> str | None:
+    """Best-effort submission id from the CLI's output.
+
+    `kaggle competitions submit` prints a progress bar and a success line; on many versions it
+    prints no id at all, and the digits it does print belong to the upload size. Only a long run of
+    digits is plausibly a reference, and callers must treat None as "match the newest row".
+    """
+    candidates = [word for word in stdout.split() if word.isdigit() and len(word) >= 6]
+    return candidates[-1] if candidates else None
+
+
 @dataclass(frozen=True)
 class SubmissionReceipt:
     competition: str
@@ -37,8 +48,9 @@ class KaggleCliSubmissionAdapter:
             capture_output=True,
             text=True,
         )
-        reference = next((word for word in result.stdout.split() if word.isdigit()), None)
-        return SubmissionReceipt(competition, str(submission), message, reference, result.stdout.strip())
+        return SubmissionReceipt(
+            competition, str(submission), message, _reference(result.stdout), result.stdout.strip()
+        )
 
     def submissions(self, competition: str, output_csv: str | Path) -> list[dict[str, object]]:
         destination = Path(output_csv)
@@ -74,6 +86,11 @@ class KaggleCliSubmissionAdapter:
             with tempfile.TemporaryDirectory(prefix="erl-kaggle-") as directory:
                 rows = self.submissions(competition, Path(directory) / "submissions.csv")
             row = next((item for item in rows if reference is None or str(item.get("ref")) == reference), None)
+            if row is None and reference is not None:
+                # The CLI does not reliably print the submission reference, so a reference parsed
+                # out of its upload chatter can be wrong. Fall back to the newest row rather than
+                # polling to the deadline against an id that will never appear.
+                row = next(iter(rows), None)
             if row is not None:
                 status = str(row.get("status", "")).lower()
                 if any(value in status for value in ("complete", "error", "cancel")):
