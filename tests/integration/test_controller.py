@@ -136,3 +136,42 @@ def test_a_refused_dispatch_does_not_mark_the_experiment_running(
     state = controller.state(run_id)
     assert state.experiment_statuses["EXP-001"] == ExperimentStatus.SELECTED, "the refused dispatch burnt the attempt"
     assert state.loop_state == LoopState.PLANNING
+
+
+def test_a_run_can_be_finalized_from_planning(tmp_path, hypothesis, proposal, clone_proposal) -> None:
+    """A final submission is not an experiment and must not have to pass as one.
+
+    It buys no information and is the most expensive fit a run makes, so a pragmatic selector scores
+    it negative and refuses it -- which happened to the exploiter arm's own final submission during
+    the IEEE-CIS verification. `FINALIZING` existed in the state machine for this and nothing ever
+    entered it, so the final artifact had to be produced outside the loop's accounting.
+    """
+    import pytest
+
+    from epistemic_loop.config import AppConfig, CompetitionConfig, RunConfig
+    from epistemic_loop.controller.research_graph import LoopStateError
+    from epistemic_loop.domain.enums import LoopState, RunStatus
+    from epistemic_loop.domain.events import EventType
+    from epistemic_loop.domain.models import CompetitionWorldModel
+
+    run_id = "final-001"
+    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
+    config = AppConfig(
+        run=RunConfig(id=run_id), competition=CompetitionConfig(slug="example", metric_direction="maximize")
+    )
+    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
+    controller.start(run_id, CompetitionWorldModel())
+    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
+
+    payload = controller.finalize(run_id, artifacts=["submission.csv"], note="shipping the tuned configuration")
+
+    assert payload["artifacts"] == ["submission.csv"]
+    assert payload["experiments_completed"] == 0
+    state = controller.state(run_id)
+    assert state.loop_state == LoopState.COMPLETED
+    assert state.run.status == RunStatus.COMPLETED
+    recorded = [event.event_type for event in controller.repository.event_store(run_id).read_all()]
+    assert EventType.RUN_FINALIZED in recorded
+
+    with pytest.raises(LoopStateError, match="cannot finalize from completed"):
+        controller.finalize(run_id, artifacts=[], note="twice")

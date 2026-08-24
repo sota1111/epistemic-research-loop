@@ -1018,3 +1018,22 @@ def report_compare(
         typer.echo(str(destination))
     else:
         typer.echo(report)
+
+
+@run_app.command("finalize")
+def run_finalize(
+    run_id: str = typer.Option(..., "--run-id"),
+    note: str = typer.Option(..., "--note", help="why the run is stopping and what it is submitting"),
+    artifact: list[str] = typer.Option([], "--artifact", help="path of a final artifact, repeatable"),
+) -> None:
+    """Close the run and record its final answer.
+
+    A final submission is not an experiment and must not be selected as one: it buys no information
+    and costs the most, so a pragmatic selector rejects it. This records it as a finalization
+    instead, which is what `FINALIZING` was always for.
+    """
+    try:
+        payload = _controller().finalize(run_id, artifacts=artifact, note=note)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(payload)

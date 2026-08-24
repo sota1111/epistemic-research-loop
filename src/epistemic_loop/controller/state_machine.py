@@ -8,7 +8,9 @@ TRANSITIONS: dict[LoopState, frozenset[LoopState]] = {
     LoopState.CREATED: frozenset({LoopState.OBSERVING, LoopState.BLOCKED, LoopState.FAILED}),
     LoopState.OBSERVING: frozenset({LoopState.HYPOTHESIZING, LoopState.BLOCKED, LoopState.FAILED}),
     LoopState.HYPOTHESIZING: frozenset({LoopState.PLANNING, LoopState.BLOCKED, LoopState.FAILED}),
-    LoopState.PLANNING: frozenset({LoopState.SCORING, LoopState.BLOCKED, LoopState.FAILED}),
+    LoopState.PLANNING: frozenset(
+        {LoopState.SCORING, LoopState.FINALIZING, LoopState.BLOCKED, LoopState.FAILED}
+    ),
     LoopState.SCORING: frozenset({LoopState.SELECTING, LoopState.BLOCKED, LoopState.FAILED}),
     LoopState.SELECTING: frozenset({LoopState.EXECUTING, LoopState.PLANNING, LoopState.FINALIZING, LoopState.BLOCKED}),
     LoopState.EXECUTING: frozenset({LoopState.PARSING, LoopState.PLANNING, LoopState.BLOCKED, LoopState.FAILED}),

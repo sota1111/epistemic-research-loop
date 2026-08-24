@@ -360,6 +360,38 @@ class ResearchController:
         )
         return LoopState.PLANNING
 
+    def finalize(self, run_id: str, *, artifacts: Sequence[str], note: str) -> dict[str, Any]:
+        """Close the run and record what it is submitting as its answer.
+
+        A final submission is not an experiment. It buys no information, it is the most expensive
+        fit the run will make, and under an exploiter's pragmatic weights it scores negative utility
+        and is refused by the very selector meant to choose research. `FINALIZING` existed in the
+        state machine for exactly this and nothing ever entered it, so producing a final artifact
+        had to happen outside the loop's accounting entirely. This is the path in.
+        """
+        state = self.state(run_id)
+        allowed = {LoopState.PLANNING, LoopState.SELECTING, LoopState.PHASE_DECISION, LoopState.EXPLOITER_HANDOFF}
+        if state.loop_state not in allowed:
+            raise LoopStateError(f"cannot finalize from {state.loop_state.value}")
+        payload = {
+            "run_id": run_id,
+            "note": note,
+            "artifacts": list(artifacts),
+            "phase": state.phase.value,
+            "experiments_completed": sum(
+                status == ExperimentStatus.COMPLETED for status in state.experiment_statuses.values()
+            ),
+            "observed_runtime": state.observed_runtime(),
+        }
+        self._advance(run_id, state.loop_state, LoopState.FINALIZING, allowed)
+        self.repository.append(run_id, EventType.RUN_FINALIZED, payload)
+        self.repository.append(
+            run_id,
+            EventType.STATE_CHANGED,
+            {"state": LoopState.COMPLETED.value, "run_status": RunStatus.COMPLETED.value},
+        )
+        return payload
+
     # -------------------------------------------------------------- auditing
 
     def record_violation(self, run_id: str, violation: HoldoutViolation) -> None:
