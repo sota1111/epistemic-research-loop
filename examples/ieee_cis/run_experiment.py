@@ -442,6 +442,39 @@ def train(spec: Spec) -> dict[str, Any]:
     }
 
 
+def feature_comparison(spec: Spec) -> dict[str, Any]:
+    """Score one model under two feature policies and report the gap between them.
+
+    The research kept needing an ablation cost measured against a baseline taken under *identical*
+    conditions, and getting that from two separate experiments makes the two runs differ in seed
+    draw, sample and worker version. Varying only the feature policy inside one process removes all
+    of that, which is what an ablation claim actually rests on.
+    """
+    baseline = str(spec.extra.get("baseline_features", "base"))
+    contrast = str(spec.extra.get("contrast_features", "no_v"))
+    contrast_drop = [item for item in str(spec.extra.get("contrast_drop_prefixes", "")).split(",") if item.strip()]
+    results = {}
+    for name, features, drop in ((baseline, baseline, []), (contrast, contrast, contrast_drop)):
+        variant = Spec(**{**spec.to_json(), "data": spec.data, "output": spec.output})
+        variant.features = features
+        variant.drop_prefixes = [*spec.drop_prefixes, *drop]
+        results[name if not drop else f"{name}_drop_{'_'.join(drop)}"] = train(variant)
+    keys = list(results)
+    cost = results[keys[0]]["metrics"]["roc_auc"] - results[keys[1]]["metrics"]["roc_auc"]
+    return {
+        "metrics": {
+            f"roc_auc_{keys[0]}": results[keys[0]]["metrics"]["roc_auc"],
+            f"roc_auc_{keys[1]}": results[keys[1]]["metrics"]["roc_auc"],
+            "ablation_cost": float(cost),
+            "roc_auc": results[keys[0]]["metrics"]["roc_auc"],
+        },
+        "fold_metrics": {name: value["fold_metrics"]["folds"] for name, value in results.items()},
+        "seed_metrics": {name: value["seed_metrics"]["seeds"] for name, value in results.items()},
+        "subgroup_metrics": results[keys[0]]["subgroup_metrics"],
+        "detail": {"baseline": keys[0], "contrast": keys[1], "model": spec.model},
+    }
+
+
 def split_comparison(spec: Spec) -> dict[str, Any]:
     """Score one model under two validation schemes and report the gap between them.
 
@@ -496,6 +529,7 @@ def write_submission(spec: Spec, destination: Path) -> dict[str, Any]:
 MODES = {
     "train": train,
     "split_comparison": split_comparison,
+    "feature_comparison": feature_comparison,
     "adversarial_validation": adversarial_validation,
     "feature_auc": feature_auc,
     "duplicate_scan": duplicate_scan,
@@ -524,6 +558,9 @@ def parse(argv: list[str] | None = None) -> Spec:
     parser.add_argument("--submit", action="store_true", help="also write submission.csv from a full-train fit")
     parser.add_argument("--baseline-split", default="random_kfold")
     parser.add_argument("--contrast-split", default="time_holdout")
+    parser.add_argument("--baseline-features", default="base")
+    parser.add_argument("--contrast-features", default="no_v")
+    parser.add_argument("--contrast-drop-prefixes", default="", help="prefixes dropped only in the contrast arm")
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--output", type=Path, default=None)
     arguments = parser.parse_args(argv)
@@ -550,7 +587,13 @@ def parse(argv: list[str] | None = None) -> Spec:
         submit=arguments.submit,
         data=arguments.data,
         output=output,
-        extra={"baseline_split": arguments.baseline_split, "contrast_split": arguments.contrast_split},
+        extra={
+            "baseline_split": arguments.baseline_split,
+            "contrast_split": arguments.contrast_split,
+            "baseline_features": arguments.baseline_features,
+            "contrast_features": arguments.contrast_features,
+            "contrast_drop_prefixes": arguments.contrast_drop_prefixes,
+        },
     )
 
 
