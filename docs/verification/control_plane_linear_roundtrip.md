@@ -120,8 +120,51 @@ ai-dev-control-plane の webhook ログ（`docs/ai/auto_logs/auto_runner.log`）
 `Observation`」の 2 区間は実測できているが、その間の「ワーカーがチケットを読んで実験を実行し result store
 へ書く」区間は本検証では**未実測**である。
 
+## 追試 (2026-08-24 16:30, main `306f11f` = PR #4 / #5 / #6 統合後)
+
+PR #6 作成に伴う GitHub 同期で SOT-3053 が Done → In Progress に戻ったため、統合後の main に対して
+受け入れ条件を実測で引き直した。その過程で**文書化された契約の誤りを 2 件**発見し、本 PR で修正した。
+
+### 追試 A: 冪等性は統合後も有効（Linear 実 API）
+
+`issues(filter: { description: { contains: "ERL-IDEMPOTENCY: sot3053-verify:EXP-3053-roundtrip:attempt-1" } })`
+を実 API に投げた結果は **1 件**（SOT-3054 / 現在は Canceled）。重複起票は発生していない。
+
+### 追試 B: 「Todo 以外は拾われない」は誤り（`configs/competition.example.yaml`）
+
+`linear_state_id` のコメントが「Todo が実行可能状態であり、他の状態のチケットは決して拾われない」と
+主張していた。PR #6 は同じ誤りを README で訂正したが、設定ファイル側に同じ文が残っていた。
+
+control plane の実装（`src/lib/linearApi.ts` `fetchActiveIssues`）は状態**名**ではなく**型**で絞る:
+
+```
+state: { type: { in: ["unstarted","started"] }, name: { nin: ["In Review"] } }
+```
+
+Backlog も Todo も `unstarted` であるため両方スキャン対象に入る。PR #6 の実測（Backlog で作成された
+SOT-3055 が 3.5 秒後に起動）と実装は一致しており、誤っていたのはコメントの方である。修正済み。
+
+### 追試 C: 「必須行を省いたチケットは拾われない」も誤り（`README.md`）
+
+README は `workers:` / `TARGET_REPO=` / 節見出しを省いたチケットは「作成されるが決して拾われない」と
+書いていた。control plane の `parseExperimentRequest`（`src/lib/experimentRequest.ts`）は、契約マーカーを
+含まない description を `kind: "none"` として返し、`getIssueExecutionEligibility` は `"none"` を
+**不適格にしない**。つまり省略したチケットは無害化されるのではなく、**既定値で実行される**:
+
+* worker … `config/worker_roles.json` の既定チェーン
+* リポジトリ … Linear project → repo マッピング（`config/project_repos.json`）
+
+`executor.linear_project_id` は project `ai-dev-control-plane` を指すため、`TARGET_REPO=` を欠いた
+チケットは **`/workspaces/ai-dev-control-plane`**（control plane 自身のリポジトリ）に対して実行される。
+「拾われない」より危険な失敗モードであり、README を実装に合わせて訂正した。
+
+拒否されるのは「マーカーはあるが契約 JSON が不正」な場合のみ（`kind: "invalid"`）。
+
 ## 残る未検証項目
 
 1. ~~ワーカーが実チケットを消化して `result.json` を書く区間~~ → SOT-3055 で実測済み（`worker_experiment_execution.md`）。
 2. `erlctl run loop` による完全自動運転（`ANTHROPIC_API_KEY` が空のため実行不能）。
 3. `--attempt 2` の再試行が別チケットを作る挙動（実機ではチケットを増やさないため未実施）。
+4. 追試 B / C は control plane の**実装コードを読んで**確認した（B は PR #6 の実測ログも裏付けになる）。
+   C の「既定値で別リポジトリに対して実行される」経路は、実チケットを 1 件消費することになるため
+   実機では走らせていない。
