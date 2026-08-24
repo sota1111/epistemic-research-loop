@@ -164,6 +164,8 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
             "## 結果の書き戻し（必須）\n\n"
             f"`{destination}` に次の形の JSON を書く。研究ループはこのファイルだけを読む。\n\n"
             f"```json\n{result_template}\n```\n\n"
+            "**このスキーマは閉じている。上記以外のキーを足すと取り込みが拒否される**"
+            "（`ExperimentResult` は `extra=forbid`）。補足やコメントは Linear のコメント欄に書くこと。\n\n"
             "コマンドが失敗した場合も `status` を `failed`、`exit_code` を実際の値にして"
             "**必ず書く**こと。書かれなければループはこの実験を未完了として待ち続ける。\n"
         )

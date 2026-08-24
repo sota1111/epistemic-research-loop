@@ -54,6 +54,10 @@ def test_linear_issue_contains_versioned_idempotent_contract() -> None:
     assert parsed["experiment_id"] == "exp-1" and parsed["run_id"] == "run-1"
     assert parsed["status"] == "completed" and parsed["attempt"] == 1
     assert "failed" in body, "the ticket must tell the worker to report failures too"
+    # ExperimentResult is extra=forbid, so a worker that helpfully adds a `notes` field has its
+    # whole result rejected at import. The ticket has to say the schema is closed; showing a
+    # template is not the same as saying nothing may be added to it.
+    assert "extra=forbid" in body and "閉じている" in body
     # ai-dev-control-plane parses the FIRST ```json block in the body as the execution contract
     # (src/lib/experimentRequest.ts uses /```json\s*([\s\S]*?)```/). A block added above it is
     # silently rejected at the webhook with "request_id must be a non-empty string", which is how a
