@@ -11,7 +11,13 @@ from epistemic_loop.domain.enums import ExperimentStatus, FalsificationDispositi
 NON_SCORING_TYPES = frozenset({"diagnostic", "falsification", "replication", "robustness", "ablation"})
 
 
-def arm_summary(state: RunState, *, submissions: int = 0, public_score: float | None = None) -> dict[str, Any]:
+def arm_summary(
+    state: RunState,
+    *,
+    submissions: int = 0,
+    public_score: float | None = None,
+    steering_estimate: float | None = None,
+) -> dict[str, Any]:
     """Everything about one arm that a comparison should weigh, not just its score.
 
     Two arms that reach the same leaderboard position have not done the same work if one of them
@@ -30,6 +36,9 @@ def arm_summary(state: RunState, *, submissions: int = 0, public_score: float | 
     types = Counter(proposal.experiment_type.value for proposal in completed)
     non_scoring = sum(count for kind, count in types.items() if kind in NON_SCORING_TYPES)
 
+    # The highest number the arm ever saw, under *any* scheme. For an exploiter this is also the
+    # number it steered by; for a research arm it is usually from a scheme the arm went on to
+    # reject, so it must never be used as the arm's own estimate.
     best_local = max(
         (observation.metrics.get("roc_auc", float("-inf")) for observation in state.observations.values()),
         default=float("-inf"),
@@ -51,10 +60,14 @@ def arm_summary(state: RunState, *, submissions: int = 0, public_score: float | 
         "cpu_hours": round(state.usage.cpu_hours, 2),
         "kaggle_submissions": submissions,
         "best_local_roc_auc": best_local_value,
+        # The estimate the arm actually made decisions against. It has to be supplied, not inferred:
+        # an arm that deliberately measures pessimistic schemes has a best-ever number that is not
+        # its belief about itself, and computing the calibration gap from that number is meaningless.
+        "steering_estimate": steering_estimate,
         "public_score": public_score,
         "cv_public_gap": (
-            round(best_local_value - public_score, 4)
-            if best_local_value is not None and public_score is not None
+            round(steering_estimate - public_score, 4)
+            if steering_estimate is not None and public_score is not None
             else None
         ),
         "distinct_lineages": len({proposal.lineage for proposal in completed}),
@@ -89,15 +102,19 @@ def build_arm_comparison(epistemic: dict[str, Any], exploiter: dict[str, Any], *
             epistemic["inconclusive_experiments"],
             exploiter["inconclusive_experiments"],
         ),
-        _row("Best local ROC AUC (own scheme)", epistemic["best_local_roc_auc"], exploiter["best_local_roc_auc"]),
+        _row("Highest local number seen, any scheme", epistemic["best_local_roc_auc"], exploiter["best_local_roc_auc"]),
+        _row("Estimate the arm steered by", epistemic["steering_estimate"], exploiter["steering_estimate"]),
         _row("Public leaderboard score", epistemic["public_score"], exploiter["public_score"]),
-        _row("Local minus public gap", epistemic["cv_public_gap"], exploiter["cv_public_gap"]),
+        _row("Calibration gap (steering minus public)", epistemic["cv_public_gap"], exploiter["cv_public_gap"]),
         _row("Holdout or rule violations", epistemic["violations"], exploiter["violations"]),
         "",
         "**The local scores are not comparable to each other.** Each arm reports the number produced by",
-        "the validation scheme it chose, and choosing that scheme is part of what is being compared. The",
-        "gap row is the one that can be read directly: it is each arm's own estimate minus the same kind",
-        "of hidden measurement, so a larger gap means an arm was further from knowing what it had.",
+        "the validation scheme it chose, and choosing that scheme is part of what is being compared.",
+        "",
+        "The calibration gap is the row that can be read directly: each arm's own steering estimate minus",
+        "the same kind of hidden measurement. Its **sign** matters as much as its size -- a positive gap",
+        "means the arm believed it was better than it was, which is the direction that costs rank when the",
+        "hidden split finally arrives.",
         "",
         "## Experiment mix",
         "",

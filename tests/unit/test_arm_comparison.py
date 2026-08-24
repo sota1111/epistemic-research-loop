@@ -92,12 +92,14 @@ def test_the_summary_separates_scoring_from_non_scoring_work(
         _state("epistemic", RunMode.EPISTEMIC, proposals, [hypothesis], observations, []),
         submissions=1,
         public_score=0.935,
+        steering_estimate=0.96,
     )
 
     assert summary["experiments_completed"] == 3
     assert summary["non_scoring_share"] == round(2 / 3, 3)
     assert summary["distinct_lineages"] == 3
     assert summary["best_local_roc_auc"] == 0.96
+    assert summary["steering_estimate"] == 0.96
     assert summary["cv_public_gap"] == 0.025
     assert summary["kaggle_submissions"] == 1
 
@@ -157,6 +159,7 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
             [],
         ),
         public_score=0.935,
+        steering_estimate=0.9101,
     )
     right = arm_summary(
         _state(
@@ -168,11 +171,13 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
             [],
         ),
         public_score=0.935,
+        steering_estimate=0.9708,
     )
     report = build_arm_comparison(left, right, notes=["one submission per arm"])
 
     assert "not comparable to each other" in report
     assert "one submission per arm" in report
-    # The exploiter's higher local score comes with the larger gap, and both must be visible.
-    assert "0.0249" in report or "-0.0249" in report
+    # The signs must survive into the report: the researcher under-claimed, the exploiter over-claimed.
+    assert "-0.0249" in report
     assert "0.0358" in report
+    assert "sign" in report

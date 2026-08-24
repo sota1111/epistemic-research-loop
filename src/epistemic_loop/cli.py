@@ -994,6 +994,10 @@ def report_compare(
     exploiter_run: str = typer.Option(..., "--exploiter"),
     epistemic_public: float | None = typer.Option(None, "--epistemic-public-score"),
     exploiter_public: float | None = typer.Option(None, "--exploiter-public-score"),
+    epistemic_steering: float | None = typer.Option(
+        None, "--epistemic-steering-estimate", help="the local estimate that arm actually made decisions against"
+    ),
+    exploiter_steering: float | None = typer.Option(None, "--exploiter-steering-estimate"),
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
     destination: Path | None = typer.Option(None, "--out"),
     note: list[str] = typer.Option([], "--note", help="a caveat to record with the comparison"),
@@ -1009,8 +1013,18 @@ def report_compare(
         if record.get("mode") == "execute":
             key = str(record.get("run_id"))
             counts[key] = counts.get(key, 0) + 1
-    left = arm_summary(_state(epistemic_run), submissions=counts.get(epistemic_run, 0), public_score=epistemic_public)
-    right = arm_summary(_state(exploiter_run), submissions=counts.get(exploiter_run, 0), public_score=exploiter_public)
+    left = arm_summary(
+        _state(epistemic_run),
+        submissions=counts.get(epistemic_run, 0),
+        public_score=epistemic_public,
+        steering_estimate=epistemic_steering,
+    )
+    right = arm_summary(
+        _state(exploiter_run),
+        submissions=counts.get(exploiter_run, 0),
+        public_score=exploiter_public,
+        steering_estimate=exploiter_steering,
+    )
     report = build_arm_comparison(left, right, notes=list(note))
     if destination is not None:
         destination.parent.mkdir(parents=True, exist_ok=True)
