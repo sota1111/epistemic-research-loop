@@ -18,6 +18,7 @@
         "StateChanged",
         "ResearchBriefCreated",
         "SubmissionSealed",
+        "LeaderboardFeedbackRecorded",
         "HoldoutUnsealed",
         "RunFinalized",
         "ViolationDetected"

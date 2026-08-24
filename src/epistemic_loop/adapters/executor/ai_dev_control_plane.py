@@ -26,12 +26,20 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
         team_id: str,
         project_id: str,
         result_root: str | Path,
+        worker: str = "claude:opus",
+        handoff: bool = False,
+        target_repo: str | None = None,
+        state_id: str | None = None,
         api_key_env: str = "LINEAR_API_KEY",
         api_url: str = "https://api.linear.app/graphql",
     ):
         self.team_id = team_id
         self.project_id = project_id
         self.result_root = Path(result_root)
+        self.worker = worker
+        self.handoff = handoff
+        self.target_repo = target_repo
+        self.state_id = state_id
         self.api_key_env = api_key_env
         self.api_url = api_url
 
@@ -77,15 +85,67 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
         )
 
     @staticmethod
-    def issue_description(request: ExperimentRequest) -> str:
-        contract = request.model_dump_json(indent=2)
+    def issue_description(
+        request: ExperimentRequest,
+        *,
+        worker: str = "claude:opus",
+        handoff: bool = False,
+        target_repo: str | None = None,
+    ) -> str:
+        """Render the control plane's native ticket, with the contract embedded verbatim.
+
+        The `workers:` header and `TARGET_REPO=` line are what ai-dev-control-plane parses to pick
+        a worker and a checkout; the Markdown sections are what that worker reads. The execution
+        contract stays in the body as machine-readable JSON so the research loop and the worker
+        agree on exactly one description of the experiment.
+        """
+        mounts = ", ".join(mount.name for mount in request.dataset_mounts) or "なし"
+        seeds = ", ".join(str(seed) for seed in request.seeds)
+        outputs = "\n".join(f"* `{name}`" for name in request.required_outputs)
+        checklist = "\n".join(f"- [ ] `{name}` を出力する" for name in request.required_outputs)
+        repo_line = f"TARGET_REPO={target_repo}\n\n" if target_repo else ""
         return (
+            f"workers: solo={worker}, handoff={'on' if handoff else 'off'}\n\n"
+            f"{repo_line}"
             f"{CONTRACT_MARKER}\n"
             f"ERL-IDEMPOTENCY: {request.idempotency_key}\n\n"
-            "Execute this preregistered experiment exactly as declared. Do not change its prediction "
-            "or decision rule. Write the required outputs and ExperimentResult to the configured artifact store.\n\n"
-            f"```json\n{contract}\n```\n"
+            "## 目的\n\n"
+            f"{request.objective}\n\n"
+            "## 変更範囲\n\n"
+            f"{outputs}\n\n"
+            "## 実装内容\n\n"
+            f"* コマンド: `{request.command}`\n"
+            f"* コンテナ: `{request.container_image}`\n"
+            f"* シード: {seeds}\n"
+            f"* データマウント（読み取り専用）: {mounts}\n"
+            f"* ネットワーク: {request.network_policy}\n\n"
+            "## 検証内容\n\n"
+            "* 事前登録された予測と判定規則は**変更しない**。実験は宣言どおりに実行する。\n"
+            "* 必須成果物を `ERL_OUTPUT_DIR` に書き出す。\n"
+            "* `ExperimentResult` を result store に書く。研究ループがそこから結果を取り込む。\n\n"
+            "## 受け入れ条件\n\n"
+            f"{checklist}\n"
+            "- [ ] `result.json` に `ExperimentResult` を書く\n"
+            "- [ ] 予測・判定規則・シード・split を変更していない\n\n"
+            "## 実行契約（機械可読・変更禁止）\n\n"
+            f"```json\n{request.model_dump_json(indent=2)}\n```\n"
         )
+
+    def issue_input(self, request: ExperimentRequest) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "teamId": self.team_id,
+            "projectId": self.project_id,
+            "title": f"[ERL {request.run_id}] {request.objective}",
+            "description": self.issue_description(
+                request,
+                worker=self.worker,
+                handoff=self.handoff,
+                target_repo=self.target_repo,
+            ),
+        }
+        if self.state_id:
+            payload["stateId"] = self.state_id
+        return payload
 
     def submit(self, request: ExperimentRequest) -> ExperimentResult:
         existing = self._existing(request.idempotency_key)
@@ -94,14 +154,7 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
                 """mutation($input: IssueCreateInput!) {
                   issueCreate(input: $input) { success issue { id identifier url } }
                 }""",
-                {
-                    "input": {
-                        "teamId": self.team_id,
-                        "projectId": self.project_id,
-                        "title": f"[ERL {request.run_id}] {request.objective}",
-                        "description": self.issue_description(request),
-                    }
-                },
+                {"input": self.issue_input(request)},
             )
             created = data.get("issueCreate", {})
             if not created.get("success") or not created.get("issue"):

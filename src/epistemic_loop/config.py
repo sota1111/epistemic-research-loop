@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from epistemic_loop.domain.enums import Phase, RunMode
+from epistemic_loop.domain.enums import LeaderboardFeedbackMode, Phase, RunMode
 from epistemic_loop.domain.models import Budget, HoldoutPolicy
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
@@ -91,12 +91,30 @@ class ContaminationConfig(StrictModel):
 
 
 class ExecutorConfig(StrictModel):
-    adapter: str = "local"
+    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane)$")
     queue: str = "kaggle-research"
     retry_infrastructure_failures: int = Field(default=2, ge=0)
     linear_team_id: str | None = None
     linear_project_id: str | None = None
     result_root: str = ".results"
+    container_image: str = "python:3.11-slim"
+    dataset_mounts: list[str] = Field(default_factory=list)
+    workspace: str = "."
+    # ai-dev-control-plane ticket contract: it parses `workers:` to pick a worker and
+    # `TARGET_REPO=` to pick the checkout, so both must match that pipeline's convention.
+    worker: str = "claude:opus"
+    handoff: bool = False
+    target_repo: str | None = None
+    linear_state_id: str | None = None
+
+
+class LeaderboardConfig(StrictModel):
+    """Public-leaderboard feedback policy. The private score stays sealed under every mode."""
+
+    public_feedback: LeaderboardFeedbackMode = LeaderboardFeedbackMode.GATED_BINARY
+    max_public_queries: int = Field(default=3, ge=0)
+    query_ledger: str = ".state/leaderboard-queries.jsonl"
+    sealed_store: str = ".sealed-scores"
 
 
 class ArtifactConfig(StrictModel):
@@ -111,7 +129,12 @@ class StorageConfig(StrictModel):
 
 
 class LlmConfig(StrictModel):
-    adapter: str = "ai_dev_control_plane"
+    """Proposal-stage model. ai-dev-control-plane is reached only through Linear, never as an LLM."""
+
+    adapter: str = Field(default="claude", pattern="^(claude|file_bridge)$")
+    model: str = "claude-opus-5"
+    max_tokens: int = Field(default=16000, ge=1024)
+    effort: str = Field(default="high", pattern="^(low|medium|high|xhigh|max)$")
     structured_output_required: bool = True
     store_raw_response: bool = True
 
@@ -123,6 +146,7 @@ class AppConfig(StrictModel):
     loop: LoopConfig = Field(default_factory=LoopConfig)
     selection: SelectionConfig = Field(default_factory=SelectionConfig)
     holdout: HoldoutPolicy = Field(default_factory=HoldoutPolicy)
+    leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     contamination: ContaminationConfig = Field(default_factory=ContaminationConfig)
     executor: ExecutorConfig = Field(default_factory=ExecutorConfig)
     artifacts: ArtifactConfig = Field(default_factory=ArtifactConfig)

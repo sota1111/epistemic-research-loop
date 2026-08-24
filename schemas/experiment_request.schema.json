@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "DatasetMount": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "read_only": {
+          "const": true,
+          "default": true,
+          "title": "Read Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "DatasetMount",
+      "type": "object"
+    },
+    "ResourceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Cpu",
+          "type": "integer"
+        },
+        "gpu": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu",
+          "type": "integer"
+        },
+        "memory_gb": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "timeout_seconds": {
+          "default": 3600,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "ResourceRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base_commit_sha": {
+      "minLength": 1,
+      "title": "Base Commit Sha",
+      "type": "string"
+    },
+    "command": {
+      "minLength": 1,
+      "title": "Command",
+      "type": "string"
+    },
+    "container_image": {
+      "minLength": 1,
+      "title": "Container Image",
+      "type": "string"
+    },
+    "dataset_mounts": {
+      "items": {
+        "$ref": "#/$defs/DatasetMount"
+      },
+      "title": "Dataset Mounts",
+      "type": "array"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "implementation_mode": {
+      "minLength": 1,
+      "title": "Implementation Mode",
+      "type": "string"
+    },
+    "network_policy": {
+      "default": "disabled",
+      "enum": [
+        "disabled",
+        "source_policy_proxy",
+        "enabled"
+      ],
+      "title": "Network Policy",
+      "type": "string"
+    },
+    "objective": {
+      "minLength": 1,
+      "title": "Objective",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "required_outputs": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Required Outputs",
+      "type": "array"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceRequest"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "seeds": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Seeds",
+      "type": "array"
+    }
+  },
+  "required": [
+    "request_id",
+    "experiment_id",
+    "run_id",
+    "idempotency_key",
+    "base_commit_sha",
+    "implementation_mode",
+    "objective",
+    "command",
+    "container_image",
+    "dataset_mounts",
+    "resources",
+    "seeds",
+    "required_outputs"
+  ],
+  "title": "ExperimentRequest",
+  "type": "object"
+}

@@ -26,6 +26,7 @@ class EventType(StrEnum):
     STATE_CHANGED = "StateChanged"
     RESEARCH_BRIEF_CREATED = "ResearchBriefCreated"
     SUBMISSION_SEALED = "SubmissionSealed"
+    LEADERBOARD_FEEDBACK_RECORDED = "LeaderboardFeedbackRecorded"
     HOLDOUT_UNSEALED = "HoldoutUnsealed"
     RUN_FINALIZED = "RunFinalized"
     VIOLATION_DETECTED = "ViolationDetected"

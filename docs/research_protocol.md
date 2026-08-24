@@ -14,3 +14,14 @@ Discovery diagnoses validation, metrics, shifts, entities, time, leakage, and ba
 Consolidation compares lineages, ablates improvements, and establishes robustness. Exploitation runs
 HPO and ensembles inside the approved search space. Rank reversal, seed instability, localized gains,
 or implausible validation can return the run to research.
+
+Each round is a state machine, and every step appends to the canonical log:
+`hypothesizing -> planning -> scoring -> selecting -> executing -> parsing -> falsifying -> updating
+-> phase_decision`. A step invoked from the wrong state is refused rather than silently reordered,
+so the record cannot claim a prediction was preregistered after its result was seen.
+
+Automation changes who fills the proposal slots, not who decides what counts as evidence. The model
+is consulted three times per round — propose hypotheses, design experiments, judge which predictions
+the evidence matched. The disposition that follows from those matches, the evidence weight, the
+log-odds update, the gates, the utility, and the budget are computed from the proposal, not asked
+for.

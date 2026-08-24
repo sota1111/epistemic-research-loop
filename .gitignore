@@ -15,5 +15,6 @@ build/
 .sealed/
 .sealed-scores/
 .results/
+.proposals/
 .benchmarks/
 benchmark-plan.yaml

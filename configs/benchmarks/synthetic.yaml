@@ -29,6 +29,14 @@ selection:
   consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
   exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
 holdout: {policy: strict_blind, max_queries: 0, reveal_scores: after_all_paired_runs, sealed_store: .sealed}
+leaderboard:
+  # Local CV is the unrestricted signal. The public leaderboard is a finite-sample proxy for the
+  # private score, so reading it is budgeted and returns only a preregistered threshold verdict.
+  # The private score is the objective and is never unsealed by the research loop.
+  public_feedback: gated_binary
+  max_public_queries: 3
+  query_ledger: .state/leaderboard-queries.jsonl
+  sealed_store: .sealed-scores
 contamination:
   policy: strict_historical
   block_kaggle_discussions: true
@@ -43,8 +51,12 @@ executor:
   linear_team_id: null
   linear_project_id: null
   result_root: .results
+  container_image: python:3.11-slim
+  dataset_mounts: []
+  workspace: .
 artifacts: {adapter: local, root: .runs}
 storage: {event_store: jsonl, projection: sqlite, sqlite_path: .state/epistemic-loop.db}
-llm: {adapter: ai_dev_control_plane, structured_output_required: true, store_raw_response: true}
+llm: {adapter: claude, model: claude-opus-5, max_tokens: 16000, effort: high,
+      structured_output_required: true, store_raw_response: true}
 benchmark_id: synthetic-ab-001
 synthetic_scenarios: [temporal_shift, spurious_leakage, candidate_generation_bottleneck, iid_easy]
