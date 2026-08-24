@@ -122,6 +122,6 @@ ai-dev-control-plane の webhook ログ（`docs/ai/auto_logs/auto_runner.log`）
 
 ## 残る未検証項目
 
-1. ワーカーが実チケットを消化して `result.json` を書く区間（上記の理由で意図的に未実施）。
+1. ~~ワーカーが実チケットを消化して `result.json` を書く区間~~ → SOT-3055 で実測済み（`worker_experiment_execution.md`）。
 2. `erlctl run loop` による完全自動運転（`ANTHROPIC_API_KEY` が空のため実行不能）。
 3. `--attempt 2` の再試行が別チケットを作る挙動（実機ではチケットを増やさないため未実施）。

@@ -1,0 +1,22 @@
+{
+  "experiment_id": "E-SPLIT-001",
+  "run_id": "erl-live-001",
+  "attempt": 1,
+  "status": "completed",
+  "exit_code": 0,
+  "failure_class": null,
+  "commit_sha": "483190062e07041d3f5fcafe294c9d4ccfe9478f",
+  "environment_hash": "8f7f2680f499a0a8ad5cc16d3c48de319925ff36120aa1f54c5be0dd0cca06d7",
+  "dataset_fingerprint": "local-executor-unverified",
+  "metrics": {
+    "score": 0.75
+  },
+  "artifact_refs": [
+    "/workspaces/epistemic-research-loop/.results/erl-live-001/E-SPLIT-001/metrics.json",
+    "/workspaces/epistemic-research-loop/.results/erl-live-001/E-SPLIT-001/fold_metrics.json"
+  ],
+  "runtime": {
+    "wall_seconds": 0.022952697006985545
+  },
+  "external_ref": "SOT-3055"
+}
