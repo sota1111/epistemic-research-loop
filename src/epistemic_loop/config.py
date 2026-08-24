@@ -1,0 +1,145 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+from pathlib import Path
+from typing import Any
+
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
+
+from epistemic_loop.domain.enums import Phase, RunMode
+from epistemic_loop.domain.models import Budget, HoldoutPolicy
+
+_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
+
+
+def _expand_env(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _expand_env(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_expand_env(item) for item in value]
+    if not isinstance(value, str):
+        return value
+
+    def substitute(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in os.environ:
+            raise ValueError(f"required environment variable is not set: {name}")
+        return os.environ[name]
+
+    return _ENV_PATTERN.sub(substitute, value)
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class RunConfig(StrictModel):
+    id: str | None = None
+    mode: RunMode = RunMode.EPISTEMIC
+    seed: int = 101
+
+
+class CompetitionConfig(StrictModel):
+    slug: str
+    metric_direction: str = Field(pattern="^(maximize|minimize)$")
+    primary_metric: str = "score"
+    data_path: str | None = None
+    sample_submission: str | None = None
+
+
+class LoopConfig(StrictModel):
+    phase_policy: str = "adaptive"
+    max_active_hypotheses: int = Field(default=30, ge=1)
+    max_priority_hypotheses: int = Field(default=10, ge=1)
+    max_consecutive_optimization_experiments: int = Field(default=3, ge=1)
+    minimum_replications_for_support: int = Field(default=1, ge=1)
+
+
+class PhaseWeights(StrictModel):
+    pragmatic: float = Field(ge=0)
+    epistemic: float = Field(ge=0)
+    robustness: float = Field(ge=0)
+    diversity: float = Field(ge=0)
+
+
+class SelectionConfig(StrictModel):
+    cost_lambda: float = Field(default=0.15, ge=0)
+    minimum_utility: float = 0.0
+    discovery: PhaseWeights = PhaseWeights(pragmatic=0.20, epistemic=0.45, robustness=0.20, diversity=0.15)
+    consolidation: PhaseWeights = PhaseWeights(pragmatic=0.35, epistemic=0.30, robustness=0.25, diversity=0.10)
+    exploitation: PhaseWeights = PhaseWeights(pragmatic=0.55, epistemic=0.15, robustness=0.25, diversity=0.05)
+
+    def for_phase(self, phase: Phase) -> PhaseWeights:
+        if phase == Phase.DISCOVERY:
+            return self.discovery
+        if phase == Phase.CONSOLIDATION:
+            return self.consolidation
+        return self.exploitation
+
+
+class ContaminationConfig(StrictModel):
+    policy: str = "strict_historical"
+    block_kaggle_discussions: bool = True
+    block_kaggle_code: bool = True
+    block_competition_specific_github: bool = True
+    require_source_provenance: bool = True
+    worker_network: str = "disabled"
+
+
+class ExecutorConfig(StrictModel):
+    adapter: str = "local"
+    queue: str = "kaggle-research"
+    retry_infrastructure_failures: int = Field(default=2, ge=0)
+    linear_team_id: str | None = None
+    linear_project_id: str | None = None
+    result_root: str = ".results"
+
+
+class ArtifactConfig(StrictModel):
+    adapter: str = "local"
+    root: str = ".runs"
+
+
+class StorageConfig(StrictModel):
+    event_store: str = "jsonl"
+    projection: str = "sqlite"
+    sqlite_path: str = ".state/epistemic-loop.db"
+
+
+class LlmConfig(StrictModel):
+    adapter: str = "ai_dev_control_plane"
+    structured_output_required: bool = True
+    store_raw_response: bool = True
+
+
+class AppConfig(StrictModel):
+    run: RunConfig
+    competition: CompetitionConfig
+    budgets: Budget = Field(default_factory=Budget)
+    loop: LoopConfig = Field(default_factory=LoopConfig)
+    selection: SelectionConfig = Field(default_factory=SelectionConfig)
+    holdout: HoldoutPolicy = Field(default_factory=HoldoutPolicy)
+    contamination: ContaminationConfig = Field(default_factory=ContaminationConfig)
+    executor: ExecutorConfig = Field(default_factory=ExecutorConfig)
+    artifacts: ArtifactConfig = Field(default_factory=ArtifactConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
+    llm: LlmConfig = Field(default_factory=LlmConfig)
+    benchmark_id: str | None = None
+    synthetic_scenarios: list[str] | None = None
+
+
+def load_config(path: str | Path) -> AppConfig:
+    config_path = Path(path)
+    raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("configuration root must be an object")
+    return AppConfig.model_validate(_expand_env(raw))
+
+
+def config_hash(config: AppConfig) -> str:
+    canonical = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()

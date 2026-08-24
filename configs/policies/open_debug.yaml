@@ -1,0 +1,4 @@
+policy: open_debug
+max_queries: 100
+reveal_scores: immediate
+sealed_store: .sealed-debug

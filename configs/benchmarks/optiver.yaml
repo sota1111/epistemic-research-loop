@@ -1,0 +1,7 @@
+run: {id: optiver-epistemic-001, mode: epistemic, seed: 101}
+competition:
+  slug: optiver-realized-volatility-prediction
+  metric_direction: minimize
+  primary_metric: rmspe
+benchmark_id: optiver-ab-001
+synthetic_scenarios: [temporal_shift]

@@ -1,0 +1,7 @@
+run: {id: ieee-cis-epistemic-001, mode: epistemic, seed: 101}
+competition:
+  slug: ieee-fraud-detection
+  metric_direction: maximize
+  primary_metric: roc_auc
+benchmark_id: ieee-cis-ab-001
+synthetic_scenarios: [temporal_shift, spurious_leakage]

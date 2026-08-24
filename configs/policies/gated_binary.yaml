@@ -1,0 +1,4 @@
+policy: gated_binary
+max_queries: 3
+reveal_scores: never
+sealed_store: .sealed

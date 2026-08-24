@@ -1,0 +1,115 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "approved_feature_families": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Approved Feature Families",
+      "type": "array"
+    },
+    "approved_model_lineages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Approved Model Lineages",
+      "type": "array"
+    },
+    "expected_failure_modes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Expected Failure Modes",
+      "type": "array"
+    },
+    "falsified_hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Falsified Hypotheses",
+      "type": "array"
+    },
+    "locked_validation_scheme": {
+      "additionalProperties": true,
+      "title": "Locked Validation Scheme",
+      "type": "object"
+    },
+    "primary_metric": {
+      "title": "Primary Metric",
+      "type": "string"
+    },
+    "prohibited_shortcuts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prohibited Shortcuts",
+      "type": "array"
+    },
+    "remaining_budget": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "title": "Remaining Budget",
+      "type": "object"
+    },
+    "required_robustness_checks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Robustness Checks",
+      "type": "array"
+    },
+    "robust_metric": {
+      "title": "Robust Metric",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "search_ranges": {
+      "additionalProperties": true,
+      "title": "Search Ranges",
+      "type": "object"
+    },
+    "supported_hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supported Hypotheses",
+      "type": "array"
+    },
+    "unresolved_high_risk_hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unresolved High Risk Hypotheses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "locked_validation_scheme",
+    "primary_metric",
+    "robust_metric",
+    "supported_hypotheses",
+    "falsified_hypotheses",
+    "unresolved_high_risk_hypotheses",
+    "approved_feature_families",
+    "approved_model_lineages",
+    "prohibited_shortcuts",
+    "required_robustness_checks",
+    "search_ranges",
+    "remaining_budget",
+    "expected_failure_modes"
+  ],
+  "title": "ResearchBrief",
+  "type": "object"
+}
