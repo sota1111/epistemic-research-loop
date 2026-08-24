@@ -1,13 +1,16 @@
+# Template for a real competition run driven through ai-dev-control-plane.
+# The only integration point with the control plane is the Linear issue created per experiment;
+# results come back through the shared result store, never through a second API channel.
 run:
   id: null
   mode: epistemic
   seed: 101
 competition:
-  slug: local-competition
+  slug: replace-with-competition-slug
   metric_direction: maximize
   primary_metric: score
-  data_path: null
-  sample_submission: null
+  data_path: data/competition
+  sample_submission: data/competition/sample_submission.csv
 budgets:
   max_experiments: 40
   max_cpu_hours: 120
@@ -34,9 +37,8 @@ holdout:
   reveal_scores: after_all_paired_runs
   sealed_store: .sealed
 leaderboard:
-  # Local CV is the unrestricted signal. The public leaderboard is a finite-sample proxy for the
-  # private score, so reading it is budgeted and returns only a preregistered threshold verdict.
-  # The private score is the objective and is never unsealed by the research loop.
+  # Local CV drives the loop. Public-leaderboard reads are budgeted because overfitting the public
+  # split is what costs private-score rank; the private score is never unsealed here.
   public_feedback: gated_binary
   max_public_queries: 3
   query_ledger: .state/leaderboard-queries.jsonl
@@ -49,14 +51,14 @@ contamination:
   require_source_provenance: true
   worker_network: disabled
 executor:
-  adapter: local
+  adapter: ai_dev_control_plane
   queue: kaggle-research
   retry_infrastructure_failures: 2
-  linear_team_id: null
-  linear_project_id: null
+  linear_team_id: ${LINEAR_TEAM_ID}
+  linear_project_id: ${LINEAR_PROJECT_ID}
   result_root: .results
-  container_image: python:3.11-slim
-  dataset_mounts: []
+  container_image: ghcr.io/example/kaggle-solver:latest
+  dataset_mounts: [competition-data]
   workspace: .
 artifacts:
   adapter: local

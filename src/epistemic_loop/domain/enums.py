@@ -150,3 +150,9 @@ class EdgeType(StrEnum):
     DEPENDS_ON = "depends_on"
     EXPLAINS = "explains"
     INVALIDATES = "invalidates"
+
+
+class LeaderboardFeedbackMode(StrEnum):
+    FORBIDDEN = "forbidden"
+    GATED_BINARY = "gated_binary"
+    NUMERIC = "numeric"

@@ -7,3 +7,6 @@ rejected when a gate is created in production mode.
 
 Numeric score requests in gated mode, any strict-blind query, query-budget overflow, credential/API
 access by a worker, or publication before unseal is a blocking violation.
+
+The internal sealed holdout and the Kaggle public leaderboard are separate channels with separate
+budgets. See [leaderboard policy](leaderboard_policy.md) for the second one.

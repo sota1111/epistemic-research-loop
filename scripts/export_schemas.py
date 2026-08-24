@@ -6,6 +6,8 @@ from pathlib import Path
 from epistemic_loop.domain.events import EventEnvelope
 from epistemic_loop.domain.models import (
     ExperimentProposal,
+    ExperimentRequest,
+    ExperimentResult,
     Hypothesis,
     Observation,
     ResearchBrief,
@@ -14,6 +16,8 @@ from epistemic_loop.domain.models import (
 SCHEMAS = {
     "hypothesis.schema.json": Hypothesis,
     "experiment.schema.json": ExperimentProposal,
+    "experiment_request.schema.json": ExperimentRequest,
+    "experiment_result.schema.json": ExperimentResult,
     "observation.schema.json": Observation,
     "research_brief.schema.json": ResearchBrief,
     "event.schema.json": EventEnvelope,

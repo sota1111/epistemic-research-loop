@@ -18,7 +18,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+llm = [
+  "anthropic>=0.70,<2",
+]
 dev = [
+  "anthropic>=0.70,<2",
+
   "mypy>=1.14,<2",
   "pytest>=8.3,<10",
   "pytest-cov>=6,<8",

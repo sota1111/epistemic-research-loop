@@ -5,11 +5,14 @@ import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import typer
 import yaml
 
+from epistemic_loop.adapters.executor.ai_dev_control_plane import AiDevControlPlaneAdapter
+from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
+from epistemic_loop.adapters.executor.local import LocalExecutor
 from epistemic_loop.adapters.kaggle import (
     KaggleCliSubmissionAdapter,
     SubmissionCandidate,
@@ -18,19 +21,38 @@ from epistemic_loop.adapters.kaggle import (
     plan_submission,
 )
 from epistemic_loop.adapters.kaggle.manual import manual_submission_packet, write_manual_packet
+from epistemic_loop.adapters.llm.base import StructuredLlm
+from epistemic_loop.agents.auto import AutomaticProposer
+from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpret_evidence
+from epistemic_loop.agents.falsifier import Falsifier
 from epistemic_loop.agents.observer import CompetitionObserver
+from epistemic_loop.agents.proposal_bridge import ProposalBridge
+from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.benchmark.evaluator import finalize_benchmark
 from epistemic_loop.benchmark.paired_runner import run_synthetic_plan
 from epistemic_loop.benchmark.protocol import BenchmarkPlan, load_plan, save_plan
-from epistemic_loop.config import load_config
+from epistemic_loop.config import AppConfig, load_config
+from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
+from epistemic_loop.controller.budget_manager import BudgetManager
+from epistemic_loop.controller.phase_policy import PhaseEvidence
 from epistemic_loop.controller.research_graph import (
+    LoopStateError,
     ResearchController,
     fingerprint_path,
 )
-from epistemic_loop.domain.enums import Phase
+from epistemic_loop.controller.run_state import RunState
+from epistemic_loop.domain.enums import HypothesisStatus, Phase, VerifierResult
 from epistemic_loop.domain.events import EventType
-from epistemic_loop.domain.models import ExperimentProposal, Hypothesis
+from epistemic_loop.domain.models import (
+    CompetitionWorldModel,
+    ExperimentProposal,
+    ExperimentResult,
+    Hypothesis,
+)
+from epistemic_loop.holdout.leaderboard import LeaderboardGate
+from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
+from epistemic_loop.holdout.violations import HoldoutViolationError
 from epistemic_loop.reporting.benchmark_report import write_benchmark_report
 from epistemic_loop.reporting.run_report import write_run_report
 from epistemic_loop.scoring.selector import score_experiment
@@ -44,6 +66,7 @@ holdout_app = typer.Typer(help="Audit holdout access", no_args_is_help=True)
 benchmark_app = typer.Typer(help="Run paired benchmarks", no_args_is_help=True)
 report_app = typer.Typer(help="Build reports", no_args_is_help=True)
 kaggle_app = typer.Typer(help="Evaluator-only Kaggle submission automation", no_args_is_help=True)
+beliefs_app = typer.Typer(help="Falsify hypotheses and update beliefs", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -51,6 +74,7 @@ app.add_typer(holdout_app, name="holdout")
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(report_app, name="report")
 app.add_typer(kaggle_app, name="kaggle")
+app.add_typer(beliefs_app, name="beliefs")
 
 
 def _home() -> Path:
@@ -64,6 +88,64 @@ def _repository() -> ResearchRepository:
 
 def _run_config_path(run_id: str) -> Path:
     return _home() / ".runs" / run_id / "config.yaml"
+
+
+def _controller() -> ResearchController:
+    return ResearchController(_repository())
+
+
+def _run_config(run_id: str) -> AppConfig:
+    path = _run_config_path(run_id)
+    if not path.is_file():
+        raise typer.BadParameter(f"unknown run: {run_id}")
+    return load_config(path)
+
+
+def _state(run_id: str) -> RunState:
+    try:
+        return _controller().state(run_id)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+
+
+def _executor(config: AppConfig) -> ExecutorAdapter:
+    result_root = _home() / config.executor.result_root
+    if config.executor.adapter == "local":
+        return LocalExecutor(_home() / config.executor.workspace, result_root)
+    if not config.executor.linear_team_id or not config.executor.linear_project_id:
+        raise typer.BadParameter("executor.linear_team_id and executor.linear_project_id must be configured")
+    return AiDevControlPlaneAdapter(
+        team_id=config.executor.linear_team_id,
+        project_id=config.executor.linear_project_id,
+        result_root=result_root,
+        worker=config.executor.worker,
+        handoff=config.executor.handoff,
+        target_repo=config.executor.target_repo,
+        state_id=config.executor.linear_state_id,
+    )
+
+
+def _bridge() -> ProposalBridge:
+    return ProposalBridge(_home() / ".proposals", _home() / "prompts")
+
+
+def _llm(config: AppConfig) -> StructuredLlm:
+    if config.llm.adapter != "claude":
+        raise typer.BadParameter(
+            f"llm.adapter={config.llm.adapter} has no automatic driver; "
+            "use 'hypotheses request/record' and 'experiments request/propose' instead"
+        )
+    from epistemic_loop.adapters.llm.claude import ClaudeStructuredLlm, Effort
+
+    return ClaudeStructuredLlm(
+        model=config.llm.model,
+        max_tokens=config.llm.max_tokens,
+        effort=cast(Effort, config.llm.effort),
+    )
+
+
+def _echo(payload: object) -> None:
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True, default=str))
 
 
 def _git_sha() -> str:
@@ -122,29 +204,29 @@ def run_status(run_id: str = typer.Option(..., "--run-id")) -> None:
     events = _repository().event_store(run_id).read_all()
     if not events:
         raise typer.BadParameter(f"unknown run: {run_id}")
-    run = next(event.payload for event in events if event.event_type == EventType.RUN_CREATED)
-    latest_state = next(
-        (event.payload for event in reversed(events) if event.event_type == EventType.STATE_CHANGED),
-        {},
-    )
-    phase = next(
-        (event.payload["phase"] for event in reversed(events) if event.event_type == EventType.PHASE_CHANGED),
-        run["phase"],
-    )
-    typer.echo(
-        json.dumps(
-            {
-                "run_id": run_id,
-                "competition": run["competition_id"],
-                "state": latest_state.get("state", "created"),
-                "status": latest_state.get("run_status", run["status"]),
-                "phase": phase,
-                "event_count": len(events),
-                "last_sequence": events[-1].sequence,
+    state = _state(run_id)
+    statuses: dict[str, int] = {}
+    for value in state.experiment_statuses.values():
+        statuses[value.value] = statuses.get(value.value, 0) + 1
+    _echo(
+        {
+            "run_id": run_id,
+            "competition": state.run.competition_id,
+            "state": state.loop_state.value,
+            "status": state.run.status.value,
+            "phase": state.phase.value,
+            "hypotheses": {
+                "total": len(state.hypotheses),
+                "supported": sum(item.status == HypothesisStatus.SUPPORTED for item in state.hypotheses.values()),
+                "falsified": sum(item.status == HypothesisStatus.FALSIFIED for item in state.hypotheses.values()),
             },
-            indent=2,
-            sort_keys=True,
-        )
+            "experiments": statuses,
+            "observations": len(state.observations),
+            "violations": state.violations,
+            "remaining_budget": BudgetManager(state.run.budgets, state.usage).remaining(),
+            "event_count": len(events),
+            "last_sequence": events[-1].sequence,
+        }
     )
 
 
@@ -258,6 +340,246 @@ def holdout_violations(run_id: str = typer.Option(..., "--run-id")) -> None:
     typer.echo(json.dumps(_entities(run_id, EventType.VIOLATION_DETECTED), indent=2, sort_keys=True))
 
 
+@hypotheses_app.command("request")
+def hypotheses_request(run_id: str = typer.Option(..., "--run-id")) -> None:
+    """Write the hypothesis-generation prompt, context, and JSON Schema for the proposing agent."""
+    events = _repository().event_store(run_id).read_all()
+    payload = next(
+        (event.payload for event in reversed(events) if event.event_type == EventType.WORLD_MODEL_RECORDED),
+        None,
+    )
+    if payload is None:
+        raise typer.BadParameter(f"run {run_id} has no world model; run 'erlctl run start' first")
+    world_model = CompetitionWorldModel.model_validate(payload)
+    typer.echo(str(_bridge().request_hypotheses(run_id, world_model, _state(run_id))))
+
+
+@hypotheses_app.command("record")
+def hypotheses_record(
+    run_id: str = typer.Option(..., "--run-id"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    """Validate proposed hypotheses against the domain schema and append them to the event log."""
+    config = _run_config(run_id)
+    try:
+        hypotheses = ProposalBridge.load_hypotheses(source)
+        recorded = _controller().record_hypotheses(run_id, hypotheses, max_active=config.loop.max_active_hypotheses)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"run_id": run_id, "recorded": recorded})
+
+
+@experiments_app.command("request")
+def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
+    """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
+    typer.echo(str(_bridge().request_experiments(run_id, _state(run_id))))
+
+
+@experiments_app.command("propose")
+def experiments_propose(
+    run_id: str = typer.Option(..., "--run-id"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    """Record preregistered experiment candidates; gates and utility run later at selection."""
+    try:
+        proposals = ProposalBridge.load_experiments(source)
+        recorded = _controller().record_proposals(run_id, proposals)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"run_id": run_id, "proposed": recorded})
+
+
+@experiments_app.command("select")
+def experiments_select(
+    run_id: str = typer.Option(..., "--run-id"),
+    size: int = typer.Option(1, "--size", min=1),
+) -> None:
+    """Apply hard gates, phase-weighted utility, and similarity-penalized portfolio selection."""
+    config = _run_config(run_id)
+    state = _state(run_id)
+    try:
+        decision = _controller().select_experiments(
+            run_id,
+            weights=config.selection.for_phase(state.phase),
+            cost_lambda=config.selection.cost_lambda,
+            size=size,
+            minimum_utility=config.selection.minimum_utility,
+            source_policy_strict=config.contamination.require_source_provenance,
+        )
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(decision.model_dump(mode="json"))
+
+
+@experiments_app.command("dispatch")
+def experiments_dispatch(
+    run_id: str = typer.Option(..., "--run-id"),
+    experiment_id: str = typer.Option(..., "--experiment-id"),
+    attempt: int = typer.Option(1, "--attempt", min=1),
+) -> None:
+    """Hand the execution contract to the configured executor and record the attempt."""
+    config = _run_config(run_id)
+    try:
+        request, result = _controller().dispatch(
+            run_id,
+            experiment_id,
+            _executor(config),
+            container_image=config.executor.container_image,
+            dataset_mounts=config.executor.dataset_mounts,
+            network_policy=config.contamination.worker_network,
+            attempt=attempt,
+        )
+    except (ValueError, LoopStateError, PermissionError, RuntimeError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(
+        {
+            "run_id": run_id,
+            "experiment_id": experiment_id,
+            "adapter": config.executor.adapter,
+            "idempotency_key": request.idempotency_key,
+            "status": result.status,
+            "external_ref": result.external_ref,
+        }
+    )
+
+
+@experiments_app.command("import-result")
+def experiments_import_result(
+    run_id: str = typer.Option(..., "--run-id"),
+    experiment_id: str = typer.Option(..., "--experiment-id"),
+) -> None:
+    """Import the worker's ExperimentResult and derive an Observation from local metrics."""
+    config = _run_config(run_id)
+    source = result_path(_home() / config.executor.result_root, run_id, experiment_id)
+    if not source.is_file():
+        raise typer.BadParameter(f"no result has been written yet: {source}")
+    result = ExperimentResult.model_validate_json(source.read_text(encoding="utf-8"))
+    try:
+        observation = _controller().import_result(run_id, result, artifact_root=source.parent)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    if observation is None:
+        _echo({"experiment_id": experiment_id, "status": result.status, "imported": False})
+        return
+    _echo(
+        {
+            "experiment_id": experiment_id,
+            "status": result.status,
+            "observation_id": observation.id,
+            "metrics": observation.metrics,
+        }
+    )
+
+
+@beliefs_app.command("update")
+def beliefs_update(
+    run_id: str = typer.Option(..., "--run-id"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    """Record a falsification verdict and the log-odds belief update it implies."""
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    state = _state(run_id)
+    hypothesis = state.hypotheses.get(str(payload.get("hypothesis_id")))
+    if hypothesis is None:
+        raise typer.BadParameter(f"unknown hypothesis: {payload.get('hypothesis_id')}")
+    observations = [state.observations[key] for key in payload.get("observation_ids", []) if key in state.observations]
+    if not observations:
+        raise typer.BadParameter("observation_ids must reference recorded observations")
+    try:
+        record = Falsifier().record(
+            hypothesis,
+            observations,
+            supporting_predictions=list(payload.get("supporting_predictions", [])),
+            contradicting_predictions=list(payload.get("contradicting_predictions", [])),
+            alternative_explanation=str(payload.get("alternative_explanation", "")),
+            confounders_checked=list(payload.get("confounders_checked", [])),
+            recommended_next_test=payload.get("recommended_next_test"),
+        )
+        controller = _controller()
+        controller.record_falsification(run_id, record)
+        update = belief_update(
+            hypothesis.id,
+            hypothesis.current_confidence,
+            interpret_evidence(record),
+            str(payload.get("evidence_summary") or f"falsification disposition: {record.disposition.value}"),
+            [item.id for item in observations],
+            VerifierResult(payload.get("verifier_result", VerifierResult.PASS.value)),
+        )
+        status = payload.get("status")
+        revised = controller.record_belief_update(
+            run_id,
+            update,
+            status=HypothesisStatus(status) if status else DISPOSITION_STATUS[record.disposition],
+        )
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(
+        {
+            "hypothesis_id": hypothesis.id,
+            "disposition": record.disposition.value,
+            "prior_confidence": update.prior_confidence,
+            "posterior_confidence": update.posterior_confidence,
+            "status": revised.status.value,
+        }
+    )
+
+
+@run_app.command("loop")
+def run_loop(
+    run_id: str = typer.Option(..., "--run-id"),
+    rounds: int = typer.Option(1, "--rounds", min=1),
+    size: int = typer.Option(1, "--size", min=1),
+    poll_seconds: float = typer.Option(10.0, "--poll-seconds", min=0.0),
+    timeout_seconds: float = typer.Option(3600.0, "--timeout-seconds", min=1.0),
+) -> None:
+    """Run the full cycle without hand-off: propose, gate, select, dispatch, import, falsify, update."""
+    config = _run_config(run_id)
+    loop = AutonomousLoop(
+        _controller(),
+        AutomaticProposer(_llm(config), _bridge()),
+        _executor(config),
+        config=config,
+        home=_home(),
+    )
+    settings = LoopSettings(
+        rounds=rounds,
+        portfolio_size=size,
+        poll_seconds=poll_seconds,
+        timeout_seconds=timeout_seconds,
+    )
+    try:
+        outcomes = loop.run(run_id, settings)
+    except (ValueError, LoopStateError, PermissionError, RuntimeError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"run_id": run_id, "rounds": [outcome.__dict__ for outcome in outcomes]})
+
+
+@run_app.command("advance")
+def run_advance(
+    run_id: str = typer.Option(..., "--run-id"),
+    validation_locked: bool = typer.Option(False, "--validation-locked"),
+    critical_leakage_resolved: bool = typer.Option(False, "--leakage-resolved"),
+    stable_lineages: int = typer.Option(0, "--stable-lineages", min=0),
+    ablations_complete: bool = typer.Option(False, "--ablations-complete"),
+    search_space_defined: bool = typer.Option(False, "--search-space-defined"),
+    anomaly_detected: bool = typer.Option(False, "--anomaly-detected"),
+) -> None:
+    """Run the deterministic phase policy and reopen the loop for the next round."""
+    evidence = PhaseEvidence(
+        validation_locked=validation_locked,
+        critical_leakage_resolved=critical_leakage_resolved,
+        stable_lineages=stable_lineages,
+        ablations_complete=ablations_complete,
+        search_space_defined=search_space_defined,
+        anomaly_detected=anomaly_detected,
+    )
+    try:
+        phase = _controller().advance_phase(run_id, evidence)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"run_id": run_id, "phase": phase.value, "state": _state(run_id).loop_state.value})
+
+
 def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     values = raw.get("candidates", raw) if isinstance(raw, dict) else raw
@@ -322,7 +644,7 @@ def kaggle_submit(
         if not token:
             raise typer.BadParameter("BENCHMARK_UNSEAL_TOKEN is required to seal returned scores")
         score_id = f"{run_id}-{receipt.reference or digest[:12]}"
-        SealedScoreStore(_home() / ".sealed-scores").seal(
+        SealedScoreStore(_home() / _run_config(run_id).leaderboard.sealed_store).seal(
             score_id,
             {"public_score": row.get("publicScore"), "private_score": row.get("privateScore")},
             token,
@@ -345,6 +667,50 @@ def kaggle_manual_packet(
         output,
     )
     typer.echo(str(output))
+
+
+@kaggle_app.command("feedback")
+def kaggle_feedback(
+    run_id: str = typer.Option(..., "--run-id"),
+    score_id: str = typer.Option(..., "--score-id"),
+    threshold: float | None = typer.Option(None, "--threshold"),
+    actor: str = typer.Option("evaluator", "--actor"),
+    unseal_token_env: str = typer.Option("BENCHMARK_UNSEAL_TOKEN", "--unseal-token-env"),
+) -> None:
+    """Return budgeted public-leaderboard feedback. The private score is never unsealed here."""
+    config = _run_config(run_id)
+    token = os.environ.get(unseal_token_env)
+    if not token:
+        raise typer.BadParameter(f"{unseal_token_env} is not set")
+    store = SealedScoreStore(_home() / config.leaderboard.sealed_store)
+    try:
+        sealed = store.unseal(score_id, token)
+    except (FileNotFoundError, ValueError) as error:
+        raise typer.BadParameter(f"cannot unseal {score_id}: {error}") from error
+    gate = LeaderboardGate(
+        run_id,
+        config.leaderboard.public_feedback,
+        QueryLedger(_home() / config.leaderboard.query_ledger),
+        max_queries=config.leaderboard.max_public_queries,
+    )
+    controller = _controller()
+    try:
+        feedback = gate.evaluate(sealed, actor=actor, threshold=threshold)
+    except HoldoutViolationError as error:
+        controller.record_violation(run_id, error.violation)
+        raise typer.BadParameter(error.violation.description) from error
+    payload = {
+        "score_id": score_id,
+        "mode": config.leaderboard.public_feedback.value,
+        "threshold": threshold,
+        "passed": feedback.passed,
+        "public_score": feedback.public_score,
+        "response_kind": feedback.response_kind,
+        "queries_used": feedback.queries_used,
+        "queries_remaining": feedback.queries_remaining,
+    }
+    controller.record_leaderboard_feedback(run_id, payload)
+    _echo(payload)
 
 
 @benchmark_app.command("plan")
