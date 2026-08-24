@@ -11,17 +11,37 @@
 | --- | --- |
 | データ | Kaggle 公式配布 CSV (train 590,540 行 / test 506,691 行 / 434 列)、`dataset_fingerprint cc0739cc…` |
 | ワーカー | `examples/ieee_cis/run_experiment.py`（LightGBM 4.7.0 / pandas 2.3.3、CPU 24 コア） |
-| Epistemic arm | `ieee-epistemic-001`、executor `linear_local_worker`、`configs/verification/ieee_cis_epistemic.yaml` |
+| Epistemic arm | `ieee-epistemic-001`、executor `linear_local_worker`（当時）、`configs/verification/ieee_cis_epistemic.yaml` |
+| 追検証 | `ieee-cp-verify-001`、executor `ai_dev_control_plane`（実機・後述） |
 | Exploiter arm | `ieee-exploiter-002`、executor `local`、`configs/verification/ieee_cis_exploiter.yaml` |
 | 提案スロット | `llm.adapter: file_bridge`。**ANTHROPIC_API_KEY が未設定のため Claude Code が提案 JSON を記述した** |
 | Leaderboard | `public_feedback: numeric`, `max_public_queries: 5`、private は研究ループから一度も開封していない |
 
-### 情報汚染の統制
+### 情報汚染の統制 — 断言できる部分とできない部分
 
-過去コンペの Winning Solution、Kaggle Discussion、公開ノートブック、コンペ固有の GitHub は一切参照
-していない。仮説はコンペ説明・データスキーマ・評価指標と、一般的な機械学習／統計／不正検知の知識
-のみから立てた。ワーカーが提供するのは split・特徴ブロック・モデル族・診断といった**一般的な能力**
-であり、このコンペ固有の解法は実装していない。
+**断言できる:** 本セッションで WebSearch / WebFetch を一度も呼んでいない。Kaggle Discussion、公開
+ノートブック、Winning Solution を読んでいない。起票した実行契約は全件 `network_policy: disabled`。
+
+**断言できない:** `run_experiment.py` の `_uid()` は `card1` + `addr1` + `P_emaildomain` でクライアント
+を同定し、`uid_agg` はその uid 別に `TransactionAmt` の平均・標準偏差・件数を作る。IEEE-CIS には
+card1 + addr1 + D1n から UID を構成する広く知られた手法があり、その議論は私の学習データに含まれる。
+**この列の選び方が第一原理から出たものだと、誠実には主張できない。** 当初この節は「コンペ固有の解法は
+実装していない」と書いていたが、それは言い過ぎであり撤回する。
+
+`strict_historical` ソースポリシーは URL を遮断するが、モデルの記憶は遮断しない。**これはこの設計が
+構造的に防げない汚染経路である。**
+
+影響の実測（打ち消しにはならないが、規模は記録しておく）:
+
+| 観点 | 実測 |
+| --- | --- |
+| Epistemic arm の提出が使った特徴 | `base` のみ（uid 系は不使用、public 0.934969 に寄与ゼロ） |
+| Exploiter sweep で `uid_agg` が稼いだ CV | **+0.00034**（0.97128 → 0.97162） |
+| 素の 434 列だけの提出スコア | **0.934969**（つまり 0.93 台はデータそのものが出す） |
+| entity 構造についてループが出した結論 | 全データで 0.005 の価値しかなく、**補正として falsified** |
+
+つまり uid 能力を実装したうえで、ループはそれを採用に値しないと判定した。既知解法へ寄せたのなら
+下手な寄せ方だが、**能力セットの設計に記憶が影響した可能性そのものは残る。**
 
 ## 誰が何を決めたか
 
@@ -222,7 +242,57 @@ exploitation を始めないのがフェーズポリシーの目的だからだ�
 
 これらはいずれも「スコアを上げる」実験からは出てこない。1 と 3 は探索空間と検証設計を変えた。
 
-## 実測 9: 追跡可能性
+## 実測 9: control plane 実機での往復 — 当初は 1 件も実行されていなかった
+
+**当初の 20 件は control plane が 1 件も実行していない。** 使った executor は `linear_local_worker`
+（今回書いた検証用ハーネス）で、Issue の起票は実物、実行はローカルプロセスの代行だった。
+
+さらに悪いことに、**起票した 20 件は control plane 側で無限リトライを起こしていた。**
+
+```
+[RUNNER] issue=SOT-3059 no repo mapping for project="ERL IEEE-CIS 自動起票検証" (fail-closed)
+[RUN]    issue=SOT-3059 stderr: REPO_RESOLUTION_UNAVAILABLE: ...
+```
+
+`auto_runner.log` 内の同エラーは **2,252 行**に達していた。原因は私のプロジェクト命名である。control
+plane は Linear プロジェクト名を slugify して `/workspaces/<slug>` を checkout として導出する
+（`src/lib/projectRepo.ts`）。`ERL IEEE-CIS 自動起票検証` は `erl-ieee-cis` に落ち、そのパスは存在しない。
+`TARGET_REPO=` 行は本文に**入っていた**が、ルーティングには使われない。
+
+### 是正と実機での往復（実測）
+
+1. 起票していた 21 件（SOT-3058〜3078）を Linear API で削除。削除後 45 秒でエラー増加は 0 になった
+2. プロジェクトを `Epistemic Research Loop` に改名（slug `epistemic-research-loop`、実在する checkout）
+3. executor を `ai_dev_control_plane` に変更
+4. 1 件起票 → **webhook が契約を拒否**: `request_id must be a non-empty string`
+
+4 は私が今回入れた「結果テンプレート」が原因だった。control plane は本文の**最初の** ```json ブロック
+を実行契約として読む（`src/lib/experimentRequest.ts` の `/```json\s*([\s\S]*?)```/`）。テンプレートを
+契約の前に置いたため、契約が読めなくなっていた。**起票は成功し、実行だけが静かに落ちる**種類の不具合
+である。契約を先頭に戻し、回帰テストで固定した。
+
+再起票（SOT-3080）後の実測ログ:
+
+```
+[RUNNER] issue=SOT-3080 resolved target repo: project="Epistemic Research Loop" -> /workspaces/epistemic-research-loop
+[RUNNER] issue=SOT-3080 auto-linked project="Epistemic Research Loop" -> sota1111/epistemic-research-loop (persisted)
+[RUN]    issue=SOT-3080 == Auto Runner: script-driven role pipeline ==
+[WORKER_ROLES] issue=SOT-3080 per-issue override: solo=claude:opus | handoff=off
+```
+
+worker（`claude:opus`）がコマンドを実行し、`ExperimentResult` を書き戻した:
+
+```json
+{"experiment_id":"E-CP-01","attempt":2,"status":"completed","exit_code":0,
+ "metrics":{"entity_overlap_rate_across_split":0.8282,"row_duplicate_rate_across_split":0.0},
+ "runtime":{"wall_seconds":3.75},"external_ref":"SOT-3080"}
+```
+
+値は私がローカルで測った 0.8282 / 0.0 と完全一致し、ループは `OB-703c5f8eeef4` として取り込んだ。
+**ループ → Linear 起票 → control plane → worker 実行 → 結果書き戻し → Observation の往復が実機で成立
+したのは、この 1 件だけである。**当初の 20 実験はローカル代行のままであり、そこは作り直していない。
+
+## 実測 10: 追跡可能性
 
 全 321 イベントがハッシュ連鎖付き JSONL に記録されている。
 
@@ -266,8 +336,8 @@ uv run erlctl holdout status --run-id ieee-epistemic-001
 ## 検証していないこと
 
 - **完全無人ループ (`erlctl run loop`)。** API キーが無く未実行。提案は人手（Claude Code）である。
-- **ai-dev-control-plane のワーカー群。** `linear_local_worker` は Issue を実際に起票するが、実行は
-  ローカルプロセスが代行している。キュー・ワーカー選択・リトライは動かしていない。
+- **ai-dev-control-plane による 20 実験の再実行。** 実機往復は `ieee-cp-verify-001` の 1 件のみ確認
+  した。本文の実測 1〜8 が依拠する 20 実験は `linear_local_worker`（ローカル代行）のままである。
 - **private score による最終評価。** 研究ループからは開封していない。
 - **Research → Exploitation 遷移**（上記のとおり到達せず）。
 - **複数回の paired run**。今回は N=1（1 コンペ・各アーム 1 提出）であり、対照実験ではあっても

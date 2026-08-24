@@ -192,7 +192,7 @@ The round trip:
 
 ```text
 workers: solo=claude:opus, handoff=off        <- parsed to select the worker
-TARGET_REPO=/workspaces/<repo>                <- parsed to select the checkout
+TARGET_REPO=/workspaces/<repo>                <- the checkout the worker is told to use
 
 <!-- epistemic-research-loop:experiment-request:v1 -->
 ERL-IDEMPOTENCY: <run>:<experiment>:<attempt>
@@ -202,18 +202,35 @@ ERL-IDEMPOTENCY: <run>:<experiment>:<attempt>
 
 ## 実行契約（機械可読・変更禁止）
     a fenced JSON block holding the full ExperimentRequest
+                                              <- MUST be the first ```json block
+
+## 結果の書き戻し（必須）
+    the exact result path and an ExperimentResult template
 ```
+
+**Routing is by Linear project name, not by `TARGET_REPO=`.** The control plane resolves the
+checkout from the project: `config/project_repos.json`, then `config/auth/apps.json`, then by
+slugifying the project name and taking `/workspaces/<slug>` if it contains a `.git`
+(`src/lib/projectRepo.ts`). A project that resolves to nothing is **fail-closed**: every ticket filed
+into it answers `REPO_RESOLUTION_UNAVAILABLE` and is retried indefinitely. Measured: filing 20
+tickets into a project named `ERL IEEE-CIS 自動起票検証` — which slugifies to `erl-ieee-cis`, a path
+that does not exist — produced 1,126 retry failures before the tickets were deleted. Name the
+project after the repository.
+
+**The execution contract must be the first fenced JSON block.** `parseExperimentRequest` takes the
+first `` ```json `` block in the description, so any JSON block placed above it is parsed as the
+contract and the ticket is rejected at the webhook with `request_id must be a non-empty string` —
+filed successfully, then never run. `tests/integration/test_control_plane_contract.py` pins this.
 
 The `workers:` line, the `TARGET_REPO=` line, and the section headings follow
 `ai-dev-control-plane`'s ticket convention. Omitting them does **not** make the ticket inert — it
-makes it run on the control plane's defaults, which is worse. Measured against the control plane's
-own code: a description without the `<!-- epistemic-research-loop:experiment-request:v1 -->` marker
-parses as `kind: "none"`, which is *eligible*, not rejected; the worker then comes from
-`config/worker_roles.json` and the repository from the Linear project → repo mapping. Since
-`executor.linear_project_id` points at the `ai-dev-control-plane` project, a ticket missing
-`TARGET_REPO=` runs against `/workspaces/ai-dev-control-plane` — the control plane's own repository,
-not this one. So set them with `executor.worker`, `executor.handoff`, and `executor.target_repo`.
-Only a ticket that *has* the marker but a malformed contract is rejected outright.
+makes it run on the control plane's defaults, which is worse. A description without the
+`<!-- epistemic-research-loop:experiment-request:v1 -->` marker parses as `kind: "none"`, which is
+*eligible*, not rejected; the worker then comes from `config/worker_roles.json`. Set them with
+`executor.worker`, `executor.handoff`, and `executor.target_repo`, and keep `target_repo` equal to
+the path the project name resolves to — telling the worker one checkout while the runner hands it
+another is how a ticket runs in the wrong repository. Only a ticket that *has* the marker but a
+malformed contract is rejected outright.
 
 `executor.linear_state_id` sets the status the issue is created in, and nothing more. **It does not
 keep the issue out of the worker's queue.** Measured against the live control plane: an issue

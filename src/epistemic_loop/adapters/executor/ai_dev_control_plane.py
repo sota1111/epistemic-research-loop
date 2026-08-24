@@ -94,6 +94,7 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
         worker: str = "claude:opus",
         handoff: bool = False,
         target_repo: str | None = None,
+        result_path: str | None = None,
     ) -> str:
         """Render the control plane's native ticket, with the contract embedded verbatim.
 
@@ -104,9 +105,31 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
         """
         mounts = ", ".join(mount.name for mount in request.dataset_mounts) or "なし"
         seeds = ", ".join(str(seed) for seed in request.seeds)
-        outputs = "\n".join(f"* `{name}`" for name in request.required_outputs)
-        checklist = "\n".join(f"- [ ] `{name}` を出力する" for name in request.required_outputs)
+        destination = result_path or f".results/{request.run_id}/{request.experiment_id}/result.json"
+        output_dir = str(Path(destination).parent)
+        outputs = "\n".join(f"* `{output_dir}/{name}`" for name in request.required_outputs)
+        checklist = "\n".join(f"- [ ] `{output_dir}/{name}` を出力する" for name in request.required_outputs)
         repo_line = f"TARGET_REPO={target_repo}\n\n" if target_repo else ""
+        # The worker is told the exact result path and shape. Previously the ticket said only
+        # "write an ExperimentResult", which is not a contract a fresh worker can satisfy: it has to
+        # guess the path, and guess which fields the loop's importer requires.
+        result_template = json.dumps(
+            {
+                "experiment_id": request.experiment_id,
+                "run_id": request.run_id,
+                "attempt": 1,
+                "status": "completed",
+                "exit_code": 0,
+                "commit_sha": request.base_commit_sha,
+                "environment_hash": "<コマンド実行環境の任意の安定ハッシュ>",
+                "dataset_fingerprint": "<データのフィンガープリント。不明なら worker-unverified>",
+                "metrics": {"<metrics.json の内容をそのまま>": 0.0},
+                "artifact_refs": [f"{output_dir}/{name}" for name in request.required_outputs],
+                "runtime": {"wall_seconds": 0.0},
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
         return (
             f"workers: solo={worker}, handoff={'on' if handoff else 'off'}\n\n"
             f"{repo_line}"
@@ -117,21 +140,32 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
             "## 変更範囲\n\n"
             f"{outputs}\n\n"
             "## 実装内容\n\n"
-            f"* コマンド: `{request.command}`\n"
+            f"* 作業ディレクトリ: リポジトリのルート\n"
+            f"* 出力ディレクトリ: `{output_dir}`（無ければ作成する）\n"
+            f"* コマンド: `ERL_OUTPUT_DIR={output_dir} {request.command}`\n"
             f"* コンテナ: `{request.container_image}`\n"
             f"* シード: {seeds}\n"
             f"* データマウント（読み取り専用）: {mounts}\n"
             f"* ネットワーク: {request.network_policy}\n\n"
+            "コマンドは `ERL_OUTPUT_DIR` を読んでそこに成果物を書く。実装を書く必要はなく、"
+            "このコマンドを実行して結果を回収するだけでよい。\n\n"
             "## 検証内容\n\n"
             "* 事前登録された予測と判定規則は**変更しない**。実験は宣言どおりに実行する。\n"
-            "* 必須成果物を `ERL_OUTPUT_DIR` に書き出す。\n"
-            "* `ExperimentResult` を result store に書く。研究ループがそこから結果を取り込む。\n\n"
+            "* コマンドの引数（split・seed・特徴・ハイパーパラメータ）を一切変更しない。\n"
+            "* 成果物を上記の出力ディレクトリに書き出す。\n\n"
             "## 受け入れ条件\n\n"
             f"{checklist}\n"
-            "- [ ] `result.json` に `ExperimentResult` を書く\n"
+            f"- [ ] `{destination}` に上記の `ExperimentResult` を書く\n"
             "- [ ] 予測・判定規則・シード・split を変更していない\n\n"
+            # This must stay the FIRST ```json block in the body: ai-dev-control-plane parses the
+            # first one as the contract, so a block added above it silently breaks ingestion.
             "## 実行契約（機械可読・変更禁止）\n\n"
-            f"```json\n{request.model_dump_json(indent=2)}\n```\n"
+            f"```json\n{request.model_dump_json(indent=2)}\n```\n\n"
+            "## 結果の書き戻し（必須）\n\n"
+            f"`{destination}` に次の形の JSON を書く。研究ループはこのファイルだけを読む。\n\n"
+            f"```json\n{result_template}\n```\n\n"
+            "コマンドが失敗した場合も `status` を `failed`、`exit_code` を実際の値にして"
+            "**必ず書く**こと。書かれなければループはこの実験を未完了として待ち続ける。\n"
         )
 
     def issue_input(self, request: ExperimentRequest) -> dict[str, Any]:
@@ -144,6 +178,7 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
                 worker=self.worker,
                 handoff=self.handoff,
                 target_repo=self.target_repo,
+                result_path=str(self.result_root / request.run_id / request.experiment_id / "result.json"),
             ),
         }
         if self.state_id:

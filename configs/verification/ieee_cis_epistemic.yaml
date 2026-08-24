@@ -1,8 +1,14 @@
 # Epistemic arm of the IEEE-CIS verification.
 #
-# The executor is `linear_local_worker`: it files the real Linear ticket the loop decided to file,
-# then runs it locally in place of the ai-dev-control-plane worker fleet, which is not running in
-# this environment. The auto-filing half is genuine; the execution half is a local stand-in.
+# The executor is `ai_dev_control_plane`: the loop files a Linear ticket and the control plane's
+# worker fleet executes it. Implementation is NOT done by this repository.
+#
+# Repository routing is by Linear PROJECT NAME, not by the TARGET_REPO line in the ticket body.
+# ai-dev-control-plane slugifies the project name and derives `/workspaces/<slug>` as the checkout
+# (src/lib/projectRepo.ts). `linear_project_id` below points at the project named
+# "Epistemic Research Loop", which resolves to /workspaces/epistemic-research-loop -- the repo that
+# holds the IEEE-CIS worker and its data. Renaming that project breaks routing and puts every filed
+# ticket into a REPO_RESOLUTION_UNAVAILABLE retry loop.
 run:
   id: ieee-epistemic-001
   mode: epistemic
@@ -62,14 +68,16 @@ contamination:
   require_source_provenance: false
   worker_network: disabled
 executor:
-  adapter: linear_local_worker
+  adapter: ai_dev_control_plane
   queue: kaggle-research
   retry_infrastructure_failures: 2
   linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
-  linear_project_id: 313cac7a-545e-4fe6-84ba-1e8a1eaecab6 # project "ERL IEEE-CIS 自動起票検証"
+  linear_project_id: 313cac7a-545e-4fe6-84ba-1e8a1eaecab6 # project "Epistemic Research Loop"
   linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
   worker: claude:opus
   handoff: false
+  # Must agree with the path the control plane derives from the project name, or the worker is
+  # told one checkout and given another. IEEE-CIS data lives at .data/ieee-cis/parquet in this repo.
   target_repo: /workspaces/epistemic-research-loop
   result_root: .results
   container_image: python:3.11-slim

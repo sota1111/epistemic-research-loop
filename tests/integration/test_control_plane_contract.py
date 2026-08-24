@@ -28,7 +28,11 @@ def _request() -> ExperimentRequest:
 def test_linear_issue_contains_versioned_idempotent_contract() -> None:
     request = _request()
     body = AiDevControlPlaneAdapter.issue_description(
-        request, worker="claude:opus", handoff=False, target_repo="/workspaces/solver"
+        request,
+        worker="claude:opus",
+        handoff=False,
+        target_repo="/workspaces/solver",
+        result_path="/tmp/results/run-1/exp-1/result.json",
     )
     # The control plane parses the first line to pick a worker and TARGET_REPO to pick a checkout.
     assert body.startswith("workers: solo=claude:opus, handoff=off\n")
@@ -38,9 +42,25 @@ def test_linear_issue_contains_versioned_idempotent_contract() -> None:
     for heading in ("## 目的", "## 変更範囲", "## 実装内容", "## 検証内容", "## 受け入れ条件"):
         assert heading in body, f"the worker's ticket must keep the {heading} section"
     assert "compare splits" in body
-    assert "`python3 solver.py`" in body
-    contract = body.split("```json\n", 1)[1].split("\n```", 1)[0]
-    assert json.loads(contract)["network_policy"] == "disabled"
+    assert "python3 solver.py" in body
+
+    # A worker that has never seen this repository must be able to finish from the ticket alone,
+    # so the ticket has to say where the result goes and what shape it takes. Saying only
+    # "write an ExperimentResult" leaves the worker to guess both.
+    assert "/tmp/results/run-1/exp-1/result.json" in body
+    assert "ERL_OUTPUT_DIR=/tmp/results/run-1/exp-1" in body
+    template = body.split("## 結果の書き戻し")[1].split("```json\n", 1)[1].split("\n```", 1)[0]
+    parsed = json.loads(template)
+    assert parsed["experiment_id"] == "exp-1" and parsed["run_id"] == "run-1"
+    assert parsed["status"] == "completed" and parsed["attempt"] == 1
+    assert "failed" in body, "the ticket must tell the worker to report failures too"
+    # ai-dev-control-plane parses the FIRST ```json block in the body as the execution contract
+    # (src/lib/experimentRequest.ts uses /```json\s*([\s\S]*?)```/). A block added above it is
+    # silently rejected at the webhook with "request_id must be a non-empty string", which is how a
+    # ticket can be filed successfully and then never run. The contract must come first.
+    first_block = body.split("```json\n", 1)[1].split("\n```", 1)[0]
+    assert json.loads(first_block)["request_id"] == "req-1", "the contract must be the first JSON block"
+    assert json.loads(first_block)["network_policy"] == "disabled"
 
 
 def test_handoff_and_repo_are_omitted_when_not_configured() -> None:
