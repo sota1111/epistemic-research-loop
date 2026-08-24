@@ -58,9 +58,22 @@ import pathlib; pathlib.Path('.state/selected.txt').write_text(''.join(f'{i}\n' 
     echo "--- dispatch $EXP"
     uv run erlctl experiments dispatch --run-id "$RUN" --experiment-id "$EXP" | tail -8
   done < .state/selected.txt
+  # With the ai_dev_control_plane executor, dispatch only files the ticket: the control plane's
+  # worker writes the result asynchronously. Poll for it rather than assuming it is already there.
+  TIMEOUT="${ERL_RESULT_TIMEOUT:-3600}"
   while read -r EXP || [ -n "$EXP" ]; do
     [ -z "$EXP" ] && continue
-    echo "--- import $EXP"
+    RESULT=".results/$RUN/$EXP/result.json"
+    echo "--- await $EXP (timeout ${TIMEOUT}s)"
+    WAITED=0
+    while [ ! -f "$RESULT" ] && [ "$WAITED" -lt "$TIMEOUT" ]; do
+      sleep 15; WAITED=$((WAITED+15))
+    done
+    if [ ! -f "$RESULT" ]; then
+      echo "!!! $EXP: worker wrote no result within ${TIMEOUT}s; leaving the experiment running" >&2
+      continue
+    fi
+    echo "--- import $EXP (waited ${WAITED}s)"
     uv run erlctl experiments import-result --run-id "$RUN" --experiment-id "$EXP" | tail -12
   done < .state/selected.txt
   ;;
