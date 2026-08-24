@@ -66,21 +66,24 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
         return data
 
     def _existing(self, idempotency_key: str) -> dict[str, Any] | None:
+        """Find the ticket already filed for this attempt, so a retry never files a second one.
+
+        The lookup is an exact substring filter rather than full-text search: `issueSearch` is
+        deprecated in Linear's API (it answers `deprecated` and the dispatch aborts), and its
+        ranked, fuzzy matching could push the one issue that matters out of the page. The
+        description check is kept so a filter that ever loosens cannot resurrect a wrong ticket.
+        """
         marker = f"ERL-IDEMPOTENCY: {idempotency_key}"
         data = self._query(
-            """query($query: String!) {
-              issueSearch(query: $query, first: 10) {
+            """query($marker: String!) {
+              issues(filter: { description: { contains: $marker } }, first: 10) {
                 nodes { id identifier url description }
               }
             }""",
-            {"query": marker},
+            {"marker": marker},
         )
         return next(
-            (
-                item
-                for item in data.get("issueSearch", {}).get("nodes", [])
-                if marker in (item.get("description") or "")
-            ),
+            (item for item in data.get("issues", {}).get("nodes", []) if marker in (item.get("description") or "")),
             None,
         )
 

@@ -1,0 +1,58 @@
+{
+  "experiments": [
+    {
+      "id": "EXP-3053-roundtrip",
+      "run_id": "sot3053-verify",
+      "experiment_type": "diagnostic",
+      "hypothesis_ids": ["HYP-3053-contract"],
+      "research_question": "SOT-3053 executor 実機検証用の合成実験（ワーカー実行は不要・検証後に Canceled にする）: Linear 起票の契約適合と冪等性を実測する",
+      "protocol": "erlctl init/run start/hypotheses record/experiments propose/experiments select/experiments dispatch を順に実行し、生成された Linear イシューの本文と件数を Linear API で読み取って規約と突き合わせる",
+      "controls": [
+        "同一 ExperimentRequest を再送し、issueSearch による既存再利用が働くことを対照とする",
+        "起票前に同一冪等キーのイシューが 0 件であることを確認する"
+      ],
+      "split_strategy": "not_applicable_contract_check",
+      "seeds": [101],
+      "metrics": ["contract_checks_passed", "issues_created"],
+      "predicted_outcomes": [
+        {
+          "description": "契約チェック 7 項目すべてが真、作成イシューは 1 件のみ",
+          "metric_name": "contract_checks_passed",
+          "expected_direction": "increase",
+          "condition": "実 Linear API 経由で dispatch した場合",
+          "discriminates_from": []
+        }
+      ],
+      "decision_rule": "contract_checks_passed が全項目真かつ issues_created == 1 なら仮説を支持、いずれかが偽なら反証",
+      "expected_score_gain": {"mean_gain": 0.0, "uncertainty": 0.0, "rationale": "契約検証であり競技スコアには影響しない"},
+      "epistemic_assessment": {
+        "hypothesis_discrimination": 4,
+        "uncertainty_reduction": 4,
+        "decision_consequence": 4,
+        "search_space_reduction": 2,
+        "outcome_observability": 4,
+        "rationale": "実機の往復が通るかどうかは、以降のすべての実験実行の前提になる"
+      },
+      "robustness_assessment": {
+        "seed_coverage": 0.2,
+        "fold_coverage": 0.0,
+        "subgroup_coverage": 0.0,
+        "temporal_coverage": 0.0,
+        "leakage_checks": 1.0,
+        "rationale": "統計的推定ではなく決定的な契約チェックのため、被覆は冪等性の対照のみ"
+      },
+      "novelty_score": 0.5,
+      "estimated_cost": {"cpu_hours": 0.05, "wall_hours": 0.1, "failure_probability": 0.2},
+      "holdout_access": "none",
+      "contamination_risk": "low",
+      "implementation_request": {
+        "command": "python3 -c \"print('erl contract smoke test')\"",
+        "implementation_mode": "contract_smoke_test",
+        "objective": "SOT-3053 実機検証用の合成チケット（実行不要）: executor が起票する Linear イシューの契約適合と冪等性の確認",
+        "network_policy": "disabled",
+        "dataset_mounts": []
+      },
+      "required_artifacts": ["result.json", "metrics.json"]
+    }
+  ]
+}

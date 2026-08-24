@@ -102,3 +102,64 @@ def test_invalid_execution_contract_is_rejected_at_source(changes, message) -> N
 
     with pytest.raises(ValidationError, match=message):
         ExperimentRequest.model_validate(payload)
+
+
+def test_existing_lookup_avoids_the_deprecated_search_and_matches_the_marker() -> None:
+    # Linear answers `deprecated` to issueSearch, which aborted every dispatch; the lookup must use
+    # an exact description filter and still confirm the marker on the node it returns.
+    adapter = AiDevControlPlaneAdapter(team_id="team-1", project_id="project-1", result_root="/tmp/results")
+    seen: list[tuple[str, dict]] = []
+
+    def fake_query(query: str, variables: dict) -> dict:
+        seen.append((query, variables))
+        return {
+            "issues": {
+                "nodes": [
+                    {"id": "other", "identifier": "SOT-1", "url": "u1", "description": "unrelated ticket"},
+                    {
+                        "id": "match",
+                        "identifier": "SOT-2",
+                        "url": "u2",
+                        "description": "ERL-IDEMPOTENCY: run-1:exp-1:attempt-1\nbody",
+                    },
+                ]
+            }
+        }
+
+    adapter._query = fake_query  # type: ignore[method-assign]
+    found = adapter._existing("run-1:exp-1:attempt-1")
+
+    assert found is not None and found["identifier"] == "SOT-2"
+    query, variables = seen[0]
+    assert "issueSearch" not in query
+    assert "description: { contains: $marker }" in query
+    assert variables == {"marker": "ERL-IDEMPOTENCY: run-1:exp-1:attempt-1"}
+
+
+def test_submit_reuses_the_ticket_already_filed_for_the_same_attempt() -> None:
+    adapter = AiDevControlPlaneAdapter(team_id="team-1", project_id="project-1", result_root="/tmp/results")
+    request = _request()
+    calls: list[str] = []
+
+    def fake_query(query: str, variables: dict) -> dict:
+        calls.append(query)
+        assert "issueCreate" not in query, "a second ticket must never be created for the same attempt"
+        return {
+            "issues": {
+                "nodes": [
+                    {
+                        "id": "match",
+                        "identifier": "SOT-2",
+                        "url": "u2",
+                        "description": f"ERL-IDEMPOTENCY: {request.idempotency_key}",
+                    }
+                ]
+            }
+        }
+
+    adapter._query = fake_query  # type: ignore[method-assign]
+    result = adapter.submit(request)
+
+    assert result.external_ref == "SOT-2"
+    assert result.status == "queued"
+    assert len(calls) == 1

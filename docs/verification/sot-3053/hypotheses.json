@@ -1,0 +1,39 @@
+{
+  "hypotheses": [
+    {
+      "id": "HYP-3053-contract",
+      "run_id": "sot3053-verify",
+      "type": "validation",
+      "claim": "ai_dev_control_plane executor が起票する Linear イシューは、control plane のパース規約（workers: 行・TARGET_REPO 行・節構成・冪等キー・実行契約 JSON）を実機で満たす",
+      "rationale": "issue_description の形式はユニットテストで固定されているが、実際の Linear API を通した起票・検索・重複抑止は実機でしか確認できない",
+      "scope": "epistemic-research-loop の ai_dev_control_plane executor と Linear API の境界のみ。solver やコンペ本体は対象外",
+      "prior_confidence": 0.6,
+      "current_confidence": 0.6,
+      "predictions_if_true": [
+        {
+          "description": "起票されたイシュー本文が規約の全項目を含み、同一冪等キーの再送で新規起票が発生しない",
+          "metric_name": "contract_checks_passed",
+          "expected_direction": "increase",
+          "condition": "LINEAR_API_KEY が有効で executor.adapter=ai_dev_control_plane のとき",
+          "discriminates_from": ["起票はできるが本文が規約を満たさない", "本文は満たすが冪等性検索が効かない"]
+        }
+      ],
+      "predictions_if_false": [
+        {
+          "description": "本文の欠落、または同一冪等キーで 2 件目のイシューが作成される",
+          "metric_name": "contract_checks_passed",
+          "expected_direction": "decrease",
+          "condition": "同上",
+          "discriminates_from": []
+        }
+      ],
+      "falsification_requirements": [
+        "実 Linear API に対する起票 1 回と、同一冪等キーでの再送 1 回",
+        "issueSearch による冪等キーマーカーの一致件数の実測"
+      ],
+      "downstream_consequence": "high",
+      "created_by": "solo:claude:opus",
+      "prompt_version": "v1"
+    }
+  ]
+}
