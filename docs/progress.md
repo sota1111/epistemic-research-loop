@@ -26,6 +26,7 @@ names its Linear issue.
 | 2026-08-24 | Autonomous loop and the Linear execution contract (SOT-3053) | `tests/e2e/test_autonomous_loop.py`, `docs/verification/control_plane_linear_roundtrip.md` |
 | 2026-08-24 | Control-plane Linear round trip verified against the live API | `docs/verification/sot-3053/` |
 | 2026-08-24 | Capability closure: derived phase evidence, exploiter hand-off, validation adaptivity, discovery-scored benchmark, local-scoring cadence | `tests/unit/test_phase_evidence.py`, `tests/integration/test_exploiter_handoff.py`, `tests/unit/test_validation_adaptivity.py`, `tests/e2e/test_local_scoring_loop.py` |
+| 2026-08-24 | Live verification on IEEE-CIS Fraud Detection: 16 adaptive rounds, 21 auto-filed Linear tickets, 1 Kaggle submission, against an exploiter-only control | [ieee_cis_autonomous_loop](verification/ieee_cis_autonomous_loop.md) |
 
 ## What the last milestone changed
 
@@ -47,13 +48,35 @@ wired, defaulted, and covered:
 5. **A round that selected nothing stalled the loop.** `replan` returns it to planning with a
    recorded reason, which is what makes a 10+ round unattended run survivable.
 
+## What the IEEE-CIS verification changed
+
+Running the loop against real data surfaced five defects that no unit test had caught, each fixed
+with a regression test: `dispatch` recorded an attempt before validating the transition;
+`kaggle submit` wrote its ledger only after waiting for a score, so a timeout lost a spent
+submission; the Kaggle reference was parsed out of upload chatter; the configurable
+`max_consecutive_optimization_experiments` knob was never read by the gate, which stalled the
+exploiter control arm at round four; and `beliefs update` could judge only one hypothesis per round.
+See the [verification record](verification/ieee_cis_autonomous_loop.md) for the measurements, and for
+what it did **not** establish.
+
 ## Known limitations
 
 These are deliberate and unfinished, not oversights:
 
+- **The fully unattended loop (`erlctl run loop`) has still never been run.** There is no
+  `ANTHROPIC_API_KEY` in this environment, so both verifications filled the proposal slot by hand
+  through the file bridge. Gates, selection, dispositions, belief updates, phase decisions and
+  ticket filing were deterministic in both, but "autonomous" remains an untested claim about the
+  proposal stage specifically.
+- **The Research-to-Exploitation transition has not been observed in a real run.** It is implemented
+  and unit-tested; the IEEE-CIS run stayed in discovery because its findings kept failing
+  replication, which is the policy working rather than failing. The arithmetic is in the record.
+- **`uncertainty_threshold` is a `decide_phase` argument default, not a config field.** The phase
+  policy's single most consequential number cannot currently be set per competition.
 - **The synthetic benchmark is a harness test.** Its regrets are stipulated. It shows the selection
-  policy prefers informative actions; it is not evidence about a real competition. The profiles in
-  `configs/benchmarks/` (IEEE-CIS, AMEX, H&M, Optiver) have not been run here.
+  policy prefers informative actions; it is not evidence about a real competition. The IEEE-CIS
+  profile in `configs/benchmarks/` is superseded by `configs/verification/`; AMEX, H&M and Optiver
+  have not been run.
 - **The adaptivity guard bounds queries, it does not de-bias the estimates already taken.**
 - **`normalized_cost` scales are stipulated defaults**, not fitted to a real worker fleet.
 - **`BudgetManager.reconcile` does not yet replace estimates with observed cost.** Usage is

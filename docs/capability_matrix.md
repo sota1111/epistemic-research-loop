@@ -83,6 +83,14 @@ See [benchmark protocol](benchmark_protocol.md).
 | 29 | Kaggle 提出は 1 日 5 回まで。ローカル採点でループは 10 回以上回せる | enforced | `Budget.max_daily_submissions = 5` and `erlctl kaggle submit --daily-cap` (default 5) refuse an exhausted day; the loop reads only worker-written `metrics.json`, so its cadence is bounded by compute, not by Kaggle | `tests/e2e/test_local_scoring_loop.py` (12 rounds, 0 submissions), `tests/unit/test_kaggle_submission.py` |
 | 30 | 進捗はリポジトリのドキュメントから確認でき、Linear には詳細を書かない | documented | this file and [progress](progress.md); the Linear issue carries only a pointer | — |
 
+## Live verification
+
+The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
+is the separate question of whether they hold on a real competition: 16 adaptive rounds, 21 auto-filed
+Linear tickets, one Kaggle submission, and an exploiter-only control arm at matched budget. It records
+five defects that only appeared under real data, and three claims it did **not** establish -- the
+unattended loop, the control plane's worker fleet, and the Research-to-Exploitation transition.
+
 ## What is *not* claimed
 
 - **Confidence is not calibrated.** It is an operational prioritisation number in `[0.05, 0.95]`.
