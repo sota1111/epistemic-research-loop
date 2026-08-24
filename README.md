@@ -189,8 +189,15 @@ ERL-IDEMPOTENCY: <run>:<experiment>:<attempt>
 The `workers:` line, the `TARGET_REPO=` line, and the section headings follow
 `ai-dev-control-plane`'s ticket convention. A ticket that omits them is created but never picked up,
 so they are not decoration — set them with `executor.worker`, `executor.handoff`, and
-`executor.target_repo`. `executor.linear_state_id` pins the initial status when the team's default
-would leave the issue out of the worker's queue.
+`executor.target_repo`.
+
+`executor.linear_state_id` sets the status the issue is created in, and nothing more. **It does not
+keep the issue out of the worker's queue.** Measured against the live control plane: an issue
+created in `Backlog` was moved to `In Progress` 3.5 seconds later. Dispatching is therefore not a
+dry run — every ticket this repository files is work the control plane will pick up, whatever status
+it carries. There is no supported way to file a ticket here that a worker will ignore; to inspect a
+contract without triggering one, render it with `AiDevControlPlaneAdapter.issue_description()` and
+do not submit.
 
 The research loop decides *what to run and why*. It does not reimplement worker dispatch, retry
 policy, or the implementation itself — those belong to the control plane, and the issue is where the
