@@ -1,0 +1,7 @@
+run: {id: h-and-m-epistemic-001, mode: epistemic, seed: 101}
+competition:
+  slug: h-and-m-personalized-fashion-recommendations
+  metric_direction: maximize
+  primary_metric: map_at_12
+benchmark_id: h-and-m-ab-001
+synthetic_scenarios: [candidate_generation_bottleneck]

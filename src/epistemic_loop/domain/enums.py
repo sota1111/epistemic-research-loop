@@ -1,0 +1,152 @@
+from enum import StrEnum
+
+
+class RunMode(StrEnum):
+    EPISTEMIC = "epistemic"
+    EXPLOITER_ONLY = "exploiter_only"
+
+
+class Phase(StrEnum):
+    DISCOVERY = "discovery"
+    CONSOLIDATION = "consolidation"
+    EXPLOITATION = "exploitation"
+    FINALIZED = "finalized"
+
+
+class RunStatus(StrEnum):
+    CREATED = "created"
+    RUNNING = "running"
+    BLOCKED = "blocked"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class LoopState(StrEnum):
+    CREATED = "created"
+    OBSERVING = "observing"
+    HYPOTHESIZING = "hypothesizing"
+    PLANNING = "planning"
+    SCORING = "scoring"
+    SELECTING = "selecting"
+    EXECUTING = "executing"
+    PARSING = "parsing"
+    FALSIFYING = "falsifying"
+    UPDATING = "updating"
+    PHASE_DECISION = "phase_decision"
+    EXPLOITER_HANDOFF = "exploiter_handoff"
+    FINALIZING = "finalizing"
+    COMPLETED = "completed"
+    BLOCKED = "blocked"
+    FAILED = "failed"
+
+
+class HypothesisType(StrEnum):
+    VALIDATION = "validation"
+    DISTRIBUTION_SHIFT = "distribution_shift"
+    TEMPORAL_STRUCTURE = "temporal_structure"
+    ENTITY_STRUCTURE = "entity_structure"
+    LEAKAGE = "leakage"
+    TARGET_SEMANTICS = "target_semantics"
+    METRIC_SEMANTICS = "metric_semantics"
+    SAMPLING = "sampling"
+    LABEL_NOISE = "label_noise"
+    REPRESENTATION = "representation"
+    FEATURE_FAMILY = "feature_family"
+    MODEL_FAMILY = "model_family"
+    AUGMENTATION = "augmentation"
+    EXTERNAL_DATA = "external_data"
+    CANDIDATE_GENERATION = "candidate_generation"
+    ENSEMBLE_DIVERSITY = "ensemble_diversity"
+    ROBUSTNESS = "robustness"
+    COMPUTATIONAL = "computational"
+
+
+class HypothesisStatus(StrEnum):
+    PROPOSED = "proposed"
+    TESTABLE = "testable"
+    UNDER_TEST = "under_test"
+    SUPPORTED = "supported"
+    CONTESTED = "contested"
+    FALSIFIED = "falsified"
+    RETIRED = "retired"
+
+
+class Consequence(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class Direction(StrEnum):
+    INCREASE = "increase"
+    DECREASE = "decrease"
+    UNCHANGED = "unchanged"
+    PATTERN = "pattern"
+
+
+class ExperimentType(StrEnum):
+    DIAGNOSTIC = "diagnostic"
+    OPTIMIZATION = "optimization"
+    FALSIFICATION = "falsification"
+    ROBUSTNESS = "robustness"
+    REPLICATION = "replication"
+    ABLATION = "ablation"
+
+
+class ExperimentStatus(StrEnum):
+    PROPOSED = "proposed"
+    GATED = "gated"
+    SELECTED = "selected"
+    REJECTED = "rejected"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class HoldoutAccess(StrEnum):
+    NONE = "none"
+    WORKING_VALIDATION = "working_validation"
+    SEALED_HOLDOUT = "sealed_holdout"
+
+
+class HoldoutPolicyName(StrEnum):
+    STRICT_BLIND = "strict_blind"
+    GATED_BINARY = "gated_binary"
+    OPEN_DEBUG = "open_debug"
+
+
+class Risk(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class FailureClass(StrEnum):
+    INFRASTRUCTURE = "infrastructure"
+    IMPLEMENTATION = "implementation"
+    MODEL = "model"
+    INVALID_DESIGN = "invalid_design"
+
+
+class FalsificationDisposition(StrEnum):
+    SURVIVES = "survives"
+    WEAKENED = "weakened"
+    FALSIFIED = "falsified"
+    INCONCLUSIVE = "inconclusive"
+
+
+class VerifierResult(StrEnum):
+    PASS = "pass"
+    FAIL = "fail"
+    DISPUTED = "disputed"
+
+
+class EdgeType(StrEnum):
+    SUPPORTS = "supports"
+    CONTRADICTS = "contradicts"
+    REFINES = "refines"
+    ALTERNATIVE_TO = "alternative_to"
+    DEPENDS_ON = "depends_on"
+    EXPLAINS = "explains"
+    INVALIDATES = "invalidates"

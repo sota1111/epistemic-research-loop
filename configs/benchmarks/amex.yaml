@@ -1,0 +1,7 @@
+run: {id: amex-epistemic-001, mode: epistemic, seed: 101}
+competition:
+  slug: amex-default-prediction
+  metric_direction: maximize
+  primary_metric: amex_metric
+benchmark_id: amex-ab-001
+synthetic_scenarios: [iid_easy]

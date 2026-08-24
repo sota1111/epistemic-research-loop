@@ -1,0 +1,337 @@
+{
+  "$defs": {
+    "Consequence": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Consequence",
+      "type": "string"
+    },
+    "Direction": {
+      "enum": [
+        "increase",
+        "decrease",
+        "unchanged",
+        "pattern"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "HypothesisStatus": {
+      "enum": [
+        "proposed",
+        "testable",
+        "under_test",
+        "supported",
+        "contested",
+        "falsified",
+        "retired"
+      ],
+      "title": "HypothesisStatus",
+      "type": "string"
+    },
+    "HypothesisType": {
+      "enum": [
+        "validation",
+        "distribution_shift",
+        "temporal_structure",
+        "entity_structure",
+        "leakage",
+        "target_semantics",
+        "metric_semantics",
+        "sampling",
+        "label_noise",
+        "representation",
+        "feature_family",
+        "model_family",
+        "augmentation",
+        "external_data",
+        "candidate_generation",
+        "ensemble_diversity",
+        "robustness",
+        "computational"
+      ],
+      "title": "HypothesisType",
+      "type": "string"
+    },
+    "PredictedOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "discriminates_from": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Discriminates From",
+          "type": "array"
+        },
+        "expected_direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "expected_range": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Range"
+        },
+        "metric_name": {
+          "minLength": 1,
+          "title": "Metric Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "metric_name",
+        "expected_direction",
+        "condition"
+      ],
+      "title": "PredictedOutcome",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "title": "Allowed",
+          "type": "boolean"
+        },
+        "competition_specific": {
+          "default": false,
+          "title": "Competition Specific",
+          "type": "boolean"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "policy_reason": {
+          "title": "Policy Reason",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "paper",
+            "official_docs",
+            "competition_page",
+            "other"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "source_type",
+        "allowed",
+        "policy_reason",
+        "content_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "alternative_hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Alternative Hypothesis Ids",
+      "type": "array"
+    },
+    "claim": {
+      "minLength": 1,
+      "title": "Claim",
+      "type": "string"
+    },
+    "confidence_kind": {
+      "const": "operational",
+      "default": "operational",
+      "title": "Confidence Kind",
+      "type": "string"
+    },
+    "created_by": {
+      "title": "Created By",
+      "type": "string"
+    },
+    "current_confidence": {
+      "maximum": 0.95,
+      "minimum": 0.05,
+      "title": "Current Confidence",
+      "type": "number"
+    },
+    "downstream_consequence": {
+      "$ref": "#/$defs/Consequence",
+      "default": "medium"
+    },
+    "evidence_against": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Against",
+      "type": "array"
+    },
+    "evidence_for": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence For",
+      "type": "array"
+    },
+    "falsification_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Falsification Requirements",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "parent_hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Parent Hypothesis Ids",
+      "type": "array"
+    },
+    "predictions_if_false": {
+      "items": {
+        "$ref": "#/$defs/PredictedOutcome"
+      },
+      "minItems": 1,
+      "title": "Predictions If False",
+      "type": "array"
+    },
+    "predictions_if_true": {
+      "items": {
+        "$ref": "#/$defs/PredictedOutcome"
+      },
+      "minItems": 1,
+      "title": "Predictions If True",
+      "type": "array"
+    },
+    "prior_confidence": {
+      "maximum": 0.95,
+      "minimum": 0.05,
+      "title": "Prior Confidence",
+      "type": "number"
+    },
+    "prompt_version": {
+      "title": "Prompt Version",
+      "type": "string"
+    },
+    "rationale": {
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scope": {
+      "minLength": 1,
+      "title": "Scope",
+      "type": "string"
+    },
+    "source_refs": {
+      "items": {
+        "$ref": "#/$defs/SourceRef"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/HypothesisStatus",
+      "default": "proposed"
+    },
+    "type": {
+      "$ref": "#/$defs/HypothesisType"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "type",
+    "claim",
+    "rationale",
+    "scope",
+    "prior_confidence",
+    "current_confidence",
+    "predictions_if_true",
+    "predictions_if_false",
+    "created_by",
+    "prompt_version"
+  ],
+  "title": "Hypothesis",
+  "type": "object"
+}

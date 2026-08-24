@@ -1,0 +1,546 @@
+{
+  "$defs": {
+    "CostEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cpu Hours",
+          "type": "number"
+        },
+        "failure_probability": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "gpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Hours",
+          "type": "number"
+        },
+        "llm_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Llm Tokens",
+          "type": "integer"
+        },
+        "monetary_cost": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Monetary Cost",
+          "type": "number"
+        },
+        "wall_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Wall Hours",
+          "type": "number"
+        }
+      },
+      "title": "CostEstimate",
+      "type": "object"
+    },
+    "Direction": {
+      "enum": [
+        "increase",
+        "decrease",
+        "unchanged",
+        "pattern"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "EpistemicAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_consequence": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Decision Consequence",
+          "type": "integer"
+        },
+        "hypothesis_discrimination": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Hypothesis Discrimination",
+          "type": "integer"
+        },
+        "outcome_observability": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Outcome Observability",
+          "type": "integer"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "search_space_reduction": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Search Space Reduction",
+          "type": "integer"
+        },
+        "uncertainty_reduction": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Uncertainty Reduction",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hypothesis_discrimination",
+        "uncertainty_reduction",
+        "decision_consequence",
+        "search_space_reduction",
+        "outcome_observability",
+        "rationale"
+      ],
+      "title": "EpistemicAssessment",
+      "type": "object"
+    },
+    "ExperimentStatus": {
+      "enum": [
+        "proposed",
+        "gated",
+        "selected",
+        "rejected",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "title": "ExperimentStatus",
+      "type": "string"
+    },
+    "ExperimentType": {
+      "enum": [
+        "diagnostic",
+        "optimization",
+        "falsification",
+        "robustness",
+        "replication",
+        "ablation"
+      ],
+      "title": "ExperimentType",
+      "type": "string"
+    },
+    "HoldoutAccess": {
+      "enum": [
+        "none",
+        "working_validation",
+        "sealed_holdout"
+      ],
+      "title": "HoldoutAccess",
+      "type": "string"
+    },
+    "PredictedOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "discriminates_from": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Discriminates From",
+          "type": "array"
+        },
+        "expected_direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "expected_range": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Range"
+        },
+        "metric_name": {
+          "minLength": 1,
+          "title": "Metric Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "metric_name",
+        "expected_direction",
+        "condition"
+      ],
+      "title": "PredictedOutcome",
+      "type": "object"
+    },
+    "Risk": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "Risk",
+      "type": "string"
+    },
+    "RobustnessAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "fold_coverage": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Fold Coverage",
+          "type": "number"
+        },
+        "leakage_checks": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Leakage Checks",
+          "type": "number"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "seed_coverage": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Seed Coverage",
+          "type": "number"
+        },
+        "subgroup_coverage": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Subgroup Coverage",
+          "type": "number"
+        },
+        "temporal_coverage": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Temporal Coverage",
+          "type": "number"
+        }
+      },
+      "required": [
+        "seed_coverage",
+        "fold_coverage",
+        "subgroup_coverage",
+        "temporal_coverage",
+        "leakage_checks",
+        "rationale"
+      ],
+      "title": "RobustnessAssessment",
+      "type": "object"
+    },
+    "ScoreEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "fold_std": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Fold Std",
+          "type": "number"
+        },
+        "mean_gain": {
+          "default": 0,
+          "title": "Mean Gain",
+          "type": "number"
+        },
+        "rationale": {
+          "default": "",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "seed_std": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Seed Std",
+          "type": "number"
+        },
+        "uncertainty": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Uncertainty",
+          "type": "number"
+        },
+        "worst_group_gap": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Worst Group Gap",
+          "type": "number"
+        }
+      },
+      "title": "ScoreEstimate",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "title": "Allowed",
+          "type": "boolean"
+        },
+        "competition_specific": {
+          "default": false,
+          "title": "Competition Specific",
+          "type": "boolean"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "policy_reason": {
+          "title": "Policy Reason",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "paper",
+            "official_docs",
+            "competition_page",
+            "other"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "source_type",
+        "allowed",
+        "policy_reason",
+        "content_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contamination_risk": {
+      "$ref": "#/$defs/Risk",
+      "default": "low"
+    },
+    "controls": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Controls",
+      "type": "array"
+    },
+    "decision_rule": {
+      "minLength": 1,
+      "title": "Decision Rule",
+      "type": "string"
+    },
+    "epistemic_assessment": {
+      "$ref": "#/$defs/EpistemicAssessment"
+    },
+    "estimated_cost": {
+      "$ref": "#/$defs/CostEstimate"
+    },
+    "expected_score_gain": {
+      "$ref": "#/$defs/ScoreEstimate"
+    },
+    "experiment_type": {
+      "$ref": "#/$defs/ExperimentType"
+    },
+    "holdout_access": {
+      "$ref": "#/$defs/HoldoutAccess",
+      "default": "none"
+    },
+    "hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Hypothesis Ids",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "implementation_request": {
+      "additionalProperties": true,
+      "title": "Implementation Request",
+      "type": "object"
+    },
+    "is_replication_of": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Is Replication Of"
+    },
+    "lineage": {
+      "default": "default",
+      "minLength": 1,
+      "title": "Lineage",
+      "type": "string"
+    },
+    "metrics": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "novelty_score": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Novelty Score",
+      "type": "number"
+    },
+    "predicted_outcomes": {
+      "items": {
+        "$ref": "#/$defs/PredictedOutcome"
+      },
+      "minItems": 1,
+      "title": "Predicted Outcomes",
+      "type": "array"
+    },
+    "protocol": {
+      "minLength": 1,
+      "title": "Protocol",
+      "type": "string"
+    },
+    "required_artifacts": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Required Artifacts",
+      "type": "array"
+    },
+    "research_question": {
+      "minLength": 1,
+      "title": "Research Question",
+      "type": "string"
+    },
+    "robustness_assessment": {
+      "$ref": "#/$defs/RobustnessAssessment"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "seeds": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Seeds",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "$ref": "#/$defs/SourceRef"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "split_strategy": {
+      "minLength": 1,
+      "title": "Split Strategy",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ExperimentStatus",
+      "default": "proposed"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "experiment_type",
+    "hypothesis_ids",
+    "research_question",
+    "protocol",
+    "controls",
+    "split_strategy",
+    "seeds",
+    "metrics",
+    "predicted_outcomes",
+    "decision_rule",
+    "expected_score_gain",
+    "epistemic_assessment",
+    "robustness_assessment",
+    "novelty_score",
+    "estimated_cost",
+    "implementation_request",
+    "required_artifacts"
+  ],
+  "title": "ExperimentProposal",
+  "type": "object"
+}

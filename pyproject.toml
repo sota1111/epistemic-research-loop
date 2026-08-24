@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "epistemic-research-loop"
+version = "0.1.0"
+description = "Hypothesis-centric, information-value-driven experiment orchestration for Kaggle research"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Epistemic Research Loop Contributors" }]
+dependencies = [
+  "pydantic>=2.10,<3",
+  "PyYAML>=6.0,<7",
+  "typer>=0.15,<1",
+  "cryptography>=44,<51",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<10",
+  "pytest-cov>=6,<8",
+  "hypothesis>=6.120,<7",
+  "ruff>=0.9,<1",
+  "types-PyYAML>=6.0,<7",
+]
+
+[project.scripts]
+erlctl = "epistemic_loop.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epistemic_loop"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["epistemic_loop"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.coverage.run]
+source = ["epistemic_loop"]
+branch = true
+omit = [
+  "*/epistemic_loop/adapters/*",
+  "*/epistemic_loop/agents/*",
+  "*/epistemic_loop/benchmark/*",
+  "*/epistemic_loop/cli.py",
+  "*/epistemic_loop/reporting/*",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true

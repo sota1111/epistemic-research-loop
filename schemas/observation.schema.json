@@ -1,0 +1,181 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "code_commit_sha": {
+          "title": "Code Commit Sha",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "environment_hash": {
+          "title": "Environment Hash",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "mime_type": {
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "sealed": {
+          "default": false,
+          "title": "Sealed",
+          "type": "boolean"
+        },
+        "sha256": {
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "experiment_id",
+        "code_commit_sha",
+        "dataset_fingerprint",
+        "environment_hash",
+        "mime_type",
+        "size"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "FailureClass": {
+      "enum": [
+        "infrastructure",
+        "implementation",
+        "model",
+        "invalid_design"
+      ],
+      "title": "FailureClass",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "code_commit_sha": {
+      "title": "Code Commit Sha",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "environment_hash": {
+      "title": "Environment Hash",
+      "type": "string"
+    },
+    "exit_status": {
+      "title": "Exit Status",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "failure_class": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FailureClass"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "fold_metrics": {
+      "additionalProperties": true,
+      "title": "Fold Metrics",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "prediction_fingerprint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prediction Fingerprint"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "runtime": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Runtime",
+      "type": "object"
+    },
+    "seed_metrics": {
+      "additionalProperties": true,
+      "title": "Seed Metrics",
+      "type": "object"
+    },
+    "subgroup_metrics": {
+      "additionalProperties": true,
+      "title": "Subgroup Metrics",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "experiment_id",
+    "run_id",
+    "code_commit_sha",
+    "environment_hash",
+    "dataset_fingerprint",
+    "exit_status"
+  ],
+  "title": "Observation",
+  "type": "object"
+}

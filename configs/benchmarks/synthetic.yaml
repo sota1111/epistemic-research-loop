@@ -1,0 +1,50 @@
+run:
+  id: synthetic-epistemic-001
+  mode: epistemic
+  seed: 101
+competition:
+  slug: synthetic-shift
+  metric_direction: maximize
+  primary_metric: normalized_score
+  data_path: examples/synthetic_shift
+  sample_submission: null
+budgets:
+  max_experiments: 40
+  max_cpu_hours: 120
+  max_gpu_hours: 24
+  max_wall_hours: 72
+  max_llm_tokens: 2000000
+  max_cost: 0
+  max_final_submissions: 1
+loop:
+  phase_policy: adaptive
+  max_active_hypotheses: 30
+  max_priority_hypotheses: 10
+  max_consecutive_optimization_experiments: 3
+  minimum_replications_for_support: 1
+selection:
+  cost_lambda: 0.15
+  minimum_utility: 0.0
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+holdout: {policy: strict_blind, max_queries: 0, reveal_scores: after_all_paired_runs, sealed_store: .sealed}
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: true
+  worker_network: disabled
+executor:
+  adapter: local
+  queue: synthetic
+  retry_infrastructure_failures: 2
+  linear_team_id: null
+  linear_project_id: null
+  result_root: .results
+artifacts: {adapter: local, root: .runs}
+storage: {event_store: jsonl, projection: sqlite, sqlite_path: .state/epistemic-loop.db}
+llm: {adapter: ai_dev_control_plane, structured_output_required: true, store_raw_response: true}
+benchmark_id: synthetic-ab-001
+synthetic_scenarios: [temporal_shift, spurious_leakage, candidate_generation_bottleneck, iid_easy]

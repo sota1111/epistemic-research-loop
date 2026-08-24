@@ -1,0 +1,18 @@
+services:
+  epistemic-loop:
+    build: .
+    working_dir: /workspace
+    read_only: true
+    network_mode: none
+    environment:
+      ERL_HOME: /workspace
+    volumes:
+      - ./:/workspace
+      - erl-state:/workspace/.state
+      - erl-runs:/workspace/.runs
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+
+volumes:
+  erl-state:
+  erl-runs:

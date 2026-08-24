@@ -1,0 +1,4 @@
+policy: strict_blind
+max_queries: 0
+reveal_scores: after_all_paired_runs
+sealed_store: .sealed
