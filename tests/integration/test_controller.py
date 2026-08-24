@@ -175,3 +175,73 @@ def test_a_run_can_be_finalized_from_planning(tmp_path, hypothesis, proposal, cl
 
     with pytest.raises(LoopStateError, match="cannot finalize from completed"):
         controller.finalize(run_id, artifacts=[], note="twice")
+
+
+def test_a_late_result_is_recorded_instead_of_discarded(tmp_path, hypothesis, proposal, clone_proposal) -> None:
+    """A worker slower than the caller's timeout must not cost the run its evidence.
+
+    `import_result` used to require the loop to still be in `executing`, so once a round timed out
+    and replanned, a result that arrived afterwards could never be imported: the experiment stayed
+    `running` forever and the compute that produced it was thrown away. With an asynchronous worker
+    fleet that is ordinary rather than exceptional, so the observation is now recorded without
+    dragging the loop back into `parsing`, and the next round's falsification step picks it up.
+    """
+    import pytest
+
+    from epistemic_loop.config import AppConfig, CompetitionConfig, PhaseWeights, RunConfig
+    from epistemic_loop.controller.research_graph import LoopStateError
+    from epistemic_loop.domain.enums import ExperimentStatus, LoopState
+    from epistemic_loop.domain.models import CompetitionWorldModel, ExperimentResult
+
+    run_id = "late-001"
+    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
+    config = AppConfig(
+        run=RunConfig(id=run_id), competition=CompetitionConfig(slug="example", metric_direction="maximize")
+    )
+    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
+    controller.start(run_id, CompetitionWorldModel())
+    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
+    controller.record_proposals(run_id, [clone_proposal(proposal, run_id=run_id)])
+    controller.select_experiments(
+        run_id, weights=PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15), size=1
+    )
+
+    class Queued:
+        def submit(self, request):
+            return ExperimentResult(
+                experiment_id=request.experiment_id,
+                run_id=request.run_id,
+                attempt=1,
+                status="queued",
+                commit_sha=request.base_commit_sha,
+                environment_hash="pending",
+                dataset_fingerprint="pending",
+            )
+
+        def result(self, request):
+            return None
+
+    controller.dispatch(run_id, "EXP-001", Queued(), container_image="python:3.11-slim")  # type: ignore[arg-type]
+    controller.replan(run_id, "the worker did not report within the timeout")
+    assert controller.state(run_id).loop_state == LoopState.PLANNING
+
+    late = ExperimentResult(
+        experiment_id="EXP-001",
+        run_id=run_id,
+        attempt=1,
+        status="completed",
+        commit_sha="abc123",
+        environment_hash="e" * 64,
+        dataset_fingerprint="f" * 64,
+        metrics={"roc_auc": 0.91},
+    )
+    observation = controller.import_result(run_id, late)
+
+    assert observation is not None and observation.metrics == {"roc_auc": 0.91}
+    state = controller.state(run_id)
+    assert state.experiment_statuses["EXP-001"] == ExperimentStatus.COMPLETED
+    assert state.loop_state == LoopState.PLANNING, "a late result must not drag the loop back a stage"
+    assert [item.id for item in state.unjudged_observations()] == [observation.id]
+
+    with pytest.raises(LoopStateError, match="never dispatched"):
+        controller.import_result(run_id, late.model_copy(update={"experiment_id": "EXP-001"}))

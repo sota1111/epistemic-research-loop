@@ -259,6 +259,10 @@ class ResearchController:
         _require_experiment(state, result.experiment_id)
         if result.status in {"queued", "running"}:
             return None
+        if state.experiment_statuses.get(result.experiment_id) != ExperimentStatus.RUNNING:
+            raise LoopStateError(
+                f"experiment {result.experiment_id} was never dispatched; there is no result to import"
+            )
         completed = result.status == "completed"
         self.repository.append(
             run_id,
@@ -267,7 +271,13 @@ class ResearchController:
         )
         observation = _observation_from_result(result, artifact_root)
         self.repository.append(run_id, EventType.OBSERVATION_RECORDED, observation)
-        self._advance(run_id, state.loop_state, LoopState.PARSING, {LoopState.EXECUTING})
+        if state.loop_state == LoopState.EXECUTING:
+            self._advance(run_id, state.loop_state, LoopState.PARSING, {LoopState.EXECUTING})
+        # Otherwise the result arrived late: the round timed out and moved on, so the loop is no
+        # longer in `executing`. Forcing it back into `parsing` would corrupt whatever round it is
+        # in now, but discarding the observation would lose evidence the run paid for -- and with an
+        # asynchronous worker fleet, "slower than the caller's timeout" is ordinary, not exceptional.
+        # The observation is recorded unjudged, so the next round's falsification step picks it up.
         return observation
 
     def record_falsification(self, run_id: str, record: FalsificationRecord) -> FalsificationRecord:
