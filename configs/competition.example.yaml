@@ -58,8 +58,10 @@ executor:
   # not credentials; the only secret is LINEAR_API_KEY, which is read from the environment.
   linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
   linear_project_id: 19e32e9a-7e87-465a-949b-8ff67c3eb15a # project ai-dev-control-plane
-  # Todo is the state the control plane's scan treats as executable; a ticket filed in any other
-  # state is never picked up.
+  # Sets only the status the issue is created in. It does NOT keep the ticket out of the worker's
+  # queue: the control plane scans every non-terminal state except In Review, so a ticket filed in
+  # Backlog is picked up just the same (measured: created 16:15:47, started 16:15:50). Filing a
+  # ticket is never a dry run - see the README section on this field.
   linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
   # Parsed by the control plane out of the ticket body: which worker runs it, and where.
   worker: claude:opus

@@ -187,9 +187,15 @@ ERL-IDEMPOTENCY: <run>:<experiment>:<attempt>
 ```
 
 The `workers:` line, the `TARGET_REPO=` line, and the section headings follow
-`ai-dev-control-plane`'s ticket convention. A ticket that omits them is created but never picked up,
-so they are not decoration — set them with `executor.worker`, `executor.handoff`, and
-`executor.target_repo`.
+`ai-dev-control-plane`'s ticket convention. Omitting them does **not** make the ticket inert — it
+makes it run on the control plane's defaults, which is worse. Measured against the control plane's
+own code: a description without the `<!-- epistemic-research-loop:experiment-request:v1 -->` marker
+parses as `kind: "none"`, which is *eligible*, not rejected; the worker then comes from
+`config/worker_roles.json` and the repository from the Linear project → repo mapping. Since
+`executor.linear_project_id` points at the `ai-dev-control-plane` project, a ticket missing
+`TARGET_REPO=` runs against `/workspaces/ai-dev-control-plane` — the control plane's own repository,
+not this one. So set them with `executor.worker`, `executor.handoff`, and `executor.target_repo`.
+Only a ticket that *has* the marker but a malformed contract is rejected outright.
 
 `executor.linear_state_id` sets the status the issue is created in, and nothing more. **It does not
 keep the issue out of the worker's queue.** Measured against the live control plane: an issue
