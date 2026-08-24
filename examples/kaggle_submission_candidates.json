@@ -1,0 +1,11 @@
+{
+  "candidates": [
+    {
+      "name": "primary",
+      "file": "outputs/submission.csv",
+      "priority": 1,
+      "enabled": true,
+      "message": "final evaluator submission"
+    }
+  ]
+}

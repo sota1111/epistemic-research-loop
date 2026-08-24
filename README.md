@@ -26,6 +26,8 @@ Version: **0.1.0** (initial MVP)
 - Local executor plus an `ai-dev-control-plane` adapter that creates idempotent Linear execution
   tickets containing a versioned `ExperimentRequest` contract.
 - Paired synthetic A/B benchmark with all final regrets sealed until finalization.
+- Evaluator-only Kaggle automation with submission caps, artifact de-duplication, polling, encrypted
+  score sealing, and a manual-submission fallback.
 - `erlctl` for run initialization/status/replay, hypothesis and experiment inspection, holdout audit,
   benchmarks, and reports.
 
@@ -62,6 +64,31 @@ uv run erlctl benchmark finalize \
 
 `BENCHMARK_UNSEAL_TOKEN`, Kaggle credentials, and API keys must be evaluator/runtime secrets. They
 must never enter prompts, events, artifacts, or source control.
+
+## Kaggle final evaluation
+
+Kaggle access belongs to the evaluator, not the Research Agent or experiment Worker. Prepare a
+candidate registry (see `examples/kaggle_submission_candidates.json`) and inspect the deterministic
+plan before submitting:
+
+```bash
+uv run erlctl kaggle plan \
+  --competition example-slug \
+  --candidates examples/kaggle_submission_candidates.json \
+  --daily-cap 1
+
+export BENCHMARK_UNSEAL_TOKEN='replace-with-an-evaluator-owned-secret'
+uv run erlctl kaggle submit \
+  --competition example-slug \
+  --file outputs/submission.csv \
+  --message 'run-001 final candidate' \
+  --run-id run-001 \
+  --daily-cap 1
+```
+
+The submit command rejects duplicate bytes and exhausted daily budgets. Returned leaderboard scores
+are encrypted into `.sealed-scores/`; stdout contains only status and the submission reference. If
+CLI submission is unavailable, `erlctl kaggle manual-packet` creates a checksummed handoff packet.
 
 ## Control-plane handoff
 

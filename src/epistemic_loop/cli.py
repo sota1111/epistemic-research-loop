@@ -3,12 +3,21 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import typer
 import yaml
 
+from epistemic_loop.adapters.kaggle import (
+    KaggleCliSubmissionAdapter,
+    SubmissionCandidate,
+    SubmissionLedger,
+    fingerprint,
+    plan_submission,
+)
+from epistemic_loop.adapters.kaggle.manual import manual_submission_packet, write_manual_packet
 from epistemic_loop.agents.observer import CompetitionObserver
 from epistemic_loop.benchmark.evaluator import finalize_benchmark
 from epistemic_loop.benchmark.paired_runner import run_synthetic_plan
@@ -34,12 +43,14 @@ experiments_app = typer.Typer(help="Inspect experiments", no_args_is_help=True)
 holdout_app = typer.Typer(help="Audit holdout access", no_args_is_help=True)
 benchmark_app = typer.Typer(help="Run paired benchmarks", no_args_is_help=True)
 report_app = typer.Typer(help="Build reports", no_args_is_help=True)
+kaggle_app = typer.Typer(help="Evaluator-only Kaggle submission automation", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
 app.add_typer(holdout_app, name="holdout")
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(report_app, name="report")
+app.add_typer(kaggle_app, name="kaggle")
 
 
 def _home() -> Path:
@@ -245,6 +256,95 @@ def holdout_status(run_id: str = typer.Option(..., "--run-id")) -> None:
 @holdout_app.command("violations")
 def holdout_violations(run_id: str = typer.Option(..., "--run-id")) -> None:
     typer.echo(json.dumps(_entities(run_id, EventType.VIOLATION_DETECTED), indent=2, sort_keys=True))
+
+
+def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    values = raw.get("candidates", raw) if isinstance(raw, dict) else raw
+    if not isinstance(values, list):
+        raise typer.BadParameter("candidate file must contain a list or a candidates list")
+    return [SubmissionCandidate(**value) for value in values]
+
+
+@kaggle_app.command("plan")
+def kaggle_plan(
+    competition: str = typer.Option(..., "--competition"),
+    candidates: Path = typer.Option(..., "--candidates", exists=True, dir_okay=False),
+    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+) -> None:
+    ledger = SubmissionLedger(ledger_path)
+    plan = plan_submission(
+        competition,
+        _submission_candidates(candidates),
+        submitted_today=ledger.submitted_today(competition),
+        daily_cap=daily_cap,
+        submitted_fingerprints=ledger.fingerprints(competition),
+    )
+    typer.echo(json.dumps(plan, default=lambda value: value.__dict__, indent=2, sort_keys=True))
+
+
+@kaggle_app.command("submit")
+def kaggle_submit(
+    competition: str = typer.Option(..., "--competition"),
+    submission: Path = typer.Option(..., "--file", exists=True, dir_okay=False),
+    message: str = typer.Option(..., "--message"),
+    run_id: str = typer.Option(..., "--run-id"),
+    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+    wait: bool = typer.Option(True, "--wait/--no-wait"),
+    seal_scores: bool = typer.Option(True, "--seal-scores/--show-scores"),
+) -> None:
+    ledger = SubmissionLedger(ledger_path)
+    digest = fingerprint(submission)
+    if ledger.submitted_today(competition) >= daily_cap:
+        raise typer.BadParameter("daily submission cap reached")
+    if digest in ledger.fingerprints(competition):
+        raise typer.BadParameter("this exact artifact was already submitted")
+    if not seal_scores:
+        raise typer.BadParameter("plaintext score output is forbidden; use evaluator unseal after paired runs")
+    adapter = KaggleCliSubmissionAdapter()
+    receipt = adapter.submit(competition, submission, message)
+    row = adapter.wait_for_terminal_status(competition, reference=receipt.reference) if wait else None
+    record: dict[str, Any] = {
+        "created_at": datetime.now(UTC).isoformat(),
+        "mode": "execute",
+        "competition": competition,
+        "run_id": run_id,
+        "sha256": digest,
+        "submission_file": str(submission.resolve()),
+        "message": message,
+        "reference": receipt.reference,
+        "status": row.get("status") if row else "submitted",
+    }
+    if row is not None:
+        token = os.environ.get("BENCHMARK_UNSEAL_TOKEN")
+        if not token:
+            raise typer.BadParameter("BENCHMARK_UNSEAL_TOKEN is required to seal returned scores")
+        score_id = f"{run_id}-{receipt.reference or digest[:12]}"
+        SealedScoreStore(_home() / ".sealed-scores").seal(
+            score_id,
+            {"public_score": row.get("publicScore"), "private_score": row.get("privateScore")},
+            token,
+        )
+        record["score_id"] = score_id
+    ledger.append(record)
+    typer.echo(json.dumps({"reference": receipt.reference, "status": record["status"], "scores": "sealed"}))
+
+
+@kaggle_app.command("manual-packet")
+def kaggle_manual_packet(
+    competition: str = typer.Option(..., "--competition"),
+    submission: Path = typer.Option(..., "--file", exists=True, dir_okay=False),
+    message: str = typer.Option(..., "--message"),
+    run_id: str = typer.Option(..., "--run-id"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    write_manual_packet(
+        manual_submission_packet(submission, competition_slug=competition, message=message, run_id=run_id),
+        output,
+    )
+    typer.echo(str(output))
 
 
 @benchmark_app.command("plan")
