@@ -36,6 +36,7 @@ from epistemic_loop.domain.models import (
     FalsificationRecord,
     Hypothesis,
     Observation,
+    ResearchBrief,
     ResearchRun,
 )
 from epistemic_loop.holdout.violations import HoldoutViolation
@@ -165,13 +166,20 @@ class ResearchController:
         minimum_utility: float = float("-inf"),
         similarity_penalty: float = 0.25,
         source_policy_strict: bool = True,
+        max_validation_reuse: int = 0,
     ) -> DecisionRecord:
         state = self.state(run_id)
         candidates = state.open_candidates()
         if not candidates:
             raise ValueError("no proposed experiments are available for selection")
         scored = evaluate_candidates(
-            candidates, state.gate_context(source_policy_strict=source_policy_strict), weights, cost_lambda
+            candidates,
+            state.gate_context(
+                source_policy_strict=source_policy_strict,
+                max_validation_reuse=max_validation_reuse,
+            ),
+            weights,
+            cost_lambda,
         )
         selected = select_portfolio(
             scored,
@@ -302,9 +310,49 @@ class ResearchController:
         self._advance(run_id, state.loop_state, LoopState.PHASE_DECISION, {LoopState.UPDATING})
         if decided != state.phase:
             self.repository.append(run_id, EventType.PHASE_CHANGED, {"phase": decided.value})
+        if next_state is None and decided == Phase.EXPLOITATION and state.brief is None:
+            # Exploitation may not begin before the research brief exists; the run parks in
+            # phase_decision so `handoff_to_exploiter` is the only way forward.
+            return decided
         target = next_state or (LoopState.PLANNING if state.hypotheses else LoopState.HYPOTHESIZING)
         self._advance(run_id, LoopState.PHASE_DECISION, target, {LoopState.PHASE_DECISION})
         return decided
+
+    def handoff_to_exploiter(self, run_id: str, brief: ResearchBrief) -> ResearchBrief:
+        """Publish the validated search space the exploiter is allowed to work inside.
+
+        The hand-off is an event, not a conversation: everything the exploiter may assume is in the
+        brief, and anything absent from it was not established by this run.
+        """
+        state = self.state(run_id)
+        if state.phase != Phase.EXPLOITATION:
+            raise LoopStateError(f"run is in {state.phase.value}; the exploiter hand-off requires exploitation")
+        if brief.run_id != run_id:
+            raise ValueError(f"brief belongs to run {brief.run_id}")
+        self._advance(run_id, state.loop_state, LoopState.EXPLOITER_HANDOFF, {LoopState.PHASE_DECISION})
+        self.repository.append(run_id, EventType.RESEARCH_BRIEF_CREATED, brief)
+        self._advance(run_id, LoopState.EXPLOITER_HANDOFF, LoopState.PLANNING, {LoopState.EXPLOITER_HANDOFF})
+        return brief
+
+    def replan(self, run_id: str, reason: str) -> LoopState:
+        """Return an unproductive round to planning instead of stalling in it.
+
+        Selection can legitimately choose nothing — every candidate gated out, every utility below
+        threshold. Without this the loop would sit in `selecting` with no work to dispatch and no way
+        to propose different work, which is how an unattended run dies quietly.
+        """
+        state = self.state(run_id)
+        allowed = {LoopState.SELECTING, LoopState.EXECUTING, LoopState.PARSING}
+        if state.loop_state not in allowed:
+            raise LoopStateError(f"cannot replan from {state.loop_state.value}")
+        machine = ResearchStateMachine(state.loop_state)
+        machine.transition(LoopState.PLANNING)
+        self.repository.append(
+            run_id,
+            EventType.STATE_CHANGED,
+            {"state": LoopState.PLANNING.value, "run_status": RunStatus.RUNNING.value, "reason": reason},
+        )
+        return LoopState.PLANNING
 
     # -------------------------------------------------------------- auditing
 

@@ -9,9 +9,10 @@ from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
 from epistemic_loop.agents.auto import AutomaticProposer
 from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpret_evidence
 from epistemic_loop.agents.falsifier import Falsifier
+from epistemic_loop.agents.research_synthesizer import derive_brief
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.config import AppConfig
-from epistemic_loop.controller.phase_policy import PhaseEvidence
+from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.research_graph import ResearchController
 from epistemic_loop.controller.stop_policy import should_stop
 from epistemic_loop.domain.enums import ExperimentStatus, LoopState, Phase
@@ -42,6 +43,8 @@ class RoundOutcome:
     beliefs: list[str] = field(default_factory=list)
     pending: list[str] = field(default_factory=list)
     phase: str = Phase.DISCOVERY.value
+    brief_created: bool = False
+    replanned: str | None = None
     stop_reasons: list[str] = field(default_factory=list)
 
 
@@ -72,6 +75,7 @@ class AutonomousLoop:
         self.home = Path(home)
         self.sleep = sleep
         self.now = now
+        self._quiet_rounds = 0
 
     # ------------------------------------------------------------- helpers
 
@@ -125,6 +129,7 @@ class AutonomousLoop:
                 alternative_explanation=assessment.alternative_explanation,
                 confounders_checked=assessment.confounders_checked,
                 recommended_next_test=assessment.recommended_next_test,
+                alternative_claims=assessment.alternative_claims,
             )
             self.controller.record_falsification(run_id, record)
             assessments.append((hypothesis, record, assessment, [item.id for item in linked]))
@@ -204,6 +209,7 @@ class AutonomousLoop:
                 size=settings.portfolio_size,
                 minimum_utility=self.config.selection.minimum_utility,
                 source_policy_strict=self.config.contamination.require_source_provenance,
+                max_validation_reuse=self.config.loop.max_validation_reuse,
             )
             outcome.selected = list(decision.selected_experiment_ids)
             utilities = [
@@ -211,6 +217,12 @@ class AutonomousLoop:
                 for value in decision.utility_breakdown.values()
                 if isinstance(value, dict) and "total" in value
             ]
+            if not outcome.selected:
+                # Nothing survived the gates or the utility floor. Returning to planning lets the
+                # next round propose different work; staying in `selecting` would stall the run.
+                outcome.replanned = "no candidate passed selection"
+                self.controller.replan(run_id, outcome.replanned)
+                return self._finish(run_id, outcome, utilities)
             state = self.controller.state(run_id)
 
         if state.loop_state in {LoopState.SELECTING, LoopState.EXECUTING}:
@@ -224,25 +236,59 @@ class AutonomousLoop:
                 state = self.controller.state(run_id)
 
         if state.loop_state == LoopState.UPDATING:
-            outcome.phase = self.controller.advance_phase(run_id, PhaseEvidence()).value
+            evidence = derive_phase_evidence(
+                state,
+                instability_threshold=self.config.loop.anomaly_instability_threshold,
+            )
+            outcome.phase = self.controller.advance_phase(run_id, evidence).value
         else:
             outcome.phase = state.phase.value
 
+        outcome.brief_created = self._handoff_if_due(run_id)
+        return self._finish(run_id, outcome, utilities)
+
+    def _handoff_if_due(self, run_id: str) -> bool:
+        """Publish the research brief the first time the run reaches exploitation.
+
+        `advance_phase` parks the run in `phase_decision` when exploitation is decided and no brief
+        exists, so this is the step that actually opens exploitation — and it is derived from the
+        event log, never asked of the model.
+        """
+        state = self.controller.state(run_id)
+        if state.phase != Phase.EXPLOITATION or state.brief is not None:
+            return False
+        if state.loop_state != LoopState.PHASE_DECISION:
+            return False
+        brief = derive_brief(state, primary_metric=self.config.competition.primary_metric)
+        self.controller.handoff_to_exploiter(run_id, brief)
+        return True
+
+    def _finish(self, run_id: str, outcome: RoundOutcome, utilities: list[float]) -> RoundOutcome:
         final = self.controller.state(run_id)
+        outcome.phase = final.phase.value
         stop = should_stop(
             final.run.budgets,
             final.usage,
             maximum_candidate_utility=max(utilities) if utilities else None,
             minimum_utility=self.config.selection.minimum_utility,
+            rounds_without_information=self._quiet_rounds,
+            max_rounds_without_information=self.config.loop.max_rounds_without_information,
             holdout_violation=final.violations > 0,
         )
         outcome.stop_reasons = list(stop.reasons)
         return outcome
 
     def run(self, run_id: str, settings: LoopSettings) -> list[RoundOutcome]:
+        """Run rounds until the budget, the stop policy, or a stuck worker ends the run.
+
+        A round that produced no observation is counted, not ignored: three of them in a row means
+        the loop is proposing work the gates keep refusing, and spinning is worse than stopping.
+        """
         outcomes: list[RoundOutcome] = []
+        self._quiet_rounds = 0
         for index in range(1, settings.rounds + 1):
             outcome = self.run_round(run_id, index, settings)
+            self._quiet_rounds = 0 if outcome.observations else self._quiet_rounds + 1
             outcomes.append(outcome)
             if outcome.stop_reasons or outcome.pending:
                 break

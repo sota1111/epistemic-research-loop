@@ -39,3 +39,10 @@ hash. LLM output can propose state but cannot mutate it without deterministic va
 | Kaggle Solver | Features, training, inference, submission artifact |
 | ai-dev-control-plane | Reads the Linear issue; webhook, queue, worker choice, execution, retry, implementation/test/evaluation |
 | Evaluator | Final submission, sealed score aggregation, unseal |
+
+## Where the rest is written down
+
+`docs/` is the project record, and [capability matrix](capability_matrix.md) is its index: one row
+per capability, naming the code that enforces it and the test that would fail if it stopped being
+true. [progress](progress.md) carries milestones, the commands to verify them yourself, and the
+known limitations. Linear issues point here; they do not restate it.

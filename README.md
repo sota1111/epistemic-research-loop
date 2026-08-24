@@ -26,15 +26,27 @@ Version: **0.1.0** (initial MVP)
 - A deterministic loop controller that folds the event log into run state and drives
   `hypothesizing -> planning -> scoring -> selecting -> executing -> parsing -> falsifying ->
   updating -> phase_decision`, refusing any step invoked out of order.
+- Phase evidence derived from the event log, so discovery advances to consolidation and exploitation
+  on its own, and an anomaly in exploitation returns the run to research.
+- An explicit researcher-to-exploiter hand-off: exploitation cannot begin until a `ResearchBrief`
+  derived from the record is published as an event.
+- A validation adaptivity budget that bounds how many *selecting* experiments one split may answer
+  before it must be rotated or re-diagnosed.
 - Local executor plus an `ai-dev-control-plane` adapter that creates idempotent Linear execution
   tickets containing a versioned `ExperimentRequest` contract.
 - Budgeted public-leaderboard feedback; local cross-validation stays unrestricted and the Kaggle
   private score is never unsealed by the loop.
-- Paired synthetic A/B benchmark with all final regrets sealed until finalization.
+- Paired synthetic A/B benchmark scored on discovery rate, CV-private gap, and compute efficiency
+  as well as sealed regret, with an IID negative control and all final regrets sealed until
+  finalization.
 - Evaluator-only Kaggle automation with submission caps, artifact de-duplication, polling, encrypted
   score sealing, and a manual-submission fallback.
-- `erlctl` for run initialization/status/replay, hypothesis and experiment inspection, holdout audit,
-  benchmarks, and reports.
+- `erlctl` for run initialization/status/replay, hypothesis and experiment inspection, the exploiter
+  hand-off, holdout audit, benchmarks, and reports.
+
+**[docs/capability_matrix.md](docs/capability_matrix.md) is the index**: one row per capability,
+naming the code that enforces it and the test that would fail if it stopped being true.
+[docs/progress.md](docs/progress.md) carries milestones, how to verify them, and known limitations.
 
 The LLM proposes hypotheses and experiments only. Schema validation, gates, state transitions,
 utility, budgets, hashes, holdout access, and event recording remain deterministic.
@@ -90,7 +102,8 @@ uv run erlctl experiments select  --run-id $RUN --size 1
 uv run erlctl experiments dispatch --run-id $RUN --experiment-id E-SPLIT-001
 uv run erlctl experiments import-result --run-id $RUN --experiment-id E-SPLIT-001
 uv run erlctl beliefs update --run-id $RUN --from belief.json
-uv run erlctl run advance --run-id $RUN --validation-locked
+uv run erlctl run advance --run-id $RUN                # evidence is derived from the event log
+uv run erlctl brief create --run-id $RUN               # required before exploitation may begin
 uv run erlctl run status  --run-id $RUN
 ```
 
@@ -107,8 +120,13 @@ by default:
 uv run erlctl kaggle feedback --run-id $RUN --score-id $RUN-12345678 --threshold 0.80
 ```
 
-The Kaggle **private** score is the objective and is never unsealed by the research loop. See
-[leaderboard policy](docs/leaderboard_policy.md).
+The Kaggle **private** score is the objective and is never unsealed by the research loop.
+Submissions are capped at five a day and the loop spends none of them — it reads the `metrics.json`
+a worker wrote locally, so ten or more rounds a day costs nothing against Kaggle's allowance. The
+working validation split is unrestricted in budget but not in statistics: `loop.max_validation_reuse`
+bounds how many selecting experiments one split may answer. See
+[leaderboard policy](docs/leaderboard_policy.md) and
+[validation adaptivity](docs/validation_adaptivity.md).
 
 ## Benchmark
 
@@ -209,6 +227,23 @@ The research loop decides *what to run and why*. It does not reimplement worker 
 policy, or the implementation itself — those belong to the control plane, and the issue is where the
 two meet.
 
-See [architecture](docs/architecture.md), [research protocol](docs/research_protocol.md),
-[holdout policy](docs/holdout_policy.md), [leaderboard policy](docs/leaderboard_policy.md), and
-[security](docs/security.md).
+## Documentation
+
+Progress, scope, and status are recorded in this repository, not in the issue tracker. Linear issues
+point here.
+
+| Document | What it answers |
+| --- | --- |
+| [capability matrix](docs/capability_matrix.md) | what is claimed, where it is enforced, which test proves it |
+| [progress](docs/progress.md) | milestones, how to verify them, known limitations |
+| [architecture](docs/architecture.md) | the repository boundary and the Linear interface |
+| [research protocol](docs/research_protocol.md) | the per-round state machine and preregistration rules |
+| [hypothesis ontology](docs/hypothesis_ontology.md) | hypothesis types, confidence semantics, retained refutations |
+| [experiment selection](docs/experiment_selection.md) | gates, utility, portfolio diversity |
+| [exploiter handoff](docs/exploiter_handoff.md) | phase evidence, the research brief, returning from an anomaly |
+| [validation adaptivity](docs/validation_adaptivity.md) | bounding adaptive reuse of the working split |
+| [holdout policy](docs/holdout_policy.md) | the sealed internal holdout |
+| [leaderboard policy](docs/leaderboard_policy.md) | public leaderboard budget and the daily submission cap |
+| [contamination policy](docs/contamination_policy.md) | source policy for historical benchmarks |
+| [benchmark protocol](docs/benchmark_protocol.md) | paired A/B design and what is scored |
+| [security](docs/security.md) | secrets, sandboxing, untrusted data |

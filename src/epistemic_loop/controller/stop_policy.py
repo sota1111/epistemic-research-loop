@@ -19,6 +19,7 @@ def should_stop(
     maximum_candidate_utility: float | None,
     minimum_utility: float,
     rounds_without_information: int = 0,
+    max_rounds_without_information: int = 3,
     validation_stable: bool = True,
     holdout_violation: bool = False,
     rule_violation: bool = False,
@@ -34,8 +35,8 @@ def should_stop(
         reasons.append("GPU budget exhausted")
     if maximum_candidate_utility is not None and maximum_candidate_utility < minimum_utility:
         reasons.append("maximum candidate utility is below threshold")
-    if rounds_without_information >= 3:
-        reasons.append("three rounds produced no new information")
+    if rounds_without_information >= max_rounds_without_information:
+        reasons.append(f"{rounds_without_information} rounds produced no new information")
     if not validation_stable:
         reasons.append("validation scheme is unstable")
         blocked = True

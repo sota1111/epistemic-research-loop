@@ -21,7 +21,9 @@ class SyntheticRunResult:
     cpu_hours: float
     information_gain: float
     discovered_finding: str | None
+    cv_score: float
     sealed_regret: float
+    sealed_private_score: float
 
 
 def _choose(scenario: SyntheticScenario, system: str) -> SyntheticAction:
@@ -69,15 +71,22 @@ def run_synthetic_plan(
                     selected_action=action.name,
                     cpu_hours=action.cost * overhead,
                     information_gain=action.information,
-                    discovered_finding=action.finding if system == "epistemic" else None,
+                    # Discovery is read off the action either system chose, not granted by label:
+                    # crediting only the epistemic arm would decide the comparison in advance.
+                    discovered_finding=action.finding,
+                    cv_score=action.cv_score,
                     sealed_regret=max(0.0, action.sealed_regret + noise),
+                    sealed_private_score=action.private_score,
                 )
                 public = asdict(result)
-                sealed_regret = public.pop("sealed_regret")
+                sealed = {
+                    "sealed_regret": public.pop("sealed_regret"),
+                    "sealed_private_score": public.pop("sealed_private_score"),
+                }
                 result_path = output / "runs" / scenario_name / f"{replicate}-{system}.json"
                 result_path.parent.mkdir(parents=True, exist_ok=True)
                 result_path.write_text(json.dumps(public, indent=2, sort_keys=True), encoding="utf-8")
                 score_id = f"{scenario_name}-{replicate}-{system}"
-                sealed_store.seal(score_id, {"sealed_regret": sealed_regret}, unseal_token)
+                sealed_store.seal(score_id, sealed, unseal_token)
                 written.append(result_path)
     return written

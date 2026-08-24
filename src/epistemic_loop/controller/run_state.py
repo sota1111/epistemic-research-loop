@@ -14,9 +14,11 @@ from epistemic_loop.domain.models import (
     FalsificationRecord,
     Hypothesis,
     Observation,
+    ResearchBrief,
     ResearchRun,
 )
 from epistemic_loop.domain.validation import GateContext, experiment_fingerprint
+from epistemic_loop.holdout.adaptivity import validation_reuse as compute_validation_reuse
 
 SETTLED_STATUSES = frozenset(
     {
@@ -57,6 +59,7 @@ class RunState:
     usage: BudgetUsage
     selection_order: tuple[str, ...]
     violations: int
+    brief: ResearchBrief | None = None
 
     @property
     def run_id(self) -> str:
@@ -72,6 +75,56 @@ class RunState:
 
     def open_candidates(self) -> list[ExperimentProposal]:
         return self.experiments_with_status(ExperimentStatus.PROPOSED)
+
+    def settled_experiment_ids(self) -> frozenset[str]:
+        return frozenset(
+            identifier for identifier in self.proposals if self.experiment_statuses.get(identifier) in SETTLED_STATUSES
+        )
+
+    def validation_reuse(self) -> dict[str, int]:
+        """Selecting queries already spent against each validation scheme in this run."""
+        return compute_validation_reuse(self.proposals, self.settled_experiment_ids())
+
+    def falsification_digest(self) -> list[dict[str, object]]:
+        """What the falsifier concluded, in the form the next round's proposals need to see.
+
+        Alternative explanations and recommended next tests are the loop's memory of what has already
+        been ruled out; without them the generator re-proposes hypotheses the evidence already
+        weakened.
+        """
+        return [
+            {
+                "hypothesis_id": record.hypothesis_id,
+                "disposition": record.disposition.value,
+                "strongest_alternative_explanation": record.strongest_alternative_explanation,
+                "confounders_checked": list(record.confounders_checked),
+                "recommended_next_test": record.recommended_next_test,
+                "alternative_claims": list(record.alternative_claims),
+                "observation_ids": list(record.observation_ids),
+            }
+            for record in self.falsifications.values()
+        ]
+
+    def failed_experiments(self) -> list[dict[str, object]]:
+        """Failures are evidence too: a design that cannot run must not be proposed again unchanged."""
+        return [
+            {
+                "experiment_id": identifier,
+                "experiment_type": proposal.experiment_type.value,
+                "hypothesis_ids": list(proposal.hypothesis_ids),
+                "research_question": proposal.research_question,
+                "failure_class": next(
+                    (
+                        item.failure_class.value
+                        for item in self.observations.values()
+                        if item.experiment_id == identifier and item.failure_class is not None
+                    ),
+                    None,
+                ),
+            }
+            for identifier, proposal in self.proposals.items()
+            if self.experiment_statuses.get(identifier) == ExperimentStatus.FAILED
+        ]
 
     def settled_fingerprints(self) -> frozenset[str]:
         """Only experiments that were actually committed to may block a duplicate."""
@@ -97,7 +150,12 @@ class RunState:
         judged = {identifier for record in self.falsifications.values() for identifier in record.observation_ids}
         return [item for item in self.observations.values() if item.id not in judged]
 
-    def gate_context(self, *, source_policy_strict: bool = True) -> GateContext:
+    def gate_context(
+        self,
+        *,
+        source_policy_strict: bool = True,
+        max_validation_reuse: int = 0,
+    ) -> GateContext:
         return GateContext(
             hypothesis_ids=frozenset(self.hypotheses),
             budget=self.run.budgets,
@@ -106,6 +164,8 @@ class RunState:
             prior_fingerprints=self.settled_fingerprints(),
             recent_experiment_types=self.recent_experiment_types(),
             source_policy_strict=source_policy_strict,
+            validation_reuse=self.validation_reuse(),
+            max_validation_reuse=max_validation_reuse,
         )
 
 
@@ -121,6 +181,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
     usage = BudgetUsage()
     selection_order: list[str] = []
     violations = 0
+    brief: ResearchBrief | None = None
 
     for event in events:
         payload = event.payload
@@ -135,6 +196,10 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
                 run = run.model_copy(update={"status": RunStatus(run_status)})
         elif event.event_type == EventType.PHASE_CHANGED:
             phase = Phase(payload["phase"])
+            if phase != Phase.EXPLOITATION:
+                # Returning the run to research retires the hand-off: an exploiter that resumes
+                # later must receive a brief rebuilt from what the anomaly taught the run.
+                brief = None
         elif event.event_type in {EventType.HYPOTHESIS_PROPOSED, EventType.HYPOTHESIS_REVISED}:
             hypothesis = Hypothesis.model_validate(payload)
             hypotheses[hypothesis.id] = hypothesis
@@ -174,6 +239,8 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         elif event.event_type == EventType.FALSIFICATION_RECORDED:
             record = FalsificationRecord.model_validate(payload)
             falsifications[record.id] = record
+        elif event.event_type == EventType.RESEARCH_BRIEF_CREATED:
+            brief = ResearchBrief.model_validate(payload)
         elif event.event_type == EventType.VIOLATION_DETECTED:
             violations += 1
             if run is not None:
@@ -198,4 +265,5 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         usage=usage,
         selection_order=tuple(selection_order),
         violations=violations,
+        brief=brief,
     )

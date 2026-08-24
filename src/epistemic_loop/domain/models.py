@@ -40,6 +40,8 @@ class Budget(DomainModel):
     max_llm_tokens: int = Field(default=2_000_000, ge=0)
     max_cost: float = Field(default=0, ge=0, description="0 means no monetary cap")
     max_final_submissions: int = Field(default=1, ge=0)
+    #: Kaggle's per-competition daily submission allowance; the loop itself never spends it.
+    max_daily_submissions: int = Field(default=5, ge=0)
 
 
 class BudgetUsage(DomainModel):
@@ -283,6 +285,8 @@ class FalsificationRecord(DomainModel):
     contradicting_predictions_matched: list[str]
     disposition: FalsificationDisposition
     recommended_next_test: str | None = None
+    #: Rival claims the same evidence would also explain, kept so the next round can test them.
+    alternative_claims: list[str] = Field(default_factory=list)
 
 
 class BeliefUpdate(DomainModel):

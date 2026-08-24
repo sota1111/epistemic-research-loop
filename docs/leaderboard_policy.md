@@ -20,6 +20,12 @@ is therefore read through `LeaderboardGate`, which ledgers every access:
 `max_public_queries` (default 3) caps reads per run. Exhausting the budget records a
 `LEADERBOARD_BUDGET_EXCEEDED` violation and blocks the run.
 
+**Submissions are capped at five a day, and the loop spends none of them.** Kaggle's allowance is
+`Budget.max_daily_submissions` (default 5) and `erlctl kaggle submit --daily-cap`, which refuses an
+exhausted day and duplicate bytes. Submission belongs to the evaluator; the research loop reads only
+the `metrics.json` a worker wrote locally, so running the loop ten or more times a day costs nothing
+against that cap.
+
 **The private score is never unsealed by the research loop.** `erlctl kaggle submit` seals both
 scores with AES-GCM; `erlctl kaggle feedback` strips every private field before the gate sees the
 payload, so no mode can return it.

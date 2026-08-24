@@ -57,6 +57,12 @@ class LoopConfig(StrictModel):
     max_priority_hypotheses: int = Field(default=10, ge=1)
     max_consecutive_optimization_experiments: int = Field(default=3, ge=1)
     minimum_replications_for_support: int = Field(default=1, ge=1)
+    #: Selecting queries one validation scheme may answer before it must be rotated. 0 disables.
+    max_validation_reuse: int = Field(default=8, ge=0)
+    #: Rounds that may produce no new observation before the loop stops instead of spinning.
+    max_rounds_without_information: int = Field(default=3, ge=1)
+    #: Seed/fold spread above which an exploitation result counts as an anomaly and returns the run.
+    anomaly_instability_threshold: float = Field(default=0.05, ge=0)
 
 
 class PhaseWeights(StrictModel):

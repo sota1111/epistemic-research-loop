@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from epistemic_loop.controller.budget_manager import BudgetManager
-from epistemic_loop.domain.enums import Consequence, HypothesisStatus
+from epistemic_loop.controller.run_state import RunState
+from epistemic_loop.domain.enums import (
+    Consequence,
+    ExperimentStatus,
+    HypothesisStatus,
+    HypothesisType,
+)
 from epistemic_loop.domain.models import Hypothesis, ResearchBrief
 
 
@@ -39,4 +45,76 @@ def synthesize_research_brief(
         search_ranges=search_ranges,
         remaining_budget=budget_manager.remaining(),
         expected_failure_modes=["seed instability", "split rank reversal", "unexpected distribution shift"],
+    )
+
+
+def derive_brief(
+    state: RunState,
+    *,
+    primary_metric: str,
+    validation_scheme: dict[str, object] | None = None,
+) -> ResearchBrief:
+    """Build the exploiter hand-off from the event-log fold alone.
+
+    Everything here is already in the record: which hypotheses survived, which split the surviving
+    validation hypothesis endorses, which lineages produced completed evidence, and what remains
+    unresolved. Deriving it rather than asking for it is what makes the hand-off checkable — the
+    exploiter receives the run's conclusions, not a fresh summary that could quietly add a claim.
+    """
+    hypotheses = list(state.hypotheses.values())
+    supported_validation = [
+        item
+        for item in hypotheses
+        if item.type == HypothesisType.VALIDATION and item.status == HypothesisStatus.SUPPORTED
+    ]
+    scheme: dict[str, object] = dict(validation_scheme or {})
+    if not scheme:
+        scheme = {
+            "source": "supported validation hypotheses",
+            "hypothesis_ids": [item.id for item in supported_validation],
+            "claims": [item.claim for item in supported_validation],
+            "split_strategies": sorted(
+                {
+                    state.proposals[identifier].split_strategy
+                    for identifier in state.proposals
+                    if state.experiment_statuses.get(identifier) == ExperimentStatus.COMPLETED
+                    and any(item.id in state.proposals[identifier].hypothesis_ids for item in supported_validation)
+                }
+            ),
+        }
+    if not scheme.get("split_strategies") and not validation_scheme:
+        raise ValueError("no completed experiment established a validation scheme; the hand-off would be unsupported")
+
+    supported_ids = {item.id for item in hypotheses if item.status == HypothesisStatus.SUPPORTED}
+    approved_lineages = sorted(
+        {
+            proposal.lineage
+            for identifier, proposal in state.proposals.items()
+            if state.experiment_statuses.get(identifier) == ExperimentStatus.COMPLETED
+            and supported_ids.intersection(proposal.hypothesis_ids)
+        }
+    )
+    approved_features = sorted(
+        {
+            item.scope
+            for item in hypotheses
+            if item.status == HypothesisStatus.SUPPORTED
+            and item.type in {HypothesisType.FEATURE_FAMILY, HypothesisType.REPRESENTATION}
+        }
+    )
+    search_ranges: dict[str, object] = {
+        "lineages": approved_lineages,
+        "seeds": sorted({seed for proposal in state.proposals.values() for seed in proposal.seeds}),
+        "metrics": sorted({metric for proposal in state.proposals.values() for metric in proposal.metrics}),
+        "validation_reuse_spent": state.validation_reuse(),
+    }
+    return synthesize_research_brief(
+        state.run_id,
+        hypotheses,
+        BudgetManager(state.run.budgets, state.usage),
+        validation_scheme=scheme,
+        primary_metric=primary_metric,
+        approved_feature_families=approved_features,
+        approved_model_lineages=approved_lineages,
+        search_ranges=search_ranges,
     )

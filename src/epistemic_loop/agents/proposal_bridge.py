@@ -37,6 +37,8 @@ class FalsificationAssessment(DomainModel):
     alternative_explanation: str
     confounders_checked: list[str] = Field(default_factory=list)
     recommended_next_test: str | None = None
+    #: Claims that would explain the same evidence, phrased so the next round can test them.
+    alternative_claims: list[str] = Field(default_factory=list)
     verifier_result: VerifierResult = VerifierResult.PASS
     evidence_summary: str
 
@@ -93,12 +95,18 @@ class ProposalBridge:
                 "existing_hypotheses": [
                     {
                         "id": item.id,
+                        "type": item.type.value,
                         "claim": item.claim,
                         "status": item.status.value,
                         "current_confidence": item.current_confidence,
+                        "alternative_hypothesis_ids": list(item.alternative_hypothesis_ids),
                     }
                     for item in state.hypotheses.values()
                 ],
+                # Refutations are the run's memory. Without them the generator re-proposes claims the
+                # evidence already weakened and never states the alternative that beat them.
+                "falsification_history": state.falsification_digest(),
+                "failed_experiments": state.failed_experiments(),
                 "remaining_budget": state.run.budgets.model_dump(mode="json"),
             },
             json_schema=HypothesisBatch.model_json_schema(),
@@ -116,6 +124,11 @@ class ProposalBridge:
                 "phase": state.phase.value,
                 "hypotheses": [item.model_dump(mode="json") for item in state.hypotheses.values()],
                 "already_run_fingerprints": sorted(state.settled_fingerprints()),
+                "falsification_history": state.falsification_digest(),
+                "failed_experiments": state.failed_experiments(),
+                # A split that has answered its budget of selecting queries must be rotated, so the
+                # designer needs to see what has already been spent against each one.
+                "validation_reuse": state.validation_reuse(),
                 "holdout_policy": state.run.holdout_policy.model_dump(mode="json"),
             },
             json_schema=ExperimentBatch.model_json_schema(),

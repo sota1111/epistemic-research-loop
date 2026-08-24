@@ -27,6 +27,7 @@ from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpr
 from epistemic_loop.agents.falsifier import Falsifier
 from epistemic_loop.agents.observer import CompetitionObserver
 from epistemic_loop.agents.proposal_bridge import ProposalBridge
+from epistemic_loop.agents.research_synthesizer import derive_brief
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.benchmark.evaluator import finalize_benchmark
 from epistemic_loop.benchmark.paired_runner import run_synthetic_plan
@@ -34,6 +35,7 @@ from epistemic_loop.benchmark.protocol import BenchmarkPlan, load_plan, save_pla
 from epistemic_loop.config import AppConfig, load_config
 from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
 from epistemic_loop.controller.budget_manager import BudgetManager
+from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.phase_policy import PhaseEvidence
 from epistemic_loop.controller.research_graph import (
     LoopStateError,
@@ -67,6 +69,7 @@ benchmark_app = typer.Typer(help="Run paired benchmarks", no_args_is_help=True)
 report_app = typer.Typer(help="Build reports", no_args_is_help=True)
 kaggle_app = typer.Typer(help="Evaluator-only Kaggle submission automation", no_args_is_help=True)
 beliefs_app = typer.Typer(help="Falsify hypotheses and update beliefs", no_args_is_help=True)
+brief_app = typer.Typer(help="Hand validated findings to the exploiter", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -75,6 +78,7 @@ app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(report_app, name="report")
 app.add_typer(kaggle_app, name="kaggle")
 app.add_typer(beliefs_app, name="beliefs")
+app.add_typer(brief_app, name="brief")
 
 
 def _home() -> Path:
@@ -223,6 +227,9 @@ def run_status(run_id: str = typer.Option(..., "--run-id")) -> None:
             "experiments": statuses,
             "observations": len(state.observations),
             "violations": state.violations,
+            "validation_reuse": state.validation_reuse(),
+            "research_brief": state.brief.model_dump(mode="json") if state.brief else None,
+            "phase_evidence": derive_phase_evidence(state).__dict__,
             "remaining_budget": BudgetManager(state.run.budgets, state.usage).remaining(),
             "event_count": len(events),
             "last_sequence": events[-1].sequence,
@@ -405,6 +412,7 @@ def experiments_select(
             size=size,
             minimum_utility=config.selection.minimum_utility,
             source_policy_strict=config.contamination.require_source_provenance,
+            max_validation_reuse=config.loop.max_validation_reuse,
         )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
@@ -563,21 +571,39 @@ def run_advance(
     ablations_complete: bool = typer.Option(False, "--ablations-complete"),
     search_space_defined: bool = typer.Option(False, "--search-space-defined"),
     anomaly_detected: bool = typer.Option(False, "--anomaly-detected"),
+    derive: bool = typer.Option(
+        True,
+        "--derive/--no-derive",
+        help="Derive phase evidence from the event log; flags then only add evidence, never remove it",
+    ),
 ) -> None:
-    """Run the deterministic phase policy and reopen the loop for the next round."""
+    """Run the deterministic phase policy and reopen the loop for the next round.
+
+    Evidence is derived from the record by default. The flags exist for a human who knows something
+    the log does not yet show; they can only assert evidence, never withdraw what the log proves.
+    """
+    state = _state(run_id)
+    derived = derive_phase_evidence(state) if derive else PhaseEvidence()
     evidence = PhaseEvidence(
-        validation_locked=validation_locked,
-        critical_leakage_resolved=critical_leakage_resolved,
-        stable_lineages=stable_lineages,
-        ablations_complete=ablations_complete,
-        search_space_defined=search_space_defined,
-        anomaly_detected=anomaly_detected,
+        validation_locked=validation_locked or derived.validation_locked,
+        critical_leakage_resolved=critical_leakage_resolved or derived.critical_leakage_resolved,
+        stable_lineages=max(stable_lineages, derived.stable_lineages),
+        ablations_complete=ablations_complete or derived.ablations_complete,
+        search_space_defined=search_space_defined or derived.search_space_defined,
+        anomaly_detected=anomaly_detected or derived.anomaly_detected,
     )
     try:
         phase = _controller().advance_phase(run_id, evidence)
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
-    _echo({"run_id": run_id, "phase": phase.value, "state": _state(run_id).loop_state.value})
+    _echo(
+        {
+            "run_id": run_id,
+            "phase": phase.value,
+            "state": _state(run_id).loop_state.value,
+            "evidence": evidence.__dict__,
+        }
+    )
 
 
 def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
@@ -592,7 +618,7 @@ def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
 def kaggle_plan(
     competition: str = typer.Option(..., "--competition"),
     candidates: Path = typer.Option(..., "--candidates", exists=True, dir_okay=False),
-    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    daily_cap: int = typer.Option(5, "--daily-cap", min=1, help="Kaggle daily submission allowance"),
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
 ) -> None:
     ledger = SubmissionLedger(ledger_path)
@@ -612,7 +638,7 @@ def kaggle_submit(
     submission: Path = typer.Option(..., "--file", exists=True, dir_okay=False),
     message: str = typer.Option(..., "--message"),
     run_id: str = typer.Option(..., "--run-id"),
-    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    daily_cap: int = typer.Option(5, "--daily-cap", min=1, help="Kaggle daily submission allowance"),
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
     wait: bool = typer.Option(True, "--wait/--no-wait"),
     seal_scores: bool = typer.Option(True, "--seal-scores/--show-scores"),
@@ -795,3 +821,33 @@ def report_benchmark(benchmark_id: str = typer.Option(..., "--benchmark-id")) ->
 
 if __name__ == "__main__":
     app()
+
+
+@brief_app.command("create")
+def brief_create(
+    run_id: str = typer.Option(..., "--run-id"),
+    validation_scheme: Path | None = typer.Option(None, "--validation-scheme", exists=True, dir_okay=False),
+) -> None:
+    """Publish the research brief that opens exploitation.
+
+    The brief is derived from the event log, so it can only assert what the run established. Nothing
+    reaches the exploiter that is not already in the record.
+    """
+    config = _run_config(run_id)
+    state = _state(run_id)
+    scheme = json.loads(validation_scheme.read_text(encoding="utf-8")) if validation_scheme else None
+    try:
+        brief = derive_brief(state, primary_metric=config.competition.primary_metric, validation_scheme=scheme)
+        _controller().handoff_to_exploiter(run_id, brief)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(brief.model_dump(mode="json"))
+
+
+@brief_app.command("show")
+def brief_show(run_id: str = typer.Option(..., "--run-id")) -> None:
+    """Show the brief the exploiter is working from, or nothing if research has not handed off."""
+    brief = _state(run_id).brief
+    if brief is None:
+        raise typer.BadParameter(f"run {run_id} has not handed off to the exploiter")
+    _echo(brief.model_dump(mode="json"))

@@ -9,4 +9,6 @@ Numeric score requests in gated mode, any strict-blind query, query-budget overf
 access by a worker, or publication before unseal is a blocking violation.
 
 The internal sealed holdout and the Kaggle public leaderboard are separate channels with separate
-budgets. See [leaderboard policy](leaderboard_policy.md) for the second one.
+budgets. See [leaderboard policy](leaderboard_policy.md) for the second one, and
+[validation adaptivity](validation_adaptivity.md) for the third: the working validation split is
+unrestricted in budget but not in statistics, so selecting queries against one split are bounded too.

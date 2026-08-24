@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk
 from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
+from epistemic_loop.holdout.adaptivity import exhausted as validation_budget_exhausted
+from epistemic_loop.holdout.adaptivity import validation_fingerprint
 
 
 @dataclass(frozen=True)
@@ -17,6 +20,8 @@ class GateContext:
     prior_fingerprints: frozenset[str] = frozenset()
     recent_experiment_types: tuple[ExperimentType, ...] = ()
     source_policy_strict: bool = True
+    validation_reuse: Mapping[str, int] = field(default_factory=dict)
+    max_validation_reuse: int = 0
 
 
 @dataclass(frozen=True)
@@ -65,6 +70,11 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("sealed holdout access is forbidden in strict_blind mode")
     if fingerprint in context.prior_fingerprints and experiment.experiment_type != ExperimentType.REPLICATION:
         reasons.append("duplicate experiment (only explicit replication may repeat)")
+    if validation_budget_exhausted(experiment, dict(context.validation_reuse), context.max_validation_reuse):
+        reasons.append(
+            f"validation adaptivity budget of {context.max_validation_reuse} selecting queries is exhausted "
+            f"for split {validation_fingerprint(experiment)[:12]}; rotate the split or run a diagnostic"
+        )
 
     cost = experiment.estimated_cost
     if context.usage.experiments + 1 > context.budget.max_experiments:

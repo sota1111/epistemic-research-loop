@@ -48,3 +48,44 @@ def test_path_fingerprint_is_stable_and_changes_with_content(tmp_path) -> None:
     first.write_text("two", encoding="utf-8")
     assert fingerprint_path(first.parent) != before
     assert missing != before
+
+
+def test_replan_returns_an_unproductive_round_to_planning(tmp_path, hypothesis, proposal, clone_proposal) -> None:
+    """Selection may legitimately choose nothing; the run must be able to propose different work.
+
+    Without this the loop sits in `selecting` with nothing to dispatch and no way to propose
+    anything else, which is how an unattended run dies without saying so.
+    """
+    import pytest
+
+    from epistemic_loop.config import AppConfig, CompetitionConfig, PhaseWeights, RunConfig
+    from epistemic_loop.controller.research_graph import LoopStateError
+    from epistemic_loop.domain.enums import LoopState
+    from epistemic_loop.domain.models import CompetitionWorldModel, CostEstimate
+
+    run_id = "replan-001"
+    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
+    config = AppConfig(
+        run=RunConfig(id=run_id),
+        competition=CompetitionConfig(slug="example", metric_direction="maximize"),
+    )
+    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
+    controller.start(run_id, CompetitionWorldModel())
+    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
+    unaffordable = clone_proposal(
+        proposal,
+        run_id=run_id,
+        estimated_cost=CostEstimate(cpu_hours=10_000).model_dump(),
+    )
+    controller.record_proposals(run_id, [unaffordable])
+
+    weights = PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15)
+    decision = controller.select_experiments(run_id, weights=weights, size=1)
+    assert decision.selected_experiment_ids == []
+    assert "CPU budget exceeded" in decision.rejected_reasons["EXP-001"]
+
+    controller.replan(run_id, "no candidate passed selection")
+    assert controller.state(run_id).loop_state == LoopState.PLANNING
+
+    with pytest.raises(LoopStateError, match="cannot replan"):
+        controller.replan(run_id, "already replanned")
