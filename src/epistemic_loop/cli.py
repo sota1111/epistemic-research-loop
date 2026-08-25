@@ -544,6 +544,7 @@ def experiments_import_result(
     proposal = state.proposals.get(experiment_id)
     if proposal is None:
         raise typer.BadParameter(f"unknown experiment: {experiment_id}")
+    executor = _executor(config)
     request = build_experiment_request(
         state.run,
         proposal,
@@ -551,8 +552,9 @@ def experiments_import_result(
         container_image=config.executor.container_image,
         dataset_mounts=config.executor.dataset_mounts,
         network_policy=config.contamination.worker_network,
+        contract=executor.contract,
     )
-    result = _executor(config).result(request)
+    result = executor.result(request)
     if result is None:
         raise typer.BadParameter(f"no result has been produced yet for {experiment_id}")
     artifact_root = Path(result.artifact_refs[0]).parent if result.artifact_refs else None

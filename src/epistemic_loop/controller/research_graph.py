@@ -261,6 +261,7 @@ class ResearchController:
             container_image=container_image,
             dataset_mounts=dataset_mounts,
             network_policy=network_policy,
+            contract=executor.contract,
         )
         # Enter `executing` before recording the attempt. Recording first would mark the experiment
         # running even when the transition is refused, burning it: the status check above then only

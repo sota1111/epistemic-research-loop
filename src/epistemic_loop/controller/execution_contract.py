@@ -4,6 +4,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any, cast
 
+from epistemic_loop.adapters.executor.base import SHELL_CONTRACT, ExecutionContract
 from epistemic_loop.domain.models import (
     DatasetMount,
     ExperimentProposal,
@@ -29,6 +30,7 @@ def build_experiment_request(
     container_image: str,
     dataset_mounts: Sequence[str] = (),
     network_policy: str = "disabled",
+    contract: ExecutionContract = SHELL_CONTRACT,
 ) -> ExperimentRequest:
     """Translate a preregistered proposal into the versioned worker contract.
 
@@ -37,8 +39,22 @@ def build_experiment_request(
     """
     request: dict[str, Any] = proposal.implementation_request
     command = str(request.get("command", "")).strip()
-    if not command:
-        raise ValueError(f"experiment {proposal.id} has no implementation_request.command")
+    # Whether a command is required is the executor's contract, not a property of every request.
+    # Demanding one unconditionally rejected a perfectly good brief-shaped proposal at the last
+    # step before dispatch -- after the gate had already accepted it against the right contract.
+    missing = [name for name in contract.required_fields if not request.get(name)]
+    if missing:
+        raise ValueError(
+            f"experiment {proposal.id} is missing implementation_request{missing}, which the "
+            f"configured executor requires. {contract.note}"
+        )
+    brief_value = request.get("brief")
+    if contract.required_brief_fields:
+        if not isinstance(brief_value, dict):
+            raise ValueError(f"experiment {proposal.id} has an implementation_request.brief that is not an object")
+        absent = [name for name in contract.required_brief_fields if not str(brief_value.get(name) or "").strip()]
+        if absent:
+            raise ValueError(f"experiment {proposal.id} has a brief missing {absent}")
     if network_policy not in NETWORK_POLICIES:
         raise ValueError(f"unknown network policy: {network_policy}")
 

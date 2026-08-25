@@ -390,7 +390,11 @@ class ExperimentRequest(DomainModel):
     base_commit_sha: str = Field(min_length=1)
     implementation_mode: str = Field(min_length=1)
     objective: str = Field(min_length=1)
-    command: str = Field(min_length=1)
+    #: What a shell executor runs. Empty for an executor that instructs a developer instead, which
+    #: is why this is not required at the model level: whether a command is needed is the
+    #: executor's contract, not a property every request has. `build_experiment_request` enforces
+    #: whichever contract is actually configured.
+    command: str = ""
     container_image: str = Field(min_length=1)
     dataset_mounts: list[DatasetMount]
     resources: ResourceRequest

@@ -193,7 +193,9 @@ def test_a_late_result_is_recorded_instead_of_discarded(tmp_path, hypothesis, pr
         run_id, weights=PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15), size=1
     )
 
-    class Queued:
+    from epistemic_loop.adapters.executor.base import ExecutorAdapter as _Adapter
+
+    class Queued(_Adapter):
         def submit(self, request):
             return ExperimentResult(
                 experiment_id=request.experiment_id,
@@ -308,7 +310,9 @@ def test_a_stranded_selection_can_still_be_dispatched(tmp_path, hypothesis, prop
     assert controller.state(run_id).loop_state == LoopState.PLANNING
     assert controller.state(run_id).experiment_statuses["EXP-001"] == ExperimentStatus.SELECTED
 
-    class Echo:
+    from epistemic_loop.adapters.executor.base import ExecutorAdapter as _Adapter
+
+    class Echo(_Adapter):
         def submit(self, request):
             return ExperimentResult(
                 experiment_id=request.experiment_id,

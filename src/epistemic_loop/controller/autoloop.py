@@ -109,6 +109,7 @@ class AutonomousLoop:
             container_image=self.config.executor.container_image,
             dataset_mounts=self.config.executor.dataset_mounts,
             network_policy=self.config.contamination.worker_network,
+            contract=self.executor.contract,
         )
 
     def _await_result(self, request: ExperimentRequest, settings: LoopSettings) -> ExperimentResult | None:
