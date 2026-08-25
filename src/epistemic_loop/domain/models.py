@@ -91,6 +91,11 @@ class CompetitionWorldModel(DomainModel):
     error_structure: list[str] = Field(default_factory=list)
     compute_constraints: list[str] = Field(default_factory=list)
     unresolved_questions: list[str] = Field(default_factory=list)
+    #: What the run actually has to work with: where the data is, what runner already exists, what
+    #: columns there are. The rest of this model is what the run *believes*; this is what it *has*.
+    #: An experiment designer without it invents entry points and data paths, and the round is spent
+    #: discovering that they do not exist.
+    environment: dict[str, Any] = Field(default_factory=dict)
     version: int = Field(default=1, ge=1)
 
 
