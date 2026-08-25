@@ -94,3 +94,17 @@ These are deliberate and unfinished, not oversights:
 - [Exploiter handoff](exploiter_handoff.md) · [Validation adaptivity](validation_adaptivity.md) ·
   [Benchmark protocol](benchmark_protocol.md) · [Holdout policy](holdout_policy.md) ·
   [Leaderboard policy](leaderboard_policy.md) · [Contamination policy](contamination_policy.md)
+
+## 2026-08-25 — cycle retrospective
+
+[`verification/cycle_retrospective.md`](verification/cycle_retrospective.md) reviews runs 001–009
+and all seven Kaggle submissions against the now-visible private leaderboard. Three findings worth
+carrying forward:
+
+- Local CV had **no** rank correlation with the public leaderboard (tau +0.00) and slightly negative
+  with the private one (tau −0.20). The candidate local CV ranked last won the private board.
+- The unattended loop changed its own research question from a number it had measured two rounds
+  earlier, and separately diagnosed and repaired a tooling defect from a failure message four
+  minutes before the operator fixed the same thing.
+- Eight of the nine defects fixed this cycle were one defect: a constraint enforced in code that the
+  party expected to satisfy it never reads.
