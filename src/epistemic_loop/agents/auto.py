@@ -58,7 +58,8 @@ class AutomaticProposer:
         hypothesis: Hypothesis,
         observations: list[Observation],
         proposal: ExperimentProposal | None = None,
+        state: RunState | None = None,
     ) -> FalsificationAssessment:
-        request = self.bridge.falsification_request(run_id, hypothesis, observations, proposal)
+        request = self.bridge.falsification_request(run_id, hypothesis, observations, proposal, state)
         assessment = self.llm.generate(request.prompt, FalsificationAssessment, request.context)
         return assessment.model_copy(update={"hypothesis_id": hypothesis.id})

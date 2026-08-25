@@ -120,7 +120,7 @@ class AutonomousLoop:
 
         assessments = []
         for hypothesis, linked, proposal in pairs:
-            assessment = self.proposer.assess(run_id, hypothesis, linked, proposal)
+            assessment = self.proposer.assess(run_id, hypothesis, linked, proposal, state)
             record: FalsificationRecord = Falsifier().record(
                 hypothesis,
                 linked,

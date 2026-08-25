@@ -29,6 +29,11 @@ Local cross-validation is what the loop reads, so its cadence is bounded by comp
 Kaggle's five-submissions-a-day allowance: ten or more rounds a day is ordinary, and the loop never
 spends a submission.
 
+The proposal context carries both the run's measurements and its interpretations. Falsification
+records alone would make the loop's memory a function of how diligently each verdict was written: a
+number nobody thought to put in a verdict would be invisible to the next round even though the log
+holds it, and a proposer that cannot see the numbers cannot notice what the verdicts missed.
+
 Automation changes who fills the proposal slots, not who decides what counts as evidence. The model
 is consulted three times per round — propose hypotheses, design experiments, judge which predictions
 the evidence matched. The disposition that follows from those matches, the evidence weight, the

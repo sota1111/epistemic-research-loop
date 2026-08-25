@@ -25,6 +25,11 @@ class GateContext:
     #: Consecutive optimization experiments allowed before a non-optimization run is required.
     #: 0 disables the rule, which is what an exploiter-only control arm needs.
     max_consecutive_optimization: int = 3
+    #: Lineages the research brief approved. Empty means no brief has been published, and the
+    #: restriction does not apply -- exploitation cannot be entered without one anyway.
+    approved_lineages: frozenset[str] = frozenset()
+    #: Shortcuts the brief prohibited, matched against the experiment's holdout access.
+    prohibited_shortcuts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -78,6 +83,19 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
             f"validation adaptivity budget of {context.max_validation_reuse} selecting queries is exhausted "
             f"for split {validation_fingerprint(experiment)[:12]}; rotate the split or run a diagnostic"
         )
+
+    if context.approved_lineages and experiment.lineage not in context.approved_lineages:
+        # A research brief that the exploiter can ignore is a record of a decision, not a hand-off.
+        # Once one is published, the search space it defines is the search space -- an experiment
+        # outside it is proposing to explore, which is what the hand-off ended.
+        reasons.append(
+            f"lineage {experiment.lineage!r} is outside the research brief's approved set "
+            f"{sorted(context.approved_lineages)}"
+        )
+    if experiment.holdout_access == HoldoutAccess.SEALED_HOLDOUT and any(
+        "sealed holdout" in shortcut.lower() for shortcut in context.prohibited_shortcuts
+    ):
+        reasons.append("the research brief prohibits sealed holdout optimization")
 
     cost = experiment.estimated_cost
     if context.usage.experiments + 1 > context.budget.max_experiments:

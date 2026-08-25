@@ -100,3 +100,46 @@ def test_a_zero_budget_disables_the_guard(proposal: ExperimentProposal, clone_pr
     spent = {validation_fingerprint(optimization): 99}
     assert exhausted(optimization, spent, budget=0) is False
     assert hard_gate(optimization, _context(spent, budget=0)).passed
+
+
+def test_the_research_brief_constrains_what_exploitation_may_run(proposal, clone_proposal) -> None:
+    """A brief the exploiter can ignore is a record of a decision, not a hand-off.
+
+    Publishing one is what opens exploitation, so once it exists the search space it names is the
+    search space. An experiment outside it is proposing to explore, which is exactly what the
+    hand-off ended.
+    """
+    from epistemic_loop.domain.enums import HoldoutAccess
+
+    inside = clone_proposal(proposal, id="EXP-IN", lineage="gbdt")
+    outside = clone_proposal(proposal, id="EXP-OUT", lineage="a-lineage-the-brief-never-approved")
+    context = GateContext(
+        hypothesis_ids=frozenset({"H-001"}),
+        budget=Budget(),
+        usage=BudgetUsage(),
+        holdout_policy=HoldoutPolicyName.GATED_BINARY,
+        approved_lineages=frozenset({"gbdt", "ensemble"}),
+        prohibited_shortcuts=("sealed holdout optimization", "public leaderboard feedback"),
+    )
+
+    assert hard_gate(inside, context).passed
+    refused = hard_gate(outside, context)
+    assert not refused.passed
+    assert any("outside the research brief" in reason for reason in refused.reasons)
+
+    shortcut = clone_proposal(inside, id="EXP-PEEK", holdout_access=HoldoutAccess.SEALED_HOLDOUT)
+    blocked = hard_gate(shortcut, context)
+    assert not blocked.passed
+    assert any("prohibits sealed holdout" in reason for reason in blocked.reasons)
+
+
+def test_no_brief_means_no_lineage_restriction(proposal, clone_proposal) -> None:
+    """Discovery has no approved set yet, and constraining it to one would defeat the point."""
+    anything = clone_proposal(proposal, id="EXP-NEW", lineage="a-lineage-nobody-has-tried")
+    context = GateContext(
+        hypothesis_ids=frozenset({"H-001"}),
+        budget=Budget(),
+        usage=BudgetUsage(),
+        holdout_policy=HoldoutPolicyName.STRICT_BLIND,
+    )
+    assert hard_gate(anything, context).passed

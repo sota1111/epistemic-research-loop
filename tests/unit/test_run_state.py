@@ -244,3 +244,39 @@ def test_observed_runtime_exposes_the_gap_between_estimate_and_actual(
     assert observed["wall_hours"] == 0.15
     assert observed["estimate_ratio"] == 3.0, "the run spent three times what its gate charged it"
     assert observed["experiments_observed"] == 1
+
+
+def test_the_brief_binds_only_once_exploitation_has_begun(
+    repository: ResearchRepository, run: ResearchRun, proposal: ExperimentProposal, clone_proposal
+) -> None:
+    """The approved set is a consequence of the hand-off, so it cannot bind before the hand-off."""
+    from epistemic_loop.domain.models import ResearchBrief
+
+    brief = ResearchBrief(
+        run_id="run-001",
+        locked_validation_scheme={"split_strategies": ["time_holdout"]},
+        primary_metric="roc_auc",
+        robust_metric="robust_roc_auc",
+        supported_hypotheses=["H-001"],
+        falsified_hypotheses=[],
+        unresolved_high_risk_hypotheses=[],
+        approved_feature_families=[],
+        approved_model_lineages=["gbdt"],
+        prohibited_shortcuts=["sealed holdout optimization"],
+        required_robustness_checks=[],
+        search_ranges={},
+        remaining_budget={},
+        expected_failure_modes=[],
+    )
+    repository.append("run-001", EventType.RUN_CREATED, run)
+    repository.append("run-001", EventType.RESEARCH_BRIEF_CREATED, brief)
+
+    during_research = _state(repository).gate_context()
+    assert during_research.approved_lineages == frozenset(), "a brief must not constrain discovery"
+
+    repository.append("run-001", EventType.PHASE_CHANGED, {"phase": Phase.EXPLOITATION.value})
+    repository.append("run-001", EventType.RESEARCH_BRIEF_CREATED, brief)
+    during_exploitation = _state(repository).gate_context()
+
+    assert during_exploitation.approved_lineages == frozenset({"gbdt"})
+    assert "sealed holdout optimization" in during_exploitation.prohibited_shortcuts

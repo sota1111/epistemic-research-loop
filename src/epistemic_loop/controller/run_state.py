@@ -103,6 +103,28 @@ class RunState:
         """Selecting queries already spent against each validation scheme in this run."""
         return compute_validation_reuse(self.proposals, self.settled_experiment_ids())
 
+    def observation_digest(self, limit: int = 12) -> list[dict[str, object]]:
+        """What the experiments actually measured, in the form the next proposal needs to see.
+
+        Falsification records carry the run's *interpretations* forward, which is not the same as
+        its measurements: a number nobody thought to write into a verdict is invisible to the next
+        round even though the loop holds it. That makes the loop's memory a function of how
+        diligently each verdict was written rather than of what was observed, and a proposer that
+        cannot see the numbers cannot notice what the verdicts missed.
+        """
+        recent = sorted(self.observations.values(), key=lambda item: item.created_at)[-limit:]
+        return [
+            {
+                "experiment_id": item.experiment_id,
+                "metrics": item.metrics,
+                "fold_metrics": item.fold_metrics,
+                "subgroup_metrics": item.subgroup_metrics,
+                "exit_status": item.exit_status,
+                "failure_class": item.failure_class.value if item.failure_class else None,
+            }
+            for item in recent
+        ]
+
     def falsification_digest(self) -> list[dict[str, object]]:
         """What the falsifier concluded, in the form the next round's proposals need to see.
 
@@ -174,6 +196,7 @@ class RunState:
         source_policy_strict: bool = True,
         max_validation_reuse: int = 0,
         max_consecutive_optimization: int = 3,
+        enforce_brief: bool = True,
     ) -> GateContext:
         return GateContext(
             hypothesis_ids=frozenset(self.hypotheses),
@@ -186,6 +209,18 @@ class RunState:
             validation_reuse=self.validation_reuse(),
             max_validation_reuse=max_validation_reuse,
             max_consecutive_optimization=max_consecutive_optimization,
+            # Only once a brief exists and the run is exploiting: during research there is no
+            # approved set yet, and constraining discovery to one would defeat the point.
+            approved_lineages=(
+                frozenset(self.brief.approved_model_lineages)
+                if enforce_brief and self.brief and self.phase == Phase.EXPLOITATION
+                else frozenset()
+            ),
+            prohibited_shortcuts=(
+                tuple(self.brief.prohibited_shortcuts)
+                if enforce_brief and self.brief and self.phase == Phase.EXPLOITATION
+                else ()
+            ),
         )
 
 

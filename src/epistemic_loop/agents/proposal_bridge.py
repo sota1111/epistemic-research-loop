@@ -105,6 +105,7 @@ class ProposalBridge:
                 ],
                 # Refutations are the run's memory. Without them the generator re-proposes claims the
                 # evidence already weakened and never states the alternative that beat them.
+                "observations": state.observation_digest(),
                 "falsification_history": state.falsification_digest(),
                 "failed_experiments": state.failed_experiments(),
                 "remaining_budget": state.run.budgets.model_dump(mode="json"),
@@ -124,6 +125,9 @@ class ProposalBridge:
                 "phase": state.phase.value,
                 "hypotheses": [item.model_dump(mode="json") for item in state.hypotheses.values()],
                 "already_run_fingerprints": sorted(state.settled_fingerprints()),
+                # The measurements themselves, not only what the verdicts said about them. A design
+                # that reacts to a number nobody wrote into a verdict is impossible without this.
+                "observations": state.observation_digest(),
                 "falsification_history": state.falsification_digest(),
                 "failed_experiments": state.failed_experiments(),
                 # A split that has answered its budget of selecting queries must be rotated, so the
@@ -140,6 +144,7 @@ class ProposalBridge:
         hypothesis: Hypothesis,
         observations: list[Observation],
         proposal: ExperimentProposal | None = None,
+        state: RunState | None = None,
     ) -> ProposalRequest:
         return ProposalRequest(
             request_id=f"FA-{uuid.uuid4().hex[:12]}",
@@ -150,6 +155,9 @@ class ProposalBridge:
             context={
                 "run_id": run_id,
                 "hypothesis": hypothesis.model_dump(mode="json"),
+                # Earlier measurements, so a verdict can be checked against what the run already
+                # saw instead of being formed from one result in isolation.
+                "prior_observations": state.observation_digest(limit=6) if state is not None else [],
                 "decision_rule": proposal.decision_rule if proposal else None,
                 "predicted_outcomes": (
                     [item.model_dump(mode="json") for item in proposal.predicted_outcomes] if proposal else []
