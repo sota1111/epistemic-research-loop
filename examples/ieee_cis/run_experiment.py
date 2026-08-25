@@ -463,12 +463,25 @@ def feature_comparison(spec: Spec) -> dict[str, Any]:
     baseline = str(spec.extra.get("baseline_features", "base"))
     contrast = str(spec.extra.get("contrast_features", "no_v"))
     contrast_drop = [item for item in str(spec.extra.get("contrast_drop_prefixes", "")).split(",") if item.strip()]
+    # A size-matched random drop belongs to the contrast arm only: applied to both it would cancel,
+    # and the whole point of the control is that the two arms lose the same *number* of columns.
+    contrast_random = int(spec.extra.get("contrast_drop_random", 0) or 0)
     results = {}
-    for name, features, drop in ((baseline, baseline, []), (contrast, contrast, contrast_drop)):
+    arms = (
+        (baseline, baseline, [], 0),
+        (contrast, contrast, contrast_drop, contrast_random),
+    )
+    for name, features, drop, random_drop in arms:
         variant = Spec(**{**spec.to_json(), "data": spec.data, "output": spec.output})
         variant.features = features
         variant.drop_prefixes = [*spec.drop_prefixes, *drop]
-        results[name if not drop else f"{name}_drop_{'_'.join(drop)}"] = train(variant)
+        variant.drop_random = random_drop
+        label = name
+        if drop:
+            label = f"{name}_drop_{'_'.join(drop)}"
+        elif random_drop:
+            label = f"{name}_drop_random_{random_drop}"
+        results[label] = train(variant)
     keys = list(results)
     cost = results[keys[0]]["metrics"]["roc_auc"] - results[keys[1]]["metrics"]["roc_auc"]
     return {
@@ -575,6 +588,9 @@ def parse(argv: list[str] | None = None) -> Spec:
     parser.add_argument("--baseline-features", default="base")
     parser.add_argument("--contrast-features", default="no_v")
     parser.add_argument("--contrast-drop-prefixes", default="", help="prefixes dropped only in the contrast arm")
+    parser.add_argument(
+        "--contrast-drop-random", type=int, default=0, help="drop N random columns in the contrast arm only"
+    )
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--output", type=Path, default=None)
     arguments = parser.parse_args(argv)
@@ -609,6 +625,7 @@ def parse(argv: list[str] | None = None) -> Spec:
             "baseline_features": arguments.baseline_features,
             "contrast_features": arguments.contrast_features,
             "contrast_drop_prefixes": arguments.contrast_drop_prefixes,
+            "contrast_drop_random": arguments.contrast_drop_random,
         },
     )
 
