@@ -56,10 +56,40 @@ def test_implementation_request_overrides_defaults(proposal: ExperimentProposal,
     assert request.network_policy == "source_policy_proxy"
 
 
+def test_a_brief_executor_needs_a_brief_and_not_a_command(proposal: ExperimentProposal, clone_proposal) -> None:
+    """Whether a command is required belongs to the executor, not to every request.
+
+    Demanding one unconditionally rejected a correctly brief-shaped proposal at the last step
+    before dispatch, after the gate had already accepted it against the right contract -- the same
+    defect as the one the gate had just been taught to catch, one layer further down.
+    """
+    from epistemic_loop.adapters.executor.base import BRIEF_CONTRACT
+
+    brief = {"title": "t", "objective": "o", "approach": "a", "verification": "v"}
+    briefed = clone_proposal(proposal, implementation_request={"brief": brief})
+
+    request = build_experiment_request(_run(), briefed, container_image="research:1", contract=BRIEF_CONTRACT)
+    assert request.command == "", "a command means nothing to an executor that instructs a developer"
+    assert request.brief == brief
+
+    half = clone_proposal(proposal, implementation_request={"brief": {"title": "t", "objective": "o"}})
+    with pytest.raises(ValueError, match=r"brief missing \['approach', 'verification'\]"):
+        build_experiment_request(_run(), half, container_image="research:1", contract=BRIEF_CONTRACT)
+
+    shell_shaped = clone_proposal(proposal, implementation_request={"command": "python3 x.py"})
+    with pytest.raises(ValueError, match=r"missing implementation_request\['brief'\]") as failure:
+        build_experiment_request(_run(), shell_shaped, container_image="research:1", contract=BRIEF_CONTRACT)
+    assert "not by a shell" in str(failure.value)
+
+
 def test_missing_command_and_unknown_network_policy_are_rejected(proposal: ExperimentProposal, clone_proposal) -> None:
     without_command = clone_proposal(proposal, implementation_request={"objective": "x"})
-    with pytest.raises(ValueError, match="implementation_request.command"):
+    with pytest.raises(ValueError, match=r"missing implementation_request\['command'\]") as failure:
         build_experiment_request(_run(), without_command, container_image="research:1")
+    # The refusal carries the contract's own instruction. Saying only "no command" tells the
+    # reader what is absent, not what to write instead, and the shape they should write is
+    # precisely what they did not know.
+    assert "$ERL_OUTPUT_DIR" in str(failure.value)
     with pytest.raises(ValueError, match="unknown network policy"):
         build_experiment_request(_run(), proposal, container_image="research:1", network_policy="wide-open")
 

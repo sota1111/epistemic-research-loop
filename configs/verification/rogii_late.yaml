@@ -1,0 +1,101 @@
+# ROGII Wellbore Geology Prediction, worked after the deadline as a late-submission exercise.
+#
+# The receiving side is ai-dev-control-plane developing `rogii-late` under instruction. It is not
+# told which system wrote the instruction, and the tickets carry none of this repository's
+# vocabulary or schemas -- see the `competition_repo` executor and its contract test.
+#
+# Routing: ai-dev-control-plane resolves the checkout from the Linear PROJECT NAME. The project is
+# named `rogii-late`, mapped explicitly in that repository's config/project_repos.json to
+# /workspaces/rogii-late. target_repo must agree with that path.
+run:
+  id: rogii-late-2026-08-r2
+  mode: epistemic
+  seed: 101
+competition:
+  slug: rogii-wellbore-geology-prediction
+  # RMSE of dTVT, minimised. The Kaggle API advertises "Mean Squared Error" and is wrong: an
+  # all-zero submission scores 11551.955, which is the scale of TVT, not of its square. The task
+  # deck says RMSE. See rogii-late/docs/competition_package.json for the evidence.
+  metric_direction: minimize
+  primary_metric: rmse
+  data_path: /workspaces/rogii-late/data/parquet
+  sample_submission: /workspaces/rogii-late/data/raw/sample_submission.csv
+budgets:
+  max_experiments: 40
+  max_cpu_hours: 60
+  max_gpu_hours: 0
+  max_wall_hours: 24
+  max_llm_tokens: 4000000
+  max_cost: 0
+  max_final_submissions: 2
+  # Kaggle's allowance for this competition, confirmed against the API. Late submissions are
+  # accepted (submissionsDisabled = false) and still capped per day.
+  max_daily_submissions: 5
+loop:
+  phase_policy: adaptive
+  max_active_hypotheses: 30
+  max_priority_hypotheses: 10
+  max_consecutive_optimization_experiments: 3
+  minimum_replications_for_support: 1
+  max_validation_reuse: 8
+  max_rounds_without_information: 3
+  # RMSE here is in feet and a decent method sits near 10, so a 0.05 absolute threshold would call
+  # every run stable. Instability is judged against the scale of the metric, not against 1.0.
+  anomaly_instability_threshold: 1.0
+selection:
+  cost_lambda: 0.15
+  minimum_utility: 0.0
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+holdout:
+  policy: strict_blind
+  max_queries: 0
+  reveal_scores: after_all_paired_runs
+  sealed_store: .sealed
+leaderboard:
+  # A late submission returns the private score along with the public one. Sealing is therefore
+  # not a formality here -- it is the only thing keeping the private score out of the research
+  # record. `numeric` gives the loop the public figure through a ledgered gate that redacts every
+  # private field; the private score is opened once, at the end, to judge the loop's decisions.
+  public_feedback: numeric
+  max_public_queries: 20
+  query_ledger: .state/rogii-leaderboard-queries.jsonl
+  sealed_store: .sealed-scores-rogii
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: false
+  worker_network: disabled
+executor:
+  adapter: competition_repo
+  queue: kaggle-research
+  retry_infrastructure_failures: 2
+  linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
+  linear_project_id: 061de7ba-b33d-4003-89bc-ecf3077d0051 # project "rogii-late"
+  linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
+  worker: claude:opus
+  handoff: false
+  target_repo: /workspaces/rogii-late
+  results_subdir: results
+  result_root: .results
+  container_image: python:3.11-slim
+  dataset_mounts: [rogii-wellbore]
+  workspace: .
+artifacts:
+  adapter: local
+  root: .runs
+storage:
+  event_store: jsonl
+  projection: sqlite
+  sqlite_path: .state/epistemic-loop.db
+llm:
+  adapter: cli
+  cli_preset: claude
+  model: claude-opus-5
+  max_tokens: 16000
+  effort: high
+  structured_output_required: true
+  store_raw_response: true

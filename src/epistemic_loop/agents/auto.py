@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
+from epistemic_loop.adapters.executor.base import ExecutionContract
 from epistemic_loop.adapters.llm.base import StructuredLlm
 from epistemic_loop.agents.experiment_designer import validate_preregistration
 from epistemic_loop.agents.hypothesis_generator import validate_generated_hypotheses
@@ -44,8 +47,14 @@ class AutomaticProposer:
         validate_generated_hypotheses(proposed, maximum=maximum)
         return proposed
 
-    def experiments(self, run_id: str, state: RunState) -> list[ExperimentProposal]:
-        request = self.bridge.experiment_request(run_id, state)
+    def experiments(
+        self,
+        run_id: str,
+        state: RunState,
+        command_allowlist: Sequence[str] = (),
+        execution_contract: ExecutionContract | None = None,
+    ) -> list[ExperimentProposal]:
+        request = self.bridge.experiment_request(run_id, state, command_allowlist, execution_contract)
         batch = self.llm.generate(request.prompt, ExperimentBatch, request.context)
         proposed = [item.model_copy(update={"run_id": run_id}) for item in batch.experiments]
         for proposal in proposed:
@@ -58,7 +67,8 @@ class AutomaticProposer:
         hypothesis: Hypothesis,
         observations: list[Observation],
         proposal: ExperimentProposal | None = None,
+        state: RunState | None = None,
     ) -> FalsificationAssessment:
-        request = self.bridge.falsification_request(run_id, hypothesis, observations, proposal)
+        request = self.bridge.falsification_request(run_id, hypothesis, observations, proposal, state)
         assessment = self.llm.generate(request.prompt, FalsificationAssessment, request.context)
         return assessment.model_copy(update={"hypothesis_id": hypothesis.id})

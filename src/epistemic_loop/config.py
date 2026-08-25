@@ -55,8 +55,16 @@ class LoopConfig(StrictModel):
     phase_policy: str = "adaptive"
     max_active_hypotheses: int = Field(default=30, ge=1)
     max_priority_hypotheses: int = Field(default=10, ge=1)
-    max_consecutive_optimization_experiments: int = Field(default=3, ge=1)
+    #: Consecutive optimization experiments allowed before a non-optimization run is required.
+    #: 0 disables the rule; an exploiter-only control arm sets it to 0 so it can be an exploiter.
+    max_consecutive_optimization_experiments: int = Field(default=3, ge=0)
     minimum_replications_for_support: int = Field(default=1, ge=1)
+    #: Selecting queries one validation scheme may answer before it must be rotated. 0 disables.
+    max_validation_reuse: int = Field(default=8, ge=0)
+    #: Rounds that may produce no new observation before the loop stops instead of spinning.
+    max_rounds_without_information: int = Field(default=3, ge=1)
+    #: Seed/fold spread above which an exploitation result counts as an anomaly and returns the run.
+    anomaly_instability_threshold: float = Field(default=0.05, ge=0)
 
 
 class PhaseWeights(StrictModel):
@@ -91,7 +99,9 @@ class ContaminationConfig(StrictModel):
 
 
 class ExecutorConfig(StrictModel):
-    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane)$")
+    # `linear_local_worker` files the real Linear ticket and runs it locally. It is a verification
+    # harness for the auto-filing half of the contract, never a production executor.
+    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane|linear_local_worker|competition_repo)$")
     queue: str = "kaggle-research"
     retry_infrastructure_failures: int = Field(default=2, ge=0)
     linear_team_id: str | None = None
@@ -105,6 +115,12 @@ class ExecutorConfig(StrictModel):
     worker: str = "claude:opus"
     handoff: bool = False
     target_repo: str | None = None
+    # `competition_repo` only: where the competition's own results convention lives, relative to
+    # target_repo. Results are read from <target_repo>/<results_subdir>/<experiment>/metrics.json.
+    results_subdir: str = "results"
+    # Commands a shell executor will run. The gate refuses anything else *before* selection, and
+    # the designer is shown the list, so an unrunnable command is not discovered at dispatch.
+    command_allowlist: list[str] = Field(default_factory=lambda: ["python", "python3", "uv", "bash"])
     linear_state_id: str | None = None
 
 
@@ -129,14 +145,24 @@ class StorageConfig(StrictModel):
 
 
 class LlmConfig(StrictModel):
-    """Proposal-stage model. ai-dev-control-plane is reached only through Linear, never as an LLM."""
+    """Proposal-stage model. ai-dev-control-plane is reached only through Linear, never as an LLM.
 
-    adapter: str = Field(default="claude", pattern="^(claude|file_bridge)$")
+    `cli` shells out to an already-authenticated coding CLI, which is what makes an unattended run
+    possible without provisioning a second credential; `claude` uses the API directly and needs
+    `ANTHROPIC_API_KEY`; `file_bridge` puts a human in the proposal slot.
+    """
+
+    adapter: str = Field(default="cli", pattern="^(cli|claude|file_bridge)$")
     model: str = "claude-opus-5"
     max_tokens: int = Field(default=16000, ge=1024)
     effort: str = Field(default="high", pattern="^(low|medium|high|xhigh|max)$")
     structured_output_required: bool = True
     store_raw_response: bool = True
+    #: `cli` adapter: which installed CLI to drive, or an explicit command overriding the preset.
+    cli_preset: str = Field(default="claude", pattern="^(claude|codex)$")
+    cli_command: str | None = None
+    cli_timeout_seconds: float = Field(default=900, gt=0)
+    cli_max_attempts: int = Field(default=3, ge=1, le=6)
 
 
 class AppConfig(StrictModel):

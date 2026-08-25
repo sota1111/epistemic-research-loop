@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -11,7 +12,9 @@ import typer
 import yaml
 
 from epistemic_loop.adapters.executor.ai_dev_control_plane import AiDevControlPlaneAdapter
-from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
+from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.adapters.executor.competition_repo import CompetitionRepoAdapter
+from epistemic_loop.adapters.executor.linear_local_worker import LinearLocalWorkerAdapter
 from epistemic_loop.adapters.executor.local import LocalExecutor
 from epistemic_loop.adapters.kaggle import (
     KaggleCliSubmissionAdapter,
@@ -27,6 +30,7 @@ from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpr
 from epistemic_loop.agents.falsifier import Falsifier
 from epistemic_loop.agents.observer import CompetitionObserver
 from epistemic_loop.agents.proposal_bridge import ProposalBridge
+from epistemic_loop.agents.research_synthesizer import derive_brief
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.benchmark.evaluator import finalize_benchmark
 from epistemic_loop.benchmark.paired_runner import run_synthetic_plan
@@ -34,6 +38,8 @@ from epistemic_loop.benchmark.protocol import BenchmarkPlan, load_plan, save_pla
 from epistemic_loop.config import AppConfig, load_config
 from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
 from epistemic_loop.controller.budget_manager import BudgetManager
+from epistemic_loop.controller.execution_contract import build_experiment_request
+from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.phase_policy import PhaseEvidence
 from epistemic_loop.controller.research_graph import (
     LoopStateError,
@@ -41,18 +47,25 @@ from epistemic_loop.controller.research_graph import (
     fingerprint_path,
 )
 from epistemic_loop.controller.run_state import RunState
+from epistemic_loop.controller.submission_policy import (
+    candidates_from_state,
+    submitted_from_ledger,
+)
+from epistemic_loop.controller.submission_policy import (
+    decide as decide_submission,
+)
 from epistemic_loop.domain.enums import HypothesisStatus, Phase, VerifierResult
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
     ExperimentProposal,
-    ExperimentResult,
     Hypothesis,
 )
 from epistemic_loop.holdout.leaderboard import LeaderboardGate
 from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
 from epistemic_loop.holdout.violations import HoldoutViolationError
+from epistemic_loop.reporting.arm_comparison import arm_summary, build_arm_comparison
 from epistemic_loop.reporting.benchmark_report import write_benchmark_report
 from epistemic_loop.reporting.run_report import write_run_report
 from epistemic_loop.scoring.selector import score_experiment
@@ -67,6 +80,7 @@ benchmark_app = typer.Typer(help="Run paired benchmarks", no_args_is_help=True)
 report_app = typer.Typer(help="Build reports", no_args_is_help=True)
 kaggle_app = typer.Typer(help="Evaluator-only Kaggle submission automation", no_args_is_help=True)
 beliefs_app = typer.Typer(help="Falsify hypotheses and update beliefs", no_args_is_help=True)
+brief_app = typer.Typer(help="Hand validated findings to the exploiter", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -75,6 +89,7 @@ app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(report_app, name="report")
 app.add_typer(kaggle_app, name="kaggle")
 app.add_typer(beliefs_app, name="beliefs")
+app.add_typer(brief_app, name="brief")
 
 
 def _home() -> Path:
@@ -114,7 +129,19 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
         return LocalExecutor(_home() / config.executor.workspace, result_root)
     if not config.executor.linear_team_id or not config.executor.linear_project_id:
         raise typer.BadParameter("executor.linear_team_id and executor.linear_project_id must be configured")
-    return AiDevControlPlaneAdapter(
+    if config.executor.adapter == "competition_repo":
+        if not config.executor.target_repo:
+            raise typer.BadParameter("executor.target_repo must point at the competition repository")
+        return CompetitionRepoAdapter(
+            team_id=config.executor.linear_team_id,
+            project_id=config.executor.linear_project_id,
+            repo_path=config.executor.target_repo,
+            results_subdir=config.executor.results_subdir,
+            worker=config.executor.worker,
+            handoff=config.executor.handoff,
+            state_id=config.executor.linear_state_id,
+        )
+    control_plane = AiDevControlPlaneAdapter(
         team_id=config.executor.linear_team_id,
         project_id=config.executor.linear_project_id,
         result_root=result_root,
@@ -123,6 +150,9 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
         target_repo=config.executor.target_repo,
         state_id=config.executor.linear_state_id,
     )
+    if config.executor.adapter == "linear_local_worker":
+        return LinearLocalWorkerAdapter(control_plane, LocalExecutor(_home() / config.executor.workspace, result_root))
+    return control_plane
 
 
 def _bridge() -> ProposalBridge:
@@ -130,6 +160,17 @@ def _bridge() -> ProposalBridge:
 
 
 def _llm(config: AppConfig) -> StructuredLlm:
+    if config.llm.adapter == "cli":
+        from epistemic_loop.adapters.llm.cli import CliStructuredLlm
+
+        return CliStructuredLlm(
+            config.llm.cli_command,
+            preset=config.llm.cli_preset,
+            model=config.llm.model,
+            timeout_seconds=config.llm.cli_timeout_seconds,
+            max_attempts=config.llm.cli_max_attempts,
+            transcript_dir=str(_home() / ".proposals" / "transcripts") if config.llm.store_raw_response else None,
+        )
     if config.llm.adapter != "claude":
         raise typer.BadParameter(
             f"llm.adapter={config.llm.adapter} has no automatic driver; "
@@ -185,7 +226,23 @@ def initialize(
 
 
 @run_app.command("start")
-def run_start(run_id: str = typer.Option(..., "--run-id")) -> None:
+def run_start(
+    run_id: str = typer.Option(..., "--run-id"),
+    package_path: Path | None = typer.Option(
+        None,
+        "--package",
+        exists=True,
+        dir_okay=False,
+        help="Competition metadata (schema, metric, target) the observer seeds the world model from",
+    ),
+) -> None:
+    """Record the world model and open the first round.
+
+    Without `--package` the observer sees only the metric, which makes every structural question
+    unresolved. That is a safe default, but a run that can read the competition's own schema starts
+    from a better-posed set of questions -- so the package is trusted metadata, and the observer
+    still treats its contents as evidence rather than as instructions.
+    """
     config_path = _run_config_path(run_id)
     loaded = load_config(config_path)
     package: dict[str, Any] = {
@@ -194,6 +251,11 @@ def run_start(run_id: str = typer.Option(..., "--run-id")) -> None:
         "columns": [],
         "compute_constraints": [f"max_cpu_hours={loaded.budgets.max_cpu_hours}"],
     }
+    if package_path is not None:
+        supplied = json.loads(package_path.read_text(encoding="utf-8"))
+        if not isinstance(supplied, dict):
+            raise typer.BadParameter("competition package must be a JSON object")
+        package.update(supplied)
     controller = ResearchController(_repository())
     controller.start(run_id, CompetitionObserver().observe(package))
     typer.echo(json.dumps({"run_id": run_id, "state": "hypothesizing", "status": "running"}))
@@ -223,6 +285,12 @@ def run_status(run_id: str = typer.Option(..., "--run-id")) -> None:
             "experiments": statuses,
             "observations": len(state.observations),
             "violations": state.violations,
+            "validation_reuse": state.validation_reuse(),
+            # Estimates gate the budget; observations say what was actually spent. A ratio far from
+            # 1.0 means the run is not operating inside the budget it believes it has.
+            "observed_runtime": state.observed_runtime(),
+            "research_brief": state.brief.model_dump(mode="json") if state.brief else None,
+            "phase_evidence": derive_phase_evidence(state).__dict__,
             "remaining_budget": BudgetManager(state.run.budgets, state.usage).remaining(),
             "event_count": len(events),
             "last_sequence": events[-1].sequence,
@@ -372,7 +440,18 @@ def hypotheses_record(
 @experiments_app.command("request")
 def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
-    typer.echo(str(_bridge().request_experiments(run_id, _state(run_id))))
+    config = _run_config(run_id)
+    # A human filling the proposal slot needs the executor's contract as much as a model does.
+    typer.echo(
+        str(
+            _bridge().request_experiments(
+                run_id,
+                _state(run_id),
+                config.executor.command_allowlist,
+                _executor(config).contract,
+            )
+        )
+    )
 
 
 @experiments_app.command("propose")
@@ -405,6 +484,10 @@ def experiments_select(
             size=size,
             minimum_utility=config.selection.minimum_utility,
             source_policy_strict=config.contamination.require_source_provenance,
+            max_validation_reuse=config.loop.max_validation_reuse,
+            max_consecutive_optimization=config.loop.max_consecutive_optimization_experiments,
+            command_allowlist=tuple(config.executor.command_allowlist),
+            execution_contract=_executor(config).contract,
         )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
@@ -448,14 +531,35 @@ def experiments_import_result(
     run_id: str = typer.Option(..., "--run-id"),
     experiment_id: str = typer.Option(..., "--experiment-id"),
 ) -> None:
-    """Import the worker's ExperimentResult and derive an Observation from local metrics."""
+    """Import the executor's result and derive an Observation from it.
+
+    Where the result lives is the executor's business, not this command's. A local worker writes an
+    `ExperimentResult` to the shared store; an executor directing a separate repository reads that
+    repository's own convention and assembles the envelope itself. Asking the executor keeps both
+    working without this command knowing which is in use.
+    """
     config = _run_config(run_id)
-    source = result_path(_home() / config.executor.result_root, run_id, experiment_id)
-    if not source.is_file():
-        raise typer.BadParameter(f"no result has been written yet: {source}")
-    result = ExperimentResult.model_validate_json(source.read_text(encoding="utf-8"))
+    controller = _controller()
+    state = _state(run_id)
+    proposal = state.proposals.get(experiment_id)
+    if proposal is None:
+        raise typer.BadParameter(f"unknown experiment: {experiment_id}")
+    executor = _executor(config)
+    request = build_experiment_request(
+        state.run,
+        proposal,
+        attempt=1,
+        container_image=config.executor.container_image,
+        dataset_mounts=config.executor.dataset_mounts,
+        network_policy=config.contamination.worker_network,
+        contract=executor.contract,
+    )
+    result = executor.result(request)
+    if result is None:
+        raise typer.BadParameter(f"no result has been produced yet for {experiment_id}")
+    artifact_root = Path(result.artifact_refs[0]).parent if result.artifact_refs else None
     try:
-        observation = _controller().import_result(run_id, result, artifact_root=source.parent)
+        observation = controller.import_result(run_id, result, artifact_root=artifact_root)
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
     if observation is None:
@@ -474,54 +578,77 @@ def experiments_import_result(
 @beliefs_app.command("update")
 def beliefs_update(
     run_id: str = typer.Option(..., "--run-id"),
-    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+    sources: list[Path] = typer.Option(..., "--from", exists=True, dir_okay=False),
 ) -> None:
-    """Record a falsification verdict and the log-odds belief update it implies."""
-    payload = json.loads(source.read_text(encoding="utf-8"))
+    """Record falsification verdicts and the log-odds belief updates they imply.
+
+    One result usually bears on more than one hypothesis, so several may be judged from a single
+    round. They are recorded in two passes -- every falsification first, then every belief update --
+    because the state machine allows `parsing -> falsifying -> updating` once per round and
+    interleaving them per hypothesis would try to re-enter `falsifying` from `updating`. This is the
+    same two-pass order the autonomous loop uses.
+    """
     state = _state(run_id)
-    hypothesis = state.hypotheses.get(str(payload.get("hypothesis_id")))
-    if hypothesis is None:
-        raise typer.BadParameter(f"unknown hypothesis: {payload.get('hypothesis_id')}")
-    observations = [state.observations[key] for key in payload.get("observation_ids", []) if key in state.observations]
-    if not observations:
-        raise typer.BadParameter("observation_ids must reference recorded observations")
+    controller = _controller()
+
+    judged = []
+    for source in sources:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        hypothesis = state.hypotheses.get(str(payload.get("hypothesis_id")))
+        if hypothesis is None:
+            raise typer.BadParameter(f"unknown hypothesis: {payload.get('hypothesis_id')}")
+        observations = [
+            state.observations[key] for key in payload.get("observation_ids", []) if key in state.observations
+        ]
+        if not observations:
+            raise typer.BadParameter(f"{source}: observation_ids must reference recorded observations")
+        judged.append((payload, hypothesis, observations))
+
+    records = []
     try:
-        record = Falsifier().record(
-            hypothesis,
-            observations,
-            supporting_predictions=list(payload.get("supporting_predictions", [])),
-            contradicting_predictions=list(payload.get("contradicting_predictions", [])),
-            alternative_explanation=str(payload.get("alternative_explanation", "")),
-            confounders_checked=list(payload.get("confounders_checked", [])),
-            recommended_next_test=payload.get("recommended_next_test"),
-        )
-        controller = _controller()
-        controller.record_falsification(run_id, record)
-        update = belief_update(
-            hypothesis.id,
-            hypothesis.current_confidence,
-            interpret_evidence(record),
-            str(payload.get("evidence_summary") or f"falsification disposition: {record.disposition.value}"),
-            [item.id for item in observations],
-            VerifierResult(payload.get("verifier_result", VerifierResult.PASS.value)),
-        )
-        status = payload.get("status")
-        revised = controller.record_belief_update(
-            run_id,
-            update,
-            status=HypothesisStatus(status) if status else DISPOSITION_STATUS[record.disposition],
-        )
+        for payload, hypothesis, observations in judged:
+            record = Falsifier().record(
+                hypothesis,
+                observations,
+                supporting_predictions=list(payload.get("supporting_predictions", [])),
+                contradicting_predictions=list(payload.get("contradicting_predictions", [])),
+                alternative_explanation=str(payload.get("alternative_explanation", "")),
+                confounders_checked=list(payload.get("confounders_checked", [])),
+                recommended_next_test=payload.get("recommended_next_test"),
+                alternative_claims=list(payload.get("alternative_claims", [])),
+            )
+            controller.record_falsification(run_id, record)
+            records.append((payload, hypothesis, observations, record))
+
+        results = []
+        for payload, hypothesis, observations, record in records:
+            current = controller.state(run_id).hypotheses[hypothesis.id]
+            update = belief_update(
+                hypothesis.id,
+                current.current_confidence,
+                interpret_evidence(record),
+                str(payload.get("evidence_summary") or f"falsification disposition: {record.disposition.value}"),
+                [item.id for item in observations],
+                VerifierResult(payload.get("verifier_result", VerifierResult.PASS.value)),
+            )
+            status = payload.get("status")
+            revised = controller.record_belief_update(
+                run_id,
+                update,
+                status=HypothesisStatus(status) if status else DISPOSITION_STATUS[record.disposition],
+            )
+            results.append(
+                {
+                    "hypothesis_id": hypothesis.id,
+                    "disposition": record.disposition.value,
+                    "prior_confidence": update.prior_confidence,
+                    "posterior_confidence": update.posterior_confidence,
+                    "status": revised.status.value,
+                }
+            )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
-    _echo(
-        {
-            "hypothesis_id": hypothesis.id,
-            "disposition": record.disposition.value,
-            "prior_confidence": update.prior_confidence,
-            "posterior_confidence": update.posterior_confidence,
-            "status": revised.status.value,
-        }
-    )
+    _echo(results)
 
 
 @run_app.command("loop")
@@ -563,21 +690,39 @@ def run_advance(
     ablations_complete: bool = typer.Option(False, "--ablations-complete"),
     search_space_defined: bool = typer.Option(False, "--search-space-defined"),
     anomaly_detected: bool = typer.Option(False, "--anomaly-detected"),
+    derive: bool = typer.Option(
+        True,
+        "--derive/--no-derive",
+        help="Derive phase evidence from the event log; flags then only add evidence, never remove it",
+    ),
 ) -> None:
-    """Run the deterministic phase policy and reopen the loop for the next round."""
+    """Run the deterministic phase policy and reopen the loop for the next round.
+
+    Evidence is derived from the record by default. The flags exist for a human who knows something
+    the log does not yet show; they can only assert evidence, never withdraw what the log proves.
+    """
+    state = _state(run_id)
+    derived = derive_phase_evidence(state) if derive else PhaseEvidence()
     evidence = PhaseEvidence(
-        validation_locked=validation_locked,
-        critical_leakage_resolved=critical_leakage_resolved,
-        stable_lineages=stable_lineages,
-        ablations_complete=ablations_complete,
-        search_space_defined=search_space_defined,
-        anomaly_detected=anomaly_detected,
+        validation_locked=validation_locked or derived.validation_locked,
+        critical_leakage_resolved=critical_leakage_resolved or derived.critical_leakage_resolved,
+        stable_lineages=max(stable_lineages, derived.stable_lineages),
+        ablations_complete=ablations_complete or derived.ablations_complete,
+        search_space_defined=search_space_defined or derived.search_space_defined,
+        anomaly_detected=anomaly_detected or derived.anomaly_detected,
     )
     try:
         phase = _controller().advance_phase(run_id, evidence)
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
-    _echo({"run_id": run_id, "phase": phase.value, "state": _state(run_id).loop_state.value})
+    _echo(
+        {
+            "run_id": run_id,
+            "phase": phase.value,
+            "state": _state(run_id).loop_state.value,
+            "evidence": evidence.__dict__,
+        }
+    )
 
 
 def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
@@ -592,7 +737,7 @@ def _submission_candidates(path: Path) -> list[SubmissionCandidate]:
 def kaggle_plan(
     competition: str = typer.Option(..., "--competition"),
     candidates: Path = typer.Option(..., "--candidates", exists=True, dir_okay=False),
-    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    daily_cap: int = typer.Option(5, "--daily-cap", min=1, help="Kaggle daily submission allowance"),
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
 ) -> None:
     ledger = SubmissionLedger(ledger_path)
@@ -606,16 +751,57 @@ def kaggle_plan(
     typer.echo(json.dumps(plan, default=lambda value: value.__dict__, indent=2, sort_keys=True))
 
 
+@kaggle_app.command("decide")
+def kaggle_decide(
+    run_id: str = typer.Option(..., "--run-id"),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+    artifact_suffix: str = typer.Option("submission.csv", "--artifact-suffix"),
+    minimum_calibration_points: int = typer.Option(3, "--calibration-points", min=1),
+    agreement_threshold: float = typer.Option(0.3, "--agreement-threshold"),
+    noise_multiplier: float = typer.Option(1.0, "--noise-multiplier", min=0.0),
+) -> None:
+    """Recommend whether to spend a submission now, and on which artifact.
+
+    Nothing is submitted here. The decision, its reasoning and the evidence behind it are printed
+    so that spending a submission stays a deliberate act with a recorded justification -- and so
+    that a refusal is as legible as a spend.
+    """
+    config = _run_config(run_id)
+    ledger = SubmissionLedger(ledger_path)
+    state = _state(run_id)
+    decision = decide_submission(
+        candidates_from_state(
+            state,
+            primary_metric=config.competition.primary_metric,
+            artifact_suffix=artifact_suffix,
+        ),
+        submitted_from_ledger(ledger.records(), config.competition.slug),
+        remaining_today=max(0, config.budgets.max_daily_submissions - ledger.submitted_today(config.competition.slug)),
+        metric_direction=config.competition.metric_direction,
+        fingerprint_of=fingerprint,
+        minimum_calibration_points=minimum_calibration_points,
+        agreement_threshold=agreement_threshold,
+        noise_multiplier=noise_multiplier,
+    )
+    _echo({"run_id": run_id, "competition": config.competition.slug, **decision.as_dict()})
+
+
 @kaggle_app.command("submit")
 def kaggle_submit(
     competition: str = typer.Option(..., "--competition"),
     submission: Path = typer.Option(..., "--file", exists=True, dir_okay=False),
     message: str = typer.Option(..., "--message"),
     run_id: str = typer.Option(..., "--run-id"),
-    daily_cap: int = typer.Option(1, "--daily-cap", min=1),
+    daily_cap: int = typer.Option(5, "--daily-cap", min=1, help="Kaggle daily submission allowance"),
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
     wait: bool = typer.Option(True, "--wait/--no-wait"),
     seal_scores: bool = typer.Option(True, "--seal-scores/--show-scores"),
+    local_estimate: float | None = typer.Option(
+        None,
+        "--local-estimate",
+        help="the local score this artifact measured; without it the submission cannot contribute "
+        "to the local-to-public calibration and `kaggle decide` will not learn from it",
+    ),
 ) -> None:
     ledger = SubmissionLedger(ledger_path)
     digest = fingerprint(submission)
@@ -623,35 +809,132 @@ def kaggle_submit(
         raise typer.BadParameter("daily submission cap reached")
     if digest in ledger.fingerprints(competition):
         raise typer.BadParameter("this exact artifact was already submitted")
+    blind = ledger.unfingerprinted(competition)
+    if blind:
+        # Not fatal -- the submission may well be new -- but the caller has to know the guard is
+        # not covering every spent submission, because the cost of being wrong is a whole day's
+        # allowance spent re-measuring something already measured.
+        typer.echo(
+            json.dumps(
+                {
+                    "warning": "duplicate detection is degraded",
+                    "unfingerprinted_submissions": blind,
+                    "detail": "reconciled ledger records carry no artifact hash; a duplicate of one cannot be caught",
+                }
+            ),
+            err=True,
+        )
     if not seal_scores:
         raise typer.BadParameter("plaintext score output is forbidden; use evaluator unseal after paired runs")
+    token = os.environ.get("BENCHMARK_UNSEAL_TOKEN")
+    if wait and not token:
+        raise typer.BadParameter("BENCHMARK_UNSEAL_TOKEN is required to seal returned scores")
+
     adapter = KaggleCliSubmissionAdapter()
     receipt = adapter.submit(competition, submission, message)
-    row = adapter.wait_for_terminal_status(competition, reference=receipt.reference) if wait else None
-    record: dict[str, Any] = {
-        "created_at": datetime.now(UTC).isoformat(),
-        "mode": "execute",
-        "competition": competition,
-        "run_id": run_id,
-        "sha256": digest,
-        "submission_file": str(submission.resolve()),
-        "message": message,
-        "reference": receipt.reference,
-        "status": row.get("status") if row else "submitted",
-    }
-    if row is not None:
-        token = os.environ.get("BENCHMARK_UNSEAL_TOKEN")
-        if not token:
-            raise typer.BadParameter("BENCHMARK_UNSEAL_TOKEN is required to seal returned scores")
-        score_id = f"{run_id}-{receipt.reference or digest[:12]}"
-        SealedScoreStore(_home() / _run_config(run_id).leaderboard.sealed_store).seal(
+    # Record the spend before waiting for the score. The submission is gone from the daily
+    # allowance the moment Kaggle accepts it; if the wait times out or the process is killed, an
+    # unrecorded submission would let the next call spend an allowance that no longer exists.
+    score_id = f"{run_id}-{receipt.reference or digest[:12]}"
+    ledger.append(
+        {
+            "created_at": datetime.now(UTC).isoformat(),
+            "mode": "execute",
+            "competition": competition,
+            "run_id": run_id,
+            "sha256": digest,
+            "submission_file": str(submission.resolve()),
+            "message": message,
+            "reference": receipt.reference,
+            "status": "submitted",
+            "score_id": score_id,
+            "local_estimate": local_estimate,
+        }
+    )
+    if not wait:
+        typer.echo(json.dumps({"reference": receipt.reference, "status": "submitted", "scores": "not requested"}))
+        return
+    try:
+        row = adapter.wait_for_terminal_status(competition, reference=receipt.reference)
+    except TimeoutError as error:
+        # The spend is already on the ledger; the score can be collected later.
+        raise typer.BadParameter(
+            f"{error}; the submission is recorded, run 'erlctl kaggle reconcile' to seal it"
+        ) from error
+    _seal_submission_scores(run_id, score_id, row, token or "")
+    typer.echo(json.dumps({"reference": receipt.reference, "status": row.get("status"), "scores": "sealed"}))
+
+
+def _seal_submission_scores(run_id: str, score_id: str, row: dict[str, Any], token: str) -> bool:
+    """Seal a returned score pair. Returns False when that score_id was already sealed."""
+    store = SealedScoreStore(_home() / _run_config(run_id).leaderboard.sealed_store)
+    try:
+        store.seal(
             score_id,
             {"public_score": row.get("publicScore"), "private_score": row.get("privateScore")},
             token,
         )
-        record["score_id"] = score_id
-    ledger.append(record)
-    typer.echo(json.dumps({"reference": receipt.reference, "status": record["status"], "scores": "sealed"}))
+    except FileExistsError:
+        return False
+    return True
+
+
+@kaggle_app.command("reconcile")
+def kaggle_reconcile(
+    competition: str = typer.Option(..., "--competition"),
+    run_id: str = typer.Option(..., "--run-id"),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+    unseal_token_env: str = typer.Option("BENCHMARK_UNSEAL_TOKEN", "--unseal-token-env"),
+) -> None:
+    """Reconcile the ledger against Kaggle: record spent submissions and seal their scores.
+
+    A submission can be accepted by Kaggle and still be missing from the ledger -- a timeout, a
+    killed process, a submission made outside the loop. Left alone that under-counts the daily
+    allowance, so this command is the repair: it adds a record for every submission Kaggle knows
+    about and this ledger does not, and seals any score that arrived after the fact.
+
+    Scores go straight into the sealed store. Nothing is printed here but counts and references.
+    """
+    token = os.environ.get(unseal_token_env)
+    if not token:
+        raise typer.BadParameter(f"{unseal_token_env} is not set")
+    ledger = SubmissionLedger(ledger_path)
+    known = {str(record.get("reference")) for record in ledger.records() if record.get("reference")}
+    adapter = KaggleCliSubmissionAdapter()
+    with tempfile.TemporaryDirectory(prefix="erl-kaggle-") as directory:
+        rows = adapter.submissions(competition, Path(directory) / "submissions.csv")
+
+    added, sealed = 0, 0
+    for row in rows:
+        reference = str(row.get("ref"))
+        score_id = f"{run_id}-{reference}"
+        if reference not in known:
+            ledger.append(
+                {
+                    "created_at": str(row.get("date") or datetime.now(UTC).isoformat()),
+                    "mode": "execute",
+                    "competition": competition,
+                    "run_id": run_id,
+                    "sha256": "",
+                    "submission_file": str(row.get("fileName", "")),
+                    "message": str(row.get("description", "")),
+                    "reference": reference,
+                    "status": str(row.get("status", "")),
+                    "score_id": score_id,
+                    "reconciled": True,
+                }
+            )
+            added += 1
+        if row.get("publicScore") is not None and _seal_submission_scores(run_id, score_id, row, token):
+            sealed += 1
+    _echo(
+        {
+            "competition": competition,
+            "kaggle_submissions": len(rows),
+            "ledger_records_added": added,
+            "scores_sealed": sealed,
+        }
+    )
 
 
 @kaggle_app.command("manual-packet")
@@ -710,6 +993,20 @@ def kaggle_feedback(
         "queries_remaining": feedback.queries_remaining,
     }
     controller.record_leaderboard_feedback(run_id, payload)
+    if feedback.public_score is not None:
+        # Append rather than edit: the spend and the disclosure are separate events and the ledger
+        # is the audit trail for both. Recording it here is not a new disclosure -- the gate has
+        # already returned the number and ledgered the query -- it is what stops the next decision
+        # having to spend another query to learn something the run was already told.
+        SubmissionLedger(_home() / ".state/kaggle-submissions.jsonl").append(
+            {
+                "created_at": datetime.now(UTC).isoformat(),
+                "mode": "score_revealed",
+                "run_id": run_id,
+                "score_id": score_id,
+                "public_score": feedback.public_score,
+            }
+        )
     _echo(payload)
 
 
@@ -795,3 +1092,105 @@ def report_benchmark(benchmark_id: str = typer.Option(..., "--benchmark-id")) ->
 
 if __name__ == "__main__":
     app()
+
+
+@brief_app.command("create")
+def brief_create(
+    run_id: str = typer.Option(..., "--run-id"),
+    validation_scheme: Path | None = typer.Option(None, "--validation-scheme", exists=True, dir_okay=False),
+) -> None:
+    """Publish the research brief that opens exploitation.
+
+    The brief is derived from the event log, so it can only assert what the run established. Nothing
+    reaches the exploiter that is not already in the record.
+    """
+    config = _run_config(run_id)
+    state = _state(run_id)
+    scheme = json.loads(validation_scheme.read_text(encoding="utf-8")) if validation_scheme else None
+    try:
+        brief = derive_brief(state, primary_metric=config.competition.primary_metric, validation_scheme=scheme)
+        _controller().handoff_to_exploiter(run_id, brief)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(brief.model_dump(mode="json"))
+
+
+@brief_app.command("show")
+def brief_show(run_id: str = typer.Option(..., "--run-id")) -> None:
+    """Show the brief the exploiter is working from, or nothing if research has not handed off."""
+    brief = _state(run_id).brief
+    if brief is None:
+        raise typer.BadParameter(f"run {run_id} has not handed off to the exploiter")
+    _echo(brief.model_dump(mode="json"))
+
+
+@report_app.command("compare")
+def report_compare(
+    epistemic_run: str = typer.Option(..., "--epistemic"),
+    exploiter_run: str = typer.Option(..., "--exploiter"),
+    epistemic_public: float | None = typer.Option(None, "--epistemic-public-score"),
+    exploiter_public: float | None = typer.Option(None, "--exploiter-public-score"),
+    epistemic_steering: float | None = typer.Option(
+        None, "--epistemic-steering-estimate", help="the local estimate that arm actually made decisions against"
+    ),
+    exploiter_steering: float | None = typer.Option(None, "--exploiter-steering-estimate"),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+    destination: Path | None = typer.Option(None, "--out"),
+    note: list[str] = typer.Option([], "--note", help="a caveat to record with the comparison"),
+) -> None:
+    """Compare an epistemic run against an exploiter-only run on more than the final score.
+
+    Public scores are passed in rather than read, because reading them belongs to the budgeted
+    leaderboard gate. Private scores are not an input to this command at all.
+    """
+    ledger = SubmissionLedger(ledger_path)
+    counts: dict[str, int] = {}
+    for record in ledger.records():
+        if record.get("mode") == "execute":
+            key = str(record.get("run_id"))
+            counts[key] = counts.get(key, 0) + 1
+    # Both arms are the same competition, so the metric they are judged on comes from one config.
+    # Reading it per arm would let a mismatched pair be compared without anything saying so.
+    metric = _run_config(epistemic_run).competition
+    left = arm_summary(
+        _state(epistemic_run),
+        primary_metric=metric.primary_metric,
+        metric_direction=metric.metric_direction,
+        submissions=counts.get(epistemic_run, 0),
+        public_score=epistemic_public,
+        steering_estimate=epistemic_steering,
+    )
+    right = arm_summary(
+        _state(exploiter_run),
+        primary_metric=metric.primary_metric,
+        metric_direction=metric.metric_direction,
+        submissions=counts.get(exploiter_run, 0),
+        public_score=exploiter_public,
+        steering_estimate=exploiter_steering,
+    )
+    report = build_arm_comparison(left, right, notes=list(note))
+    if destination is not None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(report, encoding="utf-8")
+        typer.echo(str(destination))
+    else:
+        typer.echo(report)
+
+
+@run_app.command("finalize")
+def run_finalize(
+    run_id: str = typer.Option(..., "--run-id"),
+    note: str = typer.Option(..., "--note", help="why the run is stopping and what it is submitting"),
+    artifact: list[str] = typer.Option([], "--artifact", help="path of a final artifact, repeatable"),
+) -> None:
+    """Close the run and record its final answer.
+
+    A final submission is not an experiment and must not be selected as one: it buys no information
+    and costs the most, so a pragmatic selector rejects it. This records it as a finalization
+    instead, which is what `FINALIZING` was always for.
+    """
+    try:
+        payload = _controller().finalize(run_id, artifacts=artifact, note=note)
+    except (ValueError, LoopStateError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(payload)

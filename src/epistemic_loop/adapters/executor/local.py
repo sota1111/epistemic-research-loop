@@ -33,11 +33,17 @@ class LocalExecutor(ExecutorAdapter):
         return self.result_root / request.run_id / request.experiment_id / "result.json"
 
     def submit(self, request: ExperimentRequest) -> ExperimentResult:
-        arguments = shlex.split(request.command)
-        if not arguments or Path(arguments[0]).name not in self.command_allowlist:
-            raise PermissionError(f"command is not allowlisted: {arguments[0] if arguments else ''}")
         output_root = self._result_path(request).parent
         output_root.mkdir(parents=True, exist_ok=True)
+        # The proposal is written before the output directory is known, so the command has to be
+        # able to name it symbolically. Without this the only way to pass `--output` is to guess a
+        # path, and an experiment that runs but writes somewhere else is scored as a failure.
+        command = request.command.replace("${ERL_OUTPUT_DIR}", str(output_root)).replace(
+            "$ERL_OUTPUT_DIR", str(output_root)
+        )
+        arguments = shlex.split(command)
+        if not arguments or Path(arguments[0]).name not in self.command_allowlist:
+            raise PermissionError(f"command is not allowlisted: {arguments[0] if arguments else ''}")
         environment = {
             "PATH": os.environ.get("PATH", ""),
             "LANG": os.environ.get("LANG", "C.UTF-8"),
@@ -81,6 +87,14 @@ class LocalExecutor(ExecutorAdapter):
         if not isinstance(metrics, dict):
             metrics = {}
             failure = FailureClass.IMPLEMENTATION
+        # A failure class is a category; the next proposal needs the sentence. Without it the loop
+        # can only learn "that design did not run", and re-proposes the same invalid argument.
+        excerpt = None
+        if failure is not None:
+            tail = (stderr or stdout or "").strip().splitlines()[-12:]
+            excerpt = "\n".join(tail)[-2000:] or None
+            if missing:
+                excerpt = f"missing required outputs: {missing}\n{excerpt or ''}".strip()[:2000]
         result = ExperimentResult(
             experiment_id=request.experiment_id,
             run_id=request.run_id,
@@ -96,6 +110,7 @@ class LocalExecutor(ExecutorAdapter):
                 str(output_root / name) for name in request.required_outputs if (output_root / name).is_file()
             ],
             runtime={"wall_seconds": wall},
+            failure_excerpt=excerpt,
         )
         self._result_path(request).write_text(result.model_dump_json(indent=2), encoding="utf-8")
         return result

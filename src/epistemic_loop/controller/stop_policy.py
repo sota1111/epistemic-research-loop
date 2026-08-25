@@ -19,6 +19,7 @@ def should_stop(
     maximum_candidate_utility: float | None,
     minimum_utility: float,
     rounds_without_information: int = 0,
+    max_rounds_without_information: int = 3,
     validation_stable: bool = True,
     holdout_violation: bool = False,
     rule_violation: bool = False,
@@ -28,14 +29,16 @@ def should_stop(
     blocked = False
     if usage.experiments >= budget.max_experiments:
         reasons.append("experiment budget exhausted")
-    if usage.cpu_hours >= budget.max_cpu_hours:
+    # A budget of zero means the run does not use that resource. Reading it as "exhausted" stops
+    # every CPU-only run on its first round for having consumed no GPU at all.
+    if budget.max_cpu_hours and usage.cpu_hours >= budget.max_cpu_hours:
         reasons.append("CPU budget exhausted")
-    if usage.gpu_hours >= budget.max_gpu_hours:
+    if budget.max_gpu_hours and usage.gpu_hours >= budget.max_gpu_hours:
         reasons.append("GPU budget exhausted")
     if maximum_candidate_utility is not None and maximum_candidate_utility < minimum_utility:
         reasons.append("maximum candidate utility is below threshold")
-    if rounds_without_information >= 3:
-        reasons.append("three rounds produced no new information")
+    if rounds_without_information >= max_rounds_without_information:
+        reasons.append(f"{rounds_without_information} rounds produced no new information")
     if not validation_stable:
         reasons.append("validation scheme is unstable")
         blocked = True

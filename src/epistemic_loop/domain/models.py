@@ -40,6 +40,8 @@ class Budget(DomainModel):
     max_llm_tokens: int = Field(default=2_000_000, ge=0)
     max_cost: float = Field(default=0, ge=0, description="0 means no monetary cap")
     max_final_submissions: int = Field(default=1, ge=0)
+    #: Kaggle's per-competition daily submission allowance; the loop itself never spends it.
+    max_daily_submissions: int = Field(default=5, ge=0)
 
 
 class BudgetUsage(DomainModel):
@@ -89,6 +91,11 @@ class CompetitionWorldModel(DomainModel):
     error_structure: list[str] = Field(default_factory=list)
     compute_constraints: list[str] = Field(default_factory=list)
     unresolved_questions: list[str] = Field(default_factory=list)
+    #: What the run actually has to work with: where the data is, what runner already exists, what
+    #: columns there are. The rest of this model is what the run *believes*; this is what it *has*.
+    #: An experiment designer without it invents entry points and data paths, and the round is spent
+    #: discovering that they do not exist.
+    environment: dict[str, Any] = Field(default_factory=dict)
     version: int = Field(default=1, ge=1)
 
 
@@ -112,6 +119,38 @@ class PredictedOutcome(DomainModel):
     expected_range: dict[str, float] | None = None
     condition: str = Field(min_length=1)
     discriminates_from: list[str] = Field(default_factory=list)
+
+
+class OutcomeLikelihood(DomainModel):
+    """A preregistered observable outcome under a binary research hypothesis."""
+
+    label: str = Field(min_length=1)
+    probability_if_true: float = Field(ge=0, le=1)
+    probability_if_false: float = Field(ge=0, le=1)
+
+
+class HypothesisOutcomeForecast(DomainModel):
+    """Likelihood model used to calculate information gain without an LLM self-score.
+
+    The hypothesis may still be proposed by a model, but the two likelihood vectors are fixed before
+    execution. Selection combines them with the hypothesis probability from the event log.
+    """
+
+    hypothesis_id: str = Field(min_length=1)
+    outcomes: list[OutcomeLikelihood] = Field(min_length=2)
+    decisions_affected: list[str] = Field(min_length=1)
+    measurement_notes: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_probability_vectors(self) -> HypothesisOutcomeForecast:
+        labels = [item.label for item in self.outcomes]
+        if len(labels) != len(set(labels)):
+            raise ValueError("outcome likelihood labels must be unique")
+        true_total = sum(item.probability_if_true for item in self.outcomes)
+        false_total = sum(item.probability_if_false for item in self.outcomes)
+        if abs(true_total - 1.0) > 1e-6 or abs(false_total - 1.0) > 1e-6:
+            raise ValueError("outcome likelihood probabilities must sum to 1 under true and false")
+        return self
 
 
 class Hypothesis(DomainModel):
@@ -146,7 +185,18 @@ class Hypothesis(DomainModel):
 
 
 class ScoreEstimate(DomainModel):
-    mean_gain: float = 0
+    #: Expected *improvement* on the run's primary metric. Positive always means better, whichever
+    #: way the metric runs: for a metric that is minimised, an expected drop of 0.4 is `+0.4`. This
+    #: is stated on the field because the field's JSON Schema is what the proposing model reads,
+    #: and a proposal that reports a signed metric delta instead inverts its own utility -- the
+    #: selector maximises expected gain and would then prefer the designs expected to do worst.
+    mean_gain: float = Field(
+        default=0,
+        description=(
+            "Expected improvement on the primary metric. Positive is always better. If the metric "
+            "is minimised, report the expected reduction as a positive number."
+        ),
+    )
     uncertainty: float = Field(default=0, ge=0)
     fold_std: float = Field(default=0, ge=0)
     seed_std: float = Field(default=0, ge=0)
@@ -217,6 +267,10 @@ class ExperimentProposal(DomainModel):
     seeds: list[int] = Field(min_length=1)
     metrics: list[str] = Field(min_length=1)
     predicted_outcomes: list[PredictedOutcome] = Field(min_length=1)
+    #: Optional during the v1 -> v2 migration. New proposals should populate it; when present,
+    #: selection computes mutual information from the current belief instead of trusting the
+    #: proposal's 0--4 epistemic rubric.
+    outcome_forecasts: list[HypothesisOutcomeForecast] = Field(default_factory=list)
     decision_rule: str = Field(min_length=1)
     expected_score_gain: ScoreEstimate
     epistemic_assessment: EpistemicAssessment
@@ -225,8 +279,30 @@ class ExperimentProposal(DomainModel):
     estimated_cost: CostEstimate
     holdout_access: HoldoutAccess = HoldoutAccess.NONE
     contamination_risk: Risk = Risk.LOW
-    implementation_request: dict[str, Any]
-    required_artifacts: list[str] = Field(min_length=1)
+    implementation_request: dict[str, Any] = Field(
+        description=(
+            "How the experiment is to be carried out. What is required depends on the executor, and "
+            "a proposal missing it is rejected by the hard gate before it is scored:\n"
+            "- a shell executor requires `command`: the exact, runnable invocation, including every "
+            "flag that fixes the split, seeds, features and output directory. It must be "
+            "reproducible from this string alone.\n"
+            "- an executor that directs a separate repository requires `brief`, an object with "
+            "`title`, `objective`, `approach` and `verification` written in that repository's terms.\n"
+            "Optional for both: `objective` (a one-line restatement), `container_image`, "
+            "`resources` ({cpu, memory_gb, gpu, timeout_seconds}), `dataset_mounts` (a list of "
+            "names), and `network_policy`, which must be exactly one of `disabled`, "
+            "`source_policy_proxy` or `enabled` -- any other value is rejected."
+        ),
+    )
+    required_artifacts: list[str] = Field(
+        min_length=1,
+        description=(
+            "File names the experiment must leave in its output directory, relative and without "
+            "directories -- for example `metrics.json`. These are checked for existence after the "
+            "run, so a description of what a file should contain is not one of these; it belongs in "
+            "the protocol. `metrics.json` is expected by every executor."
+        ),
+    )
     lineage: str = Field(default="default", min_length=1)
     source_refs: list[SourceRef] = Field(default_factory=list)
     status: ExperimentStatus = ExperimentStatus.PROPOSED
@@ -270,6 +346,7 @@ class Observation(DomainModel):
     runtime: dict[str, float] = Field(default_factory=dict)
     exit_status: str
     failure_class: FailureClass | None = None
+    failure_excerpt: str | None = Field(default=None, max_length=2000)
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -283,6 +360,8 @@ class FalsificationRecord(DomainModel):
     contradicting_predictions_matched: list[str]
     disposition: FalsificationDisposition
     recommended_next_test: str | None = None
+    #: Rival claims the same evidence would also explain, kept so the next round can test them.
+    alternative_claims: list[str] = Field(default_factory=list)
 
 
 class BeliefUpdate(DomainModel):
@@ -347,13 +426,21 @@ class ExperimentRequest(DomainModel):
     base_commit_sha: str = Field(min_length=1)
     implementation_mode: str = Field(min_length=1)
     objective: str = Field(min_length=1)
-    command: str = Field(min_length=1)
+    #: What a shell executor runs. Empty for an executor that instructs a developer instead, which
+    #: is why this is not required at the model level: whether a command is needed is the
+    #: executor's contract, not a property every request has. `build_experiment_request` enforces
+    #: whichever contract is actually configured.
+    command: str = ""
     container_image: str = Field(min_length=1)
     dataset_mounts: list[DatasetMount]
     resources: ResourceRequest
     seeds: list[int] = Field(min_length=1)
     required_outputs: list[str] = Field(min_length=1)
     network_policy: Literal["disabled", "source_policy_proxy", "enabled"] = "disabled"
+    #: Human-readable task description for an executor whose worker develops rather than executes.
+    #: `command` tells a shell what to run; this tells a developer what to build and what counts as
+    #: done, in the target repository's own terms.
+    brief: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_execution_contract(self) -> ExperimentRequest:
@@ -385,3 +472,11 @@ class ExperimentResult(DomainModel):
     artifact_refs: list[str] = Field(default_factory=list)
     runtime: dict[str, float] = Field(default_factory=dict)
     external_ref: str | None = None
+    failure_excerpt: str | None = Field(
+        default=None,
+        max_length=2000,
+        description=(
+            "Why the run failed, in the words of whatever failed. A failure class alone tells the "
+            "next proposal that a design did not run; it does not tell it what to change."
+        ),
+    )

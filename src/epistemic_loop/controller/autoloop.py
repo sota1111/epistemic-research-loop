@@ -9,15 +9,18 @@ from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
 from epistemic_loop.agents.auto import AutomaticProposer
 from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpret_evidence
 from epistemic_loop.agents.falsifier import Falsifier
+from epistemic_loop.agents.research_synthesizer import derive_brief
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.config import AppConfig
-from epistemic_loop.controller.phase_policy import PhaseEvidence
+from epistemic_loop.controller.execution_contract import build_experiment_request
+from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.research_graph import ResearchController
 from epistemic_loop.controller.stop_policy import should_stop
 from epistemic_loop.domain.enums import ExperimentStatus, LoopState, Phase
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
+    ExperimentRequest,
     ExperimentResult,
     FalsificationRecord,
     Observation,
@@ -42,6 +45,8 @@ class RoundOutcome:
     beliefs: list[str] = field(default_factory=list)
     pending: list[str] = field(default_factory=list)
     phase: str = Phase.DISCOVERY.value
+    brief_created: bool = False
+    replanned: str | None = None
     stop_reasons: list[str] = field(default_factory=list)
 
 
@@ -72,6 +77,7 @@ class AutonomousLoop:
         self.home = Path(home)
         self.sleep = sleep
         self.now = now
+        self._quiet_rounds = 0
 
     # ------------------------------------------------------------- helpers
 
@@ -85,14 +91,42 @@ class AutonomousLoop:
             raise ValueError(f"run {run_id} has no world model; start the run first")
         return CompetitionWorldModel.model_validate(payload)
 
-    def _await_result(self, run_id: str, experiment_id: str, settings: LoopSettings) -> ExperimentResult | None:
-        source = result_path(self.home / self.config.executor.result_root, run_id, experiment_id)
+    def _request_for(self, run_id: str, experiment_id: str) -> ExperimentRequest:
+        """Rebuild the worker request for an experiment already in flight.
+
+        A round can be interrupted -- the process dies, the machine reboots -- and the next one has
+        to be able to ask about work it did not itself dispatch. Everything the request needs is in
+        the event log, including the attempt number, which matters because the idempotency key
+        contains it and an executor that files a ticket uses that key to find the ticket it already
+        filed. Rebuilding at the wrong attempt opens a second ticket for the same experiment.
+        """
+        state = self.controller.state(run_id)
+        proposal = state.proposals[experiment_id]
+        return build_experiment_request(
+            state.run,
+            proposal,
+            attempt=state.experiment_attempts.get(experiment_id, 1),
+            container_image=self.config.executor.container_image,
+            dataset_mounts=self.config.executor.dataset_mounts,
+            network_policy=self.config.contamination.worker_network,
+            contract=self.executor.contract,
+        )
+
+    def _await_result(self, request: ExperimentRequest, settings: LoopSettings) -> ExperimentResult | None:
+        """Poll the executor until it has a terminal result, or the round gives up waiting.
+
+        Asking the executor rather than reading a fixed path is what makes this work for more than
+        one kind of worker. The local executor keeps its results in that path; an executor that
+        drives a separate repository keeps them in that repository's own convention, and one that
+        files a ticket has to consult the tracker to know whether the work ended. Hard-coding the
+        local layout here meant every non-local executor timed out on every round, which is why the
+        Linear round trip had never once closed under `run loop`.
+        """
         deadline = self.now() + settings.timeout_seconds
         while True:
-            if source.is_file():
-                result = ExperimentResult.model_validate_json(source.read_text(encoding="utf-8"))
-                if result.status in {"completed", "failed"}:
-                    return result
+            result = self.executor.result(request)
+            if result is not None and result.status in {"completed", "failed"}:
+                return result
             if self.now() >= deadline:
                 return None
             self.sleep(settings.poll_seconds)
@@ -116,7 +150,7 @@ class AutonomousLoop:
 
         assessments = []
         for hypothesis, linked, proposal in pairs:
-            assessment = self.proposer.assess(run_id, hypothesis, linked, proposal)
+            assessment = self.proposer.assess(run_id, hypothesis, linked, proposal, state)
             record: FalsificationRecord = Falsifier().record(
                 hypothesis,
                 linked,
@@ -125,6 +159,7 @@ class AutonomousLoop:
                 alternative_explanation=assessment.alternative_explanation,
                 confounders_checked=assessment.confounders_checked,
                 recommended_next_test=assessment.recommended_next_test,
+                alternative_claims=assessment.alternative_claims,
             )
             self.controller.record_falsification(run_id, record)
             assessments.append((hypothesis, record, assessment, [item.id for item in linked]))
@@ -157,7 +192,7 @@ class AutonomousLoop:
             )
         running = [item.id for item in self.controller.state(run_id).experiments_with_status(ExperimentStatus.RUNNING)]
         for experiment_id in running:
-            result = self._await_result(run_id, experiment_id, settings)
+            result = self._await_result(self._request_for(run_id, experiment_id), settings)
             if result is None:
                 outcome.pending.append(experiment_id)
                 continue
@@ -192,7 +227,15 @@ class AutonomousLoop:
             state = self.controller.state(run_id)
 
         if state.loop_state == LoopState.PLANNING:
-            outcome.experiments = self.controller.record_proposals(run_id, self.proposer.experiments(run_id, state))
+            outcome.experiments = self.controller.record_proposals(
+                run_id,
+                self.proposer.experiments(
+                    run_id,
+                    state,
+                    tuple(self.config.executor.command_allowlist),
+                    self.executor.contract,
+                ),
+            )
             state = self.controller.state(run_id)
 
         utilities: list[float] = []
@@ -204,6 +247,10 @@ class AutonomousLoop:
                 size=settings.portfolio_size,
                 minimum_utility=self.config.selection.minimum_utility,
                 source_policy_strict=self.config.contamination.require_source_provenance,
+                max_validation_reuse=self.config.loop.max_validation_reuse,
+                max_consecutive_optimization=self.config.loop.max_consecutive_optimization_experiments,
+                command_allowlist=tuple(self.config.executor.command_allowlist),
+                execution_contract=self.executor.contract,
             )
             outcome.selected = list(decision.selected_experiment_ids)
             utilities = [
@@ -211,6 +258,12 @@ class AutonomousLoop:
                 for value in decision.utility_breakdown.values()
                 if isinstance(value, dict) and "total" in value
             ]
+            if not outcome.selected:
+                # Nothing survived the gates or the utility floor. Returning to planning lets the
+                # next round propose different work; staying in `selecting` would stall the run.
+                outcome.replanned = "no candidate passed selection"
+                self.controller.replan(run_id, outcome.replanned)
+                return self._finish(run_id, outcome, utilities)
             state = self.controller.state(run_id)
 
         if state.loop_state in {LoopState.SELECTING, LoopState.EXECUTING}:
@@ -224,25 +277,59 @@ class AutonomousLoop:
                 state = self.controller.state(run_id)
 
         if state.loop_state == LoopState.UPDATING:
-            outcome.phase = self.controller.advance_phase(run_id, PhaseEvidence()).value
+            evidence = derive_phase_evidence(
+                state,
+                instability_threshold=self.config.loop.anomaly_instability_threshold,
+            )
+            outcome.phase = self.controller.advance_phase(run_id, evidence).value
         else:
             outcome.phase = state.phase.value
 
+        outcome.brief_created = self._handoff_if_due(run_id)
+        return self._finish(run_id, outcome, utilities)
+
+    def _handoff_if_due(self, run_id: str) -> bool:
+        """Publish the research brief the first time the run reaches exploitation.
+
+        `advance_phase` parks the run in `phase_decision` when exploitation is decided and no brief
+        exists, so this is the step that actually opens exploitation — and it is derived from the
+        event log, never asked of the model.
+        """
+        state = self.controller.state(run_id)
+        if state.phase != Phase.EXPLOITATION or state.brief is not None:
+            return False
+        if state.loop_state != LoopState.PHASE_DECISION:
+            return False
+        brief = derive_brief(state, primary_metric=self.config.competition.primary_metric)
+        self.controller.handoff_to_exploiter(run_id, brief)
+        return True
+
+    def _finish(self, run_id: str, outcome: RoundOutcome, utilities: list[float]) -> RoundOutcome:
         final = self.controller.state(run_id)
+        outcome.phase = final.phase.value
         stop = should_stop(
             final.run.budgets,
             final.usage,
             maximum_candidate_utility=max(utilities) if utilities else None,
             minimum_utility=self.config.selection.minimum_utility,
+            rounds_without_information=self._quiet_rounds,
+            max_rounds_without_information=self.config.loop.max_rounds_without_information,
             holdout_violation=final.violations > 0,
         )
         outcome.stop_reasons = list(stop.reasons)
         return outcome
 
     def run(self, run_id: str, settings: LoopSettings) -> list[RoundOutcome]:
+        """Run rounds until the budget, the stop policy, or a stuck worker ends the run.
+
+        A round that produced no observation is counted, not ignored: three of them in a row means
+        the loop is proposing work the gates keep refusing, and spinning is worse than stopping.
+        """
         outcomes: list[RoundOutcome] = []
+        self._quiet_rounds = 0
         for index in range(1, settings.rounds + 1):
             outcome = self.run_round(run_id, index, settings)
+            self._quiet_rounds = 0 if outcome.observations else self._quiet_rounds + 1
             outcomes.append(outcome)
             if outcome.stop_reasons or outcome.pending:
                 break

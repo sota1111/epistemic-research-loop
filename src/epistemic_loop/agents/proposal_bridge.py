@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from pydantic import Field
 
+from epistemic_loop.adapters.executor.base import ExecutionContract
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.domain.enums import VerifierResult
 from epistemic_loop.domain.models import (
@@ -37,6 +39,8 @@ class FalsificationAssessment(DomainModel):
     alternative_explanation: str
     confounders_checked: list[str] = Field(default_factory=list)
     recommended_next_test: str | None = None
+    #: Claims that would explain the same evidence, phrased so the next round can test them.
+    alternative_claims: list[str] = Field(default_factory=list)
     verifier_result: VerifierResult = VerifierResult.PASS
     evidence_summary: str
 
@@ -93,18 +97,31 @@ class ProposalBridge:
                 "existing_hypotheses": [
                     {
                         "id": item.id,
+                        "type": item.type.value,
                         "claim": item.claim,
                         "status": item.status.value,
                         "current_confidence": item.current_confidence,
+                        "alternative_hypothesis_ids": list(item.alternative_hypothesis_ids),
                     }
                     for item in state.hypotheses.values()
                 ],
+                # Refutations are the run's memory. Without them the generator re-proposes claims the
+                # evidence already weakened and never states the alternative that beat them.
+                "observations": state.observation_digest(),
+                "falsification_history": state.falsification_digest(),
+                "failed_experiments": state.failed_experiments(),
                 "remaining_budget": state.run.budgets.model_dump(mode="json"),
             },
             json_schema=HypothesisBatch.model_json_schema(),
         )
 
-    def experiment_request(self, run_id: str, state: RunState) -> ProposalRequest:
+    def experiment_request(
+        self,
+        run_id: str,
+        state: RunState,
+        command_allowlist: Sequence[str] = (),
+        execution_contract: ExecutionContract | None = None,
+    ) -> ProposalRequest:
         return ProposalRequest(
             request_id=f"ED-{uuid.uuid4().hex[:12]}",
             run_id=run_id,
@@ -114,8 +131,30 @@ class ProposalBridge:
             context={
                 "run_id": run_id,
                 "phase": state.phase.value,
+                # The designer has to write something runnable, so it needs the competition's own
+                # description of what exists: the metric, the data, the compute limits, and the
+                # solver interface. Without it a designer invents entry points that are not there.
+                "world_model": state.world_model.model_dump(mode="json") if state.world_model else {},
                 "hypotheses": [item.model_dump(mode="json") for item in state.hypotheses.values()],
                 "already_run_fingerprints": sorted(state.settled_fingerprints()),
+                # The measurements themselves, not only what the verdicts said about them. A design
+                # that reacts to a number nobody wrote into a verdict is impossible without this.
+                "observations": state.observation_digest(),
+                "falsification_history": state.falsification_digest(),
+                "failed_experiments": state.failed_experiments(),
+                # Identifiers are the proposer's to choose, so it has to know which are taken. A
+                # reused one is dropped, and a round that only reuses identifiers produces nothing.
+                "used_experiment_ids": sorted(state.proposals),
+                # A split that has answered its budget of selecting queries must be rotated, so the
+                # designer needs to see what has already been spent against each one.
+                "validation_reuse": state.validation_reuse(),
+                # What the executor will actually accept. A command outside this is refused by
+                # the gate, so telling the designer costs nothing and saves the round.
+                "allowed_command_prefixes": list(command_allowlist),
+                # *How* this run's work is carried out at all -- by a shell, or by a developer
+                # reading a brief. A designer that assumes the wrong one writes a proposal the
+                # executor cannot accept, and finds out after gating and selection have passed.
+                "execution_contract": execution_contract.describe() if execution_contract else {},
                 "holdout_policy": state.run.holdout_policy.model_dump(mode="json"),
             },
             json_schema=ExperimentBatch.model_json_schema(),
@@ -127,6 +166,7 @@ class ProposalBridge:
         hypothesis: Hypothesis,
         observations: list[Observation],
         proposal: ExperimentProposal | None = None,
+        state: RunState | None = None,
     ) -> ProposalRequest:
         return ProposalRequest(
             request_id=f"FA-{uuid.uuid4().hex[:12]}",
@@ -137,6 +177,9 @@ class ProposalBridge:
             context={
                 "run_id": run_id,
                 "hypothesis": hypothesis.model_dump(mode="json"),
+                # Earlier measurements, so a verdict can be checked against what the run already
+                # saw instead of being formed from one result in isolation.
+                "prior_observations": state.observation_digest(limit=6) if state is not None else [],
                 "decision_rule": proposal.decision_rule if proposal else None,
                 "predicted_outcomes": (
                     [item.model_dump(mode="json") for item in proposal.predicted_outcomes] if proposal else []
@@ -163,8 +206,14 @@ class ProposalBridge:
     ) -> Path:
         return self.write(self.hypothesis_request(run_id, world_model, state))
 
-    def request_experiments(self, run_id: str, state: RunState) -> Path:
-        return self.write(self.experiment_request(run_id, state))
+    def request_experiments(
+        self,
+        run_id: str,
+        state: RunState,
+        command_allowlist: Sequence[str] = (),
+        execution_contract: ExecutionContract | None = None,
+    ) -> Path:
+        return self.write(self.experiment_request(run_id, state, command_allowlist, execution_contract))
 
     @staticmethod
     def load_hypotheses(path: str | Path) -> list[Hypothesis]:

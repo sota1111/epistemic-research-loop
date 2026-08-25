@@ -17,6 +17,7 @@ class Falsifier:
         alternative_explanation: str,
         confounders_checked: list[str],
         recommended_next_test: str | None = None,
+        alternative_claims: list[str] | None = None,
     ) -> FalsificationRecord:
         if not observations:
             raise ValueError("falsification requires at least one observation")
@@ -38,4 +39,5 @@ class Falsifier:
             contradicting_predictions_matched=contradicting_predictions,
             disposition=disposition,
             recommended_next_test=recommended_next_test,
+            alternative_claims=list(alternative_claims or []),
         )

@@ -138,6 +138,76 @@
       "title": "HoldoutAccess",
       "type": "string"
     },
+    "HypothesisOutcomeForecast": {
+      "additionalProperties": false,
+      "description": "Likelihood model used to calculate information gain without an LLM self-score.\n\nThe hypothesis may still be proposed by a model, but the two likelihood vectors are fixed before\nexecution. Selection combines them with the hypothesis probability from the event log.",
+      "properties": {
+        "decisions_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decisions Affected",
+          "type": "array"
+        },
+        "hypothesis_id": {
+          "minLength": 1,
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "measurement_notes": {
+          "minLength": 1,
+          "title": "Measurement Notes",
+          "type": "string"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/OutcomeLikelihood"
+          },
+          "minItems": 2,
+          "title": "Outcomes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "outcomes",
+        "decisions_affected",
+        "measurement_notes"
+      ],
+      "title": "HypothesisOutcomeForecast",
+      "type": "object"
+    },
+    "OutcomeLikelihood": {
+      "additionalProperties": false,
+      "description": "A preregistered observable outcome under a binary research hypothesis.",
+      "properties": {
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "probability_if_false": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Probability If False",
+          "type": "number"
+        },
+        "probability_if_true": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Probability If True",
+          "type": "number"
+        }
+      },
+      "required": [
+        "label",
+        "probability_if_true",
+        "probability_if_false"
+      ],
+      "title": "OutcomeLikelihood",
+      "type": "object"
+    },
     "PredictedOutcome": {
       "additionalProperties": false,
       "properties": {
@@ -261,6 +331,7 @@
         },
         "mean_gain": {
           "default": 0,
+          "description": "Expected improvement on the primary metric. Positive is always better. If the metric is minimised, report the expected reduction as a positive number.",
           "title": "Mean Gain",
           "type": "number"
         },
@@ -421,6 +492,7 @@
     },
     "implementation_request": {
       "additionalProperties": true,
+      "description": "How the experiment is to be carried out. What is required depends on the executor, and a proposal missing it is rejected by the hard gate before it is scored:\n- a shell executor requires `command`: the exact, runnable invocation, including every flag that fixes the split, seeds, features and output directory. It must be reproducible from this string alone.\n- an executor that directs a separate repository requires `brief`, an object with `title`, `objective`, `approach` and `verification` written in that repository's terms.\nOptional for both: `objective` (a one-line restatement), `container_image`, `resources` ({cpu, memory_gb, gpu, timeout_seconds}), `dataset_mounts` (a list of names), and `network_policy`, which must be exactly one of `disabled`, `source_policy_proxy` or `enabled` -- any other value is rejected.",
       "title": "Implementation Request",
       "type": "object"
     },
@@ -456,6 +528,13 @@
       "title": "Novelty Score",
       "type": "number"
     },
+    "outcome_forecasts": {
+      "items": {
+        "$ref": "#/$defs/HypothesisOutcomeForecast"
+      },
+      "title": "Outcome Forecasts",
+      "type": "array"
+    },
     "predicted_outcomes": {
       "items": {
         "$ref": "#/$defs/PredictedOutcome"
@@ -470,6 +549,7 @@
       "type": "string"
     },
     "required_artifacts": {
+      "description": "File names the experiment must leave in its output directory, relative and without directories -- for example `metrics.json`. These are checked for existence after the run, so a description of what a file should contain is not one of these; it belongs in the protocol. `metrics.json` is expected by every executor.",
       "items": {
         "type": "string"
       },

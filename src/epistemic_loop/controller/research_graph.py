@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.adapters.executor.base import ExecutionContract, ExecutorAdapter
 from epistemic_loop.agents.experiment_designer import validate_preregistration
 from epistemic_loop.agents.hypothesis_generator import validate_generated_hypotheses
 from epistemic_loop.config import AppConfig, PhaseWeights, config_hash
@@ -36,13 +36,14 @@ from epistemic_loop.domain.models import (
     FalsificationRecord,
     Hypothesis,
     Observation,
+    ResearchBrief,
     ResearchRun,
 )
 from epistemic_loop.holdout.violations import HoldoutViolation
 from epistemic_loop.scoring.selector import ScoredCandidate, evaluate_candidates, select_portfolio
 from epistemic_loop.storage.repositories import ResearchRepository
 
-POLICY_VERSION = "selection/v1"
+POLICY_VERSION = "selection/v2"
 SIDECAR_METRICS = {
     "fold_metrics": "fold_metrics.json",
     "seed_metrics": "seed_metrics.json",
@@ -144,16 +145,26 @@ class ResearchController:
 
     def record_proposals(self, run_id: str, proposals: Sequence[ExperimentProposal]) -> list[str]:
         state = self.state(run_id)
-        incoming = list(proposals)
-        for proposal in incoming:
+        # A reused identifier is a naming accident, not a research error. Failing the batch loses the
+        # designs that were fine alongside it and ends the round, which is how the eighth unattended
+        # run stopped at round two. Drop the collision, keep the rest, and fail only if nothing is
+        # left -- there is no safe way to record two different designs under one identifier.
+        recorded: list[ExperimentProposal] = []
+        collisions: list[str] = []
+        for proposal in proposals:
             if proposal.run_id != run_id:
                 raise ValueError(f"experiment {proposal.id} belongs to run {proposal.run_id}")
-            if proposal.id in state.proposals:
-                raise ValueError(f"experiment {proposal.id} was already proposed")
+            if proposal.id in state.proposals or any(proposal.id == item.id for item in recorded):
+                collisions.append(proposal.id)
+                continue
             validate_preregistration(proposal)
+            recorded.append(proposal)
+        if not recorded:
+            raise ValueError(f"every proposed experiment reuses an existing identifier: {collisions}")
+        for proposal in recorded:
             self.repository.append(run_id, EventType.EXPERIMENT_PROPOSED, proposal)
         self._advance(run_id, state.loop_state, LoopState.SCORING, {LoopState.PLANNING})
-        return [item.id for item in incoming]
+        return [item.id for item in recorded]
 
     def select_experiments(
         self,
@@ -165,13 +176,35 @@ class ResearchController:
         minimum_utility: float = float("-inf"),
         similarity_penalty: float = 0.25,
         source_policy_strict: bool = True,
+        max_validation_reuse: int = 0,
+        max_consecutive_optimization: int = 3,
+        command_allowlist: tuple[str, ...] = (),
+        execution_contract: ExecutionContract | None = None,
     ) -> DecisionRecord:
         state = self.state(run_id)
         candidates = state.open_candidates()
         if not candidates:
             raise ValueError("no proposed experiments are available for selection")
+        if state.loop_state == LoopState.PLANNING:
+            # A round with nothing new to propose is legitimate: a preregistered candidate set is
+            # meant to be worked through one experiment at a time, and forcing a fresh proposal each
+            # round just to reach `scoring` would make the run invent work it does not want. Entering
+            # `scoring` from `planning` is only allowed while candidates are actually standing.
+            self._advance(run_id, LoopState.PLANNING, LoopState.SCORING, {LoopState.PLANNING})
+            state = self.state(run_id)
         scored = evaluate_candidates(
-            candidates, state.gate_context(source_policy_strict=source_policy_strict), weights, cost_lambda
+            candidates,
+            state.gate_context(
+                source_policy_strict=source_policy_strict,
+                max_validation_reuse=max_validation_reuse,
+                max_consecutive_optimization=max_consecutive_optimization,
+                command_allowlist=command_allowlist,
+                required_request_fields=execution_contract.required_fields if execution_contract else (),
+                required_brief_fields=execution_contract.required_brief_fields if execution_contract else (),
+            ),
+            weights,
+            cost_lambda,
+            beliefs={identifier: item.current_confidence for identifier, item in state.hypotheses.items()},
         )
         selected = select_portfolio(
             scored,
@@ -213,6 +246,15 @@ class ResearchController:
         retryable = status == ExperimentStatus.RUNNING and attempt > 1
         if status != ExperimentStatus.SELECTED and not retryable:
             raise LoopStateError(f"experiment {experiment_id} is {status} and may not be dispatched")
+        if state.loop_state == LoopState.PLANNING and status == ExperimentStatus.SELECTED:
+            # A selection is a commitment the run already recorded, with its preregistration
+            # already in the log. A round that advanced past it without dispatching leaves it
+            # stranded, and refusing to honour it because the loop has since reached `planning`
+            # discards a decision rather than protecting one. Re-entering `selecting` is safe
+            # precisely because the selection event -- and everything it fixed -- already exists.
+            self._advance(run_id, LoopState.PLANNING, LoopState.SCORING, {LoopState.PLANNING})
+            self._advance(run_id, LoopState.SCORING, LoopState.SELECTING, {LoopState.SCORING})
+            state = self.state(run_id)
         request = build_experiment_request(
             state.run,
             proposal,
@@ -220,7 +262,13 @@ class ResearchController:
             container_image=container_image,
             dataset_mounts=dataset_mounts,
             network_policy=network_policy,
+            contract=executor.contract,
         )
+        # Enter `executing` before recording the attempt. Recording first would mark the experiment
+        # running even when the transition is refused, burning it: the status check above then only
+        # allows a retry under a new attempt number, so a call that never reached the executor would
+        # cost a real attempt every time it was repeated.
+        self._advance(run_id, state.loop_state, LoopState.EXECUTING, {LoopState.SELECTING})
         self.repository.append(
             run_id,
             EventType.EXPERIMENT_STARTED,
@@ -231,7 +279,6 @@ class ResearchController:
                 "attempt": attempt,
             },
         )
-        self._advance(run_id, state.loop_state, LoopState.EXECUTING, {LoopState.SELECTING})
         return request, executor.submit(request)
 
     def import_result(
@@ -245,6 +292,10 @@ class ResearchController:
         _require_experiment(state, result.experiment_id)
         if result.status in {"queued", "running"}:
             return None
+        if state.experiment_statuses.get(result.experiment_id) != ExperimentStatus.RUNNING:
+            raise LoopStateError(
+                f"experiment {result.experiment_id} was never dispatched; there is no result to import"
+            )
         completed = result.status == "completed"
         self.repository.append(
             run_id,
@@ -253,7 +304,13 @@ class ResearchController:
         )
         observation = _observation_from_result(result, artifact_root)
         self.repository.append(run_id, EventType.OBSERVATION_RECORDED, observation)
-        self._advance(run_id, state.loop_state, LoopState.PARSING, {LoopState.EXECUTING})
+        if state.loop_state == LoopState.EXECUTING:
+            self._advance(run_id, state.loop_state, LoopState.PARSING, {LoopState.EXECUTING})
+        # Otherwise the result arrived late: the round timed out and moved on, so the loop is no
+        # longer in `executing`. Forcing it back into `parsing` would corrupt whatever round it is
+        # in now, but discarding the observation would lose evidence the run paid for -- and with an
+        # asynchronous worker fleet, "slower than the caller's timeout" is ordinary, not exceptional.
+        # The observation is recorded unjudged, so the next round's falsification step picks it up.
         return observation
 
     def record_falsification(self, run_id: str, record: FalsificationRecord) -> FalsificationRecord:
@@ -302,9 +359,81 @@ class ResearchController:
         self._advance(run_id, state.loop_state, LoopState.PHASE_DECISION, {LoopState.UPDATING})
         if decided != state.phase:
             self.repository.append(run_id, EventType.PHASE_CHANGED, {"phase": decided.value})
+        if next_state is None and decided == Phase.EXPLOITATION and state.brief is None:
+            # Exploitation may not begin before the research brief exists; the run parks in
+            # phase_decision so `handoff_to_exploiter` is the only way forward.
+            return decided
         target = next_state or (LoopState.PLANNING if state.hypotheses else LoopState.HYPOTHESIZING)
         self._advance(run_id, LoopState.PHASE_DECISION, target, {LoopState.PHASE_DECISION})
         return decided
+
+    def handoff_to_exploiter(self, run_id: str, brief: ResearchBrief) -> ResearchBrief:
+        """Publish the validated search space the exploiter is allowed to work inside.
+
+        The hand-off is an event, not a conversation: everything the exploiter may assume is in the
+        brief, and anything absent from it was not established by this run.
+        """
+        state = self.state(run_id)
+        if state.phase != Phase.EXPLOITATION:
+            raise LoopStateError(f"run is in {state.phase.value}; the exploiter hand-off requires exploitation")
+        if brief.run_id != run_id:
+            raise ValueError(f"brief belongs to run {brief.run_id}")
+        self._advance(run_id, state.loop_state, LoopState.EXPLOITER_HANDOFF, {LoopState.PHASE_DECISION})
+        self.repository.append(run_id, EventType.RESEARCH_BRIEF_CREATED, brief)
+        self._advance(run_id, LoopState.EXPLOITER_HANDOFF, LoopState.PLANNING, {LoopState.EXPLOITER_HANDOFF})
+        return brief
+
+    def replan(self, run_id: str, reason: str) -> LoopState:
+        """Return an unproductive round to planning instead of stalling in it.
+
+        Selection can legitimately choose nothing — every candidate gated out, every utility below
+        threshold. Without this the loop would sit in `selecting` with no work to dispatch and no way
+        to propose different work, which is how an unattended run dies quietly.
+        """
+        state = self.state(run_id)
+        allowed = {LoopState.SELECTING, LoopState.EXECUTING, LoopState.PARSING}
+        if state.loop_state not in allowed:
+            raise LoopStateError(f"cannot replan from {state.loop_state.value}")
+        machine = ResearchStateMachine(state.loop_state)
+        machine.transition(LoopState.PLANNING)
+        self.repository.append(
+            run_id,
+            EventType.STATE_CHANGED,
+            {"state": LoopState.PLANNING.value, "run_status": RunStatus.RUNNING.value, "reason": reason},
+        )
+        return LoopState.PLANNING
+
+    def finalize(self, run_id: str, *, artifacts: Sequence[str], note: str) -> dict[str, Any]:
+        """Close the run and record what it is submitting as its answer.
+
+        A final submission is not an experiment. It buys no information, it is the most expensive
+        fit the run will make, and under an exploiter's pragmatic weights it scores negative utility
+        and is refused by the very selector meant to choose research. `FINALIZING` existed in the
+        state machine for exactly this and nothing ever entered it, so producing a final artifact
+        had to happen outside the loop's accounting entirely. This is the path in.
+        """
+        state = self.state(run_id)
+        allowed = {LoopState.PLANNING, LoopState.SELECTING, LoopState.PHASE_DECISION, LoopState.EXPLOITER_HANDOFF}
+        if state.loop_state not in allowed:
+            raise LoopStateError(f"cannot finalize from {state.loop_state.value}")
+        payload = {
+            "run_id": run_id,
+            "note": note,
+            "artifacts": list(artifacts),
+            "phase": state.phase.value,
+            "experiments_completed": sum(
+                status == ExperimentStatus.COMPLETED for status in state.experiment_statuses.values()
+            ),
+            "observed_runtime": state.observed_runtime(),
+        }
+        self._advance(run_id, state.loop_state, LoopState.FINALIZING, allowed)
+        self.repository.append(run_id, EventType.RUN_FINALIZED, payload)
+        self.repository.append(
+            run_id,
+            EventType.STATE_CHANGED,
+            {"state": LoopState.COMPLETED.value, "run_status": RunStatus.COMPLETED.value},
+        )
+        return payload
 
     # -------------------------------------------------------------- auditing
 
@@ -385,6 +514,7 @@ def _observation_from_result(result: ExperimentResult, artifact_root: str | Path
         runtime=dict(result.runtime),
         exit_status=result.status,
         failure_class=result.failure_class,
+        failure_excerpt=result.failure_excerpt,
         fold_metrics=_sidecar(root, SIDECAR_METRICS["fold_metrics"]),
         seed_metrics=_sidecar(root, SIDECAR_METRICS["seed_metrics"]),
         subgroup_metrics=_sidecar(root, SIDECAR_METRICS["subgroup_metrics"]),

@@ -38,6 +38,14 @@ class CompetitionObserver:
             representation_hypotheses=["baseline representation has not been challenged"],
             error_structure=["unresolved: inspect fold, subgroup, and temporal errors"],
             compute_constraints=[str(item) for item in package.get("compute_constraints", [])],
+            # Copied through rather than interpreted. These are facts about the environment, not
+            # beliefs about the data, and a designer that cannot see them cannot write a command
+            # that runs.
+            environment={
+                key: package[key]
+                for key in ("solver_interface", "data_layout", "columns", "row_counts", "notes")
+                if key in package
+            },
             unresolved_questions=[
                 "Which validation split best approximates the hidden evaluation distribution?",
                 "Are there entities, time periods, or duplicates shared across splits?",

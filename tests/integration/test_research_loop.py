@@ -26,6 +26,8 @@ from epistemic_loop.domain.models import (
     ExperimentResult,
     FalsificationRecord,
     Hypothesis,
+    HypothesisOutcomeForecast,
+    OutcomeLikelihood,
 )
 from epistemic_loop.storage.repositories import ResearchRepository
 
@@ -87,6 +89,16 @@ def test_full_loop_records_every_transition(
     started.record_hypotheses("run-001", [hypothesis])
     assert started.state("run-001").loop_state == LoopState.PLANNING
 
+    forecast = HypothesisOutcomeForecast(
+        hypothesis_id="H-001",
+        outcomes=[
+            OutcomeLikelihood(label="gap", probability_if_true=0.9, probability_if_false=0.1),
+            OutcomeLikelihood(label="no_gap", probability_if_true=0.1, probability_if_false=0.9),
+        ],
+        decisions_affected=["validation scheme"],
+        measurement_notes="same models and seeds",
+    )
+    proposal = proposal.model_copy(update={"outcome_forecasts": [forecast]})
     started.record_proposals("run-001", [proposal])
     assert started.state("run-001").loop_state == LoopState.SCORING
 
@@ -94,6 +106,8 @@ def test_full_loop_records_every_transition(
     assert decision.selected_experiment_ids == ["EXP-001"]
     assert decision.rejected_reasons == {}
     assert decision.phase == Phase.DISCOVERY
+    assert decision.policy_version == "selection/v2"
+    assert decision.utility_breakdown["EXP-001"]["epistemic_method"] == "expected_information_gain_v2"
 
     state = started.state("run-001")
     assert state.experiment_statuses["EXP-001"] == ExperimentStatus.SELECTED
@@ -231,8 +245,14 @@ def test_proposals_are_validated_against_the_run(
 ) -> None:
     started.record_hypotheses("run-001", [hypothesis])
     started.record_proposals("run-001", [proposal])
-    with pytest.raises(ValueError, match="already proposed"):
+
+    # A reused identifier costs that proposal, not the batch: the designs beside it are still good
+    # research and dropping them ends the round for a naming accident.
+    fresh = clone_proposal(proposal, id="EXP-FRESH")
+    assert started.record_proposals("run-001", [proposal, fresh]) == ["EXP-FRESH"]
+    with pytest.raises(ValueError, match="every proposed experiment reuses"):
         started.record_proposals("run-001", [proposal])
+
     foreign = clone_proposal(proposal, id="EXP-FOREIGN", run_id="other-run")
     with pytest.raises(ValueError, match="belongs to run other-run"):
         started.record_proposals("run-001", [foreign])

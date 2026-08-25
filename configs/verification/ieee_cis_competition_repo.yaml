@@ -1,0 +1,89 @@
+# Research run that directs development of a separate competition repository.
+#
+# The receiving side is ai-dev-control-plane developing `kaggle-ieee-cis-fraud-detection` under
+# instruction. It is not told which system wrote the instruction, and the tickets carry none of this
+# repository's vocabulary or schemas -- see `competition_repo` executor and its contract test.
+#
+# Routing: ai-dev-control-plane derives the checkout by slugifying the Linear PROJECT NAME. The
+# project below is named `kaggle-ieee-cis-fraud-detection`, which resolves to the repository of the
+# same name. target_repo must agree with that path.
+run:
+  id: ieee-cis-2026-08
+  mode: epistemic
+  seed: 101
+competition:
+  slug: ieee-fraud-detection
+  metric_direction: maximize
+  primary_metric: roc_auc
+  data_path: /workspaces/kaggle-ieee-cis-fraud-detection/.data/ieee-cis/parquet
+  sample_submission: /workspaces/kaggle-ieee-cis-fraud-detection/.data/ieee-cis/sample_submission.csv
+budgets:
+  max_experiments: 40
+  max_cpu_hours: 60
+  max_gpu_hours: 0
+  max_wall_hours: 24
+  max_llm_tokens: 4000000
+  max_cost: 0
+  max_final_submissions: 2
+  max_daily_submissions: 5
+loop:
+  phase_policy: adaptive
+  max_active_hypotheses: 30
+  max_priority_hypotheses: 10
+  max_consecutive_optimization_experiments: 3
+  minimum_replications_for_support: 1
+  max_validation_reuse: 8
+  max_rounds_without_information: 3
+  anomaly_instability_threshold: 0.05
+selection:
+  cost_lambda: 0.15
+  minimum_utility: 0.0
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+holdout:
+  policy: strict_blind
+  max_queries: 0
+  reveal_scores: after_all_paired_runs
+  sealed_store: .sealed
+leaderboard:
+  public_feedback: numeric
+  max_public_queries: 5
+  query_ledger: .state/leaderboard-queries.jsonl
+  sealed_store: .sealed-scores
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: false
+  worker_network: disabled
+executor:
+  adapter: competition_repo
+  queue: kaggle-research
+  retry_infrastructure_failures: 2
+  linear_team_id: 9a47ddb5-8351-4c6e-a557-1433f54d676d # team Sota
+  linear_project_id: 92d76f0b-f36d-462b-a43a-782d2aa98de4 # project "kaggle-ieee-cis-fraud-detection"
+  linear_state_id: ba97d2e2-3180-48f4-9ef0-c02fd745544f # state Todo
+  worker: claude:opus
+  handoff: false
+  target_repo: /workspaces/kaggle-ieee-cis-fraud-detection
+  results_subdir: results
+  result_root: .results
+  container_image: python:3.11-slim
+  dataset_mounts: [ieee-cis]
+  workspace: .
+artifacts:
+  adapter: local
+  root: .runs
+storage:
+  event_store: jsonl
+  projection: sqlite
+  sqlite_path: .state/epistemic-loop.db
+llm:
+  adapter: file_bridge
+  model: claude-opus-5
+  max_tokens: 16000
+  effort: high
+  structured_output_required: true
+  store_raw_response: true
