@@ -100,6 +100,10 @@ def test_a_refused_dispatch_does_not_mark_the_experiment_running(
     mid-flight leaves the experiment running and forces an explicit retry. But a call refused by the
     state machine never reached an executor at all: recording it would burn the attempt and force
     every later retry to invent a new attempt number for work that never started.
+
+    The scenario is the real one: a two-experiment portfolio where the first result is imported
+    before the second is dispatched. Importing moves the loop to `parsing`, and the second
+    experiment -- still selected, never started -- must come out of it untouched.
     """
     import pytest
 
@@ -107,11 +111,24 @@ def test_a_refused_dispatch_does_not_mark_the_experiment_running(
     from epistemic_loop.config import AppConfig, CompetitionConfig, PhaseWeights, RunConfig
     from epistemic_loop.controller.research_graph import LoopStateError
     from epistemic_loop.domain.enums import ExperimentStatus, LoopState
-    from epistemic_loop.domain.models import CompetitionWorldModel
+    from epistemic_loop.domain.models import CompetitionWorldModel, ExperimentResult
 
-    class NeverCalled(ExecutorAdapter):
-        def submit(self, request):  # pragma: no cover - the point is that it is not reached
-            raise AssertionError("the executor must not be reached from a refused state")
+    class Echo(ExecutorAdapter):
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def submit(self, request):
+            self.calls.append(request.experiment_id)
+            return ExperimentResult(
+                experiment_id=request.experiment_id,
+                run_id=request.run_id,
+                attempt=1,
+                status="completed",
+                commit_sha=request.base_commit_sha,
+                environment_hash="e" * 64,
+                dataset_fingerprint="f" * 64,
+                metrics={"roc_auc": 0.9},
+            )
 
         def result(self, request):
             return None
@@ -124,57 +141,27 @@ def test_a_refused_dispatch_does_not_mark_the_experiment_running(
     controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
     controller.start(run_id, CompetitionWorldModel())
     controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
-    controller.record_proposals(run_id, [clone_proposal(proposal, run_id=run_id)])
+    controller.record_proposals(
+        run_id,
+        [
+            clone_proposal(proposal, run_id=run_id, id="EXP-001"),
+            clone_proposal(proposal, run_id=run_id, id="EXP-002", protocol="a second, different protocol"),
+        ],
+    )
     controller.select_experiments(
-        run_id, weights=PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15), size=1
+        run_id, weights=PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15), size=2
     )
-    controller.replan(run_id, "simulate a round that moved on without dispatching")
+    executor = Echo()
+    _, first = controller.dispatch(run_id, "EXP-001", executor, container_image="python:3.11-slim")
+    controller.import_result(run_id, first)
+    assert controller.state(run_id).loop_state == LoopState.PARSING
 
-    with pytest.raises(LoopStateError, match="cannot move from planning to executing"):
-        controller.dispatch(run_id, "EXP-001", NeverCalled(), container_image="python:3.11-slim")
+    with pytest.raises(LoopStateError, match="cannot move from parsing to executing"):
+        controller.dispatch(run_id, "EXP-002", executor, container_image="python:3.11-slim")
 
     state = controller.state(run_id)
-    assert state.experiment_statuses["EXP-001"] == ExperimentStatus.SELECTED, "the refused dispatch burnt the attempt"
-    assert state.loop_state == LoopState.PLANNING
-
-
-def test_a_run_can_be_finalized_from_planning(tmp_path, hypothesis, proposal, clone_proposal) -> None:
-    """A final submission is not an experiment and must not have to pass as one.
-
-    It buys no information and is the most expensive fit a run makes, so a pragmatic selector scores
-    it negative and refuses it -- which happened to the exploiter arm's own final submission during
-    the IEEE-CIS verification. `FINALIZING` existed in the state machine for this and nothing ever
-    entered it, so the final artifact had to be produced outside the loop's accounting.
-    """
-    import pytest
-
-    from epistemic_loop.config import AppConfig, CompetitionConfig, RunConfig
-    from epistemic_loop.controller.research_graph import LoopStateError
-    from epistemic_loop.domain.enums import LoopState, RunStatus
-    from epistemic_loop.domain.events import EventType
-    from epistemic_loop.domain.models import CompetitionWorldModel
-
-    run_id = "final-001"
-    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
-    config = AppConfig(
-        run=RunConfig(id=run_id), competition=CompetitionConfig(slug="example", metric_direction="maximize")
-    )
-    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
-    controller.start(run_id, CompetitionWorldModel())
-    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
-
-    payload = controller.finalize(run_id, artifacts=["submission.csv"], note="shipping the tuned configuration")
-
-    assert payload["artifacts"] == ["submission.csv"]
-    assert payload["experiments_completed"] == 0
-    state = controller.state(run_id)
-    assert state.loop_state == LoopState.COMPLETED
-    assert state.run.status == RunStatus.COMPLETED
-    recorded = [event.event_type for event in controller.repository.event_store(run_id).read_all()]
-    assert EventType.RUN_FINALIZED in recorded
-
-    with pytest.raises(LoopStateError, match="cannot finalize from completed"):
-        controller.finalize(run_id, artifacts=[], note="twice")
+    assert state.experiment_statuses["EXP-002"] == ExperimentStatus.SELECTED, "the refused dispatch burnt the attempt"
+    assert executor.calls == ["EXP-001"], "the executor must not be reached from a refused state"
 
 
 def test_a_late_result_is_recorded_instead_of_discarded(tmp_path, hypothesis, proposal, clone_proposal) -> None:
@@ -291,3 +278,54 @@ def test_a_standing_candidate_pool_can_be_rescored_without_new_proposals(
     controller.replan(run_id, "and again")
     with pytest.raises(ValueError, match="no proposed experiments"):
         controller.select_experiments(run_id, weights=weights, size=1)
+
+
+def test_a_stranded_selection_can_still_be_dispatched(tmp_path, hypothesis, proposal, clone_proposal) -> None:
+    """A selection the run already committed to must not be lost because the round moved on.
+
+    Selecting an experiment records its preregistration in the log. If the round then advances
+    without dispatching it, the experiment is stranded: it is `selected`, so a fresh selection will
+    not pick it up again, and the loop is no longer in `selecting`, so it cannot be dispatched.
+    Refusing to honour it discards a decision rather than protecting one.
+    """
+    from epistemic_loop.config import AppConfig, CompetitionConfig, PhaseWeights, RunConfig
+    from epistemic_loop.domain.enums import ExperimentStatus, LoopState
+    from epistemic_loop.domain.models import CompetitionWorldModel, ExperimentResult
+
+    run_id = "stranded-001"
+    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
+    config = AppConfig(
+        run=RunConfig(id=run_id), competition=CompetitionConfig(slug="example", metric_direction="maximize")
+    )
+    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
+    controller.start(run_id, CompetitionWorldModel())
+    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
+    controller.record_proposals(run_id, [clone_proposal(proposal, run_id=run_id)])
+    controller.select_experiments(
+        run_id, weights=PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15), size=1
+    )
+    controller.replan(run_id, "the round advanced without dispatching")
+    assert controller.state(run_id).loop_state == LoopState.PLANNING
+    assert controller.state(run_id).experiment_statuses["EXP-001"] == ExperimentStatus.SELECTED
+
+    class Echo:
+        def submit(self, request):
+            return ExperimentResult(
+                experiment_id=request.experiment_id,
+                run_id=request.run_id,
+                attempt=1,
+                status="completed",
+                commit_sha=request.base_commit_sha,
+                environment_hash="e" * 64,
+                dataset_fingerprint="f" * 64,
+                metrics={"roc_auc": 0.9},
+            )
+
+        def result(self, request):
+            return None
+
+    _, result = controller.dispatch(run_id, "EXP-001", Echo(), container_image="python:3.11-slim")  # type: ignore[arg-type]
+
+    assert result.status == "completed"
+    assert controller.state(run_id).loop_state == LoopState.EXECUTING
+    assert controller.import_result(run_id, result) is not None

@@ -230,6 +230,15 @@ class ResearchController:
         retryable = status == ExperimentStatus.RUNNING and attempt > 1
         if status != ExperimentStatus.SELECTED and not retryable:
             raise LoopStateError(f"experiment {experiment_id} is {status} and may not be dispatched")
+        if state.loop_state == LoopState.PLANNING and status == ExperimentStatus.SELECTED:
+            # A selection is a commitment the run already recorded, with its preregistration
+            # already in the log. A round that advanced past it without dispatching leaves it
+            # stranded, and refusing to honour it because the loop has since reached `planning`
+            # discards a decision rather than protecting one. Re-entering `selecting` is safe
+            # precisely because the selection event -- and everything it fixed -- already exists.
+            self._advance(run_id, LoopState.PLANNING, LoopState.SCORING, {LoopState.PLANNING})
+            self._advance(run_id, LoopState.SCORING, LoopState.SELECTING, {LoopState.SCORING})
+            state = self.state(run_id)
         request = build_experiment_request(
             state.run,
             proposal,
