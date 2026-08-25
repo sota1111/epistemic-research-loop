@@ -120,17 +120,17 @@ def evaluate_candidates(
     # whatever the competition happens to measure in. Scaling here rather than in
     # `score_experiment` keeps that function honest for a single proposal, where there is nothing
     # to scale against and the raw number is the only truthful answer.
-    scored = [item for item in result if item.utility is not None]
-    if len(scored) > 1:
-        rescaled = _relative_gain([item.utility.pragmatic_raw for item in scored])  # type: ignore[union-attr]
-        by_id = {
-            id(item): _combine(replace(item.utility, pragmatic=value), weights, cost_lambda)  # type: ignore[arg-type]
-            for item, value in zip(scored, rescaled, strict=True)
-        }
-        result = [
-            ScoredCandidate(item.proposal, item.gate, by_id.get(id(item), item.utility)) for item in result
-        ]
-    return result
+    scored = [(item, item.utility) for item in result if item.utility is not None]
+    if len(scored) < 2:
+        return result
+    rescaled = _relative_gain([utility.pragmatic_raw for _, utility in scored])
+    replacements = {
+        id(item): _combine(replace(utility, pragmatic=value), weights, cost_lambda)
+        for (item, utility), value in zip(scored, rescaled, strict=True)
+    }
+    return [
+        ScoredCandidate(item.proposal, item.gate, replacements.get(id(item), item.utility)) for item in result
+    ]
 
 
 def select_portfolio(
