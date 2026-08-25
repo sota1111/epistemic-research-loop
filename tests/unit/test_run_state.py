@@ -280,3 +280,24 @@ def test_the_brief_binds_only_once_exploitation_has_begun(
 
     assert during_exploitation.approved_lineages == frozenset({"gbdt"})
     assert "sealed holdout optimization" in during_exploitation.prohibited_shortcuts
+
+
+def test_the_world_model_is_folded_into_run_state(repository: ResearchRepository, run: ResearchRun) -> None:
+    """The experiment designer must write a runnable command, so it needs to know what exists.
+
+    Without the world model in its context, the first unattended run invented a script path and a
+    dozen flags that were not there, and the experiment failed on a missing file.
+    """
+    from epistemic_loop.domain.models import CompetitionWorldModel
+
+    repository.append("run-001", EventType.RUN_CREATED, run)
+    assert _state(repository).world_model is None
+
+    repository.append(
+        "run-001",
+        EventType.WORLD_MODEL_RECORDED,
+        CompetitionWorldModel(compute_constraints=["cpu only"], unresolved_questions=["which split?"]),
+    )
+    folded = _state(repository).world_model
+    assert folded is not None
+    assert folded.compute_constraints == ["cpu only"]

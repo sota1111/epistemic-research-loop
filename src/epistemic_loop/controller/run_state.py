@@ -8,6 +8,7 @@ from epistemic_loop.domain.events import EventEnvelope, EventType
 from epistemic_loop.domain.models import (
     BeliefUpdate,
     BudgetUsage,
+    CompetitionWorldModel,
     CostEstimate,
     DecisionRecord,
     ExperimentProposal,
@@ -60,6 +61,9 @@ class RunState:
     selection_order: tuple[str, ...]
     violations: int
     brief: ResearchBrief | None = None
+    #: What the run knows about the competition, including the interface it must write commands
+    #: against. A designer that cannot see this invents entry points that do not exist.
+    world_model: CompetitionWorldModel | None = None
 
     @property
     def run_id(self) -> str:
@@ -237,6 +241,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
     selection_order: list[str] = []
     violations = 0
     brief: ResearchBrief | None = None
+    world_model: CompetitionWorldModel | None = None
 
     for event in events:
         payload = event.payload
@@ -294,6 +299,8 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         elif event.event_type == EventType.FALSIFICATION_RECORDED:
             record = FalsificationRecord.model_validate(payload)
             falsifications[record.id] = record
+        elif event.event_type == EventType.WORLD_MODEL_RECORDED:
+            world_model = CompetitionWorldModel.model_validate(payload)
         elif event.event_type == EventType.RESEARCH_BRIEF_CREATED:
             brief = ResearchBrief.model_validate(payload)
         elif event.event_type == EventType.VIOLATION_DETECTED:
@@ -321,4 +328,5 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         selection_order=tuple(selection_order),
         violations=violations,
         brief=brief,
+        world_model=world_model,
     )

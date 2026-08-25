@@ -123,6 +123,10 @@ class ProposalBridge:
             context={
                 "run_id": run_id,
                 "phase": state.phase.value,
+                # The designer has to write something runnable, so it needs the competition's own
+                # description of what exists: the metric, the data, the compute limits, and the
+                # solver interface. Without it a designer invents entry points that are not there.
+                "world_model": state.world_model.model_dump(mode="json") if state.world_model else {},
                 "hypotheses": [item.model_dump(mode="json") for item in state.hypotheses.values()],
                 "already_run_fingerprints": sorted(state.settled_fingerprints()),
                 # The measurements themselves, not only what the verdicts said about them. A design
