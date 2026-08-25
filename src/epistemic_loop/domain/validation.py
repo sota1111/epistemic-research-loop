@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk
 from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
@@ -31,6 +32,8 @@ class GateContext:
     #: Lineages the research brief approved. Empty means no brief has been published, and the
     #: restriction does not apply -- exploitation cannot be entered without one anyway.
     approved_lineages: frozenset[str] = frozenset()
+    #: Executables a shell executor will accept. Empty means the executor imposes no list.
+    command_allowlist: tuple[str, ...] = ()
     #: Shortcuts the brief prohibited, matched against the experiment's holdout access.
     prohibited_shortcuts: tuple[str, ...] = ()
 
@@ -68,6 +71,22 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("decision rule is required")
     if not experiment.implementation_request.get("command") and not experiment.implementation_request.get("brief"):
         reasons.append("implementation_request needs a reproducible `command` or a `brief`")
+    command = str(experiment.implementation_request.get("command") or "")
+    if command and context.command_allowlist:
+        import shlex
+
+        try:
+            head = shlex.split(command)[:1]
+        except ValueError:
+            head = []
+        # Refused here rather than at dispatch, where the executor's PermissionError takes the whole
+        # round -- and the loop -- down for a constraint the proposal could have been checked against.
+        if not head:
+            reasons.append("implementation_request.command could not be parsed as a shell command")
+        elif Path(head[0]).name not in context.command_allowlist:
+            reasons.append(
+                f"command must start with one of {list(context.command_allowlist)}, not {Path(head[0]).name!r}"
+            )
     policy = experiment.implementation_request.get("network_policy")
     if policy is not None and policy not in NETWORK_POLICIES:
         # Caught here rather than when the contract is built, because by then the experiment has

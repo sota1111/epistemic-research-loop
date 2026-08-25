@@ -433,7 +433,9 @@ def hypotheses_record(
 @experiments_app.command("request")
 def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
-    typer.echo(str(_bridge().request_experiments(run_id, _state(run_id))))
+    typer.echo(
+        str(_bridge().request_experiments(run_id, _state(run_id), _run_config(run_id).executor.command_allowlist))
+    )
 
 
 @experiments_app.command("propose")
@@ -468,6 +470,7 @@ def experiments_select(
             source_policy_strict=config.contamination.require_source_provenance,
             max_validation_reuse=config.loop.max_validation_reuse,
             max_consecutive_optimization=config.loop.max_consecutive_optimization_experiments,
+            command_allowlist=tuple(config.executor.command_allowlist),
         )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -113,7 +114,9 @@ class ProposalBridge:
             json_schema=HypothesisBatch.model_json_schema(),
         )
 
-    def experiment_request(self, run_id: str, state: RunState) -> ProposalRequest:
+    def experiment_request(
+        self, run_id: str, state: RunState, command_allowlist: Sequence[str] = ()
+    ) -> ProposalRequest:
         return ProposalRequest(
             request_id=f"ED-{uuid.uuid4().hex[:12]}",
             run_id=run_id,
@@ -137,6 +140,9 @@ class ProposalBridge:
                 # A split that has answered its budget of selecting queries must be rotated, so the
                 # designer needs to see what has already been spent against each one.
                 "validation_reuse": state.validation_reuse(),
+                # What the executor will actually accept. A command outside this is refused by
+                # the gate, so telling the designer costs nothing and saves the round.
+                "allowed_command_prefixes": list(command_allowlist),
                 "holdout_policy": state.run.holdout_policy.model_dump(mode="json"),
             },
             json_schema=ExperimentBatch.model_json_schema(),
@@ -188,8 +194,8 @@ class ProposalBridge:
     ) -> Path:
         return self.write(self.hypothesis_request(run_id, world_model, state))
 
-    def request_experiments(self, run_id: str, state: RunState) -> Path:
-        return self.write(self.experiment_request(run_id, state))
+    def request_experiments(self, run_id: str, state: RunState, command_allowlist: Sequence[str] = ()) -> Path:
+        return self.write(self.experiment_request(run_id, state, command_allowlist))
 
     @staticmethod
     def load_hypotheses(path: str | Path) -> list[Hypothesis]:

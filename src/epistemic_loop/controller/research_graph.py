@@ -168,6 +168,7 @@ class ResearchController:
         source_policy_strict: bool = True,
         max_validation_reuse: int = 0,
         max_consecutive_optimization: int = 3,
+        command_allowlist: tuple[str, ...] = (),
     ) -> DecisionRecord:
         state = self.state(run_id)
         candidates = state.open_candidates()
@@ -186,6 +187,7 @@ class ResearchController:
                 source_policy_strict=source_policy_strict,
                 max_validation_reuse=max_validation_reuse,
                 max_consecutive_optimization=max_consecutive_optimization,
+                command_allowlist=command_allowlist,
             ),
             weights,
             cost_lambda,

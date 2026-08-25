@@ -201,6 +201,7 @@ class RunState:
         max_validation_reuse: int = 0,
         max_consecutive_optimization: int = 3,
         enforce_brief: bool = True,
+        command_allowlist: tuple[str, ...] = (),
     ) -> GateContext:
         return GateContext(
             hypothesis_ids=frozenset(self.hypotheses),
@@ -213,6 +214,7 @@ class RunState:
             validation_reuse=self.validation_reuse(),
             max_validation_reuse=max_validation_reuse,
             max_consecutive_optimization=max_consecutive_optimization,
+            command_allowlist=command_allowlist,
             # Only once a brief exists and the run is exploiting: during research there is no
             # approved set yet, and constraining discovery to one would defeat the point.
             approved_lineages=(

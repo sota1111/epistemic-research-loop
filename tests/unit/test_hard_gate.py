@@ -92,3 +92,32 @@ def test_a_brief_satisfies_the_gate_where_a_command_would(proposal: ExperimentPr
     result = hard_gate(neither, context())
     assert not result.passed
     assert any("reproducible `command` or a `brief`" in reason for reason in result.reasons)
+
+
+def test_a_command_the_executor_would_refuse_is_refused_at_the_gate(proposal: ExperimentProposal) -> None:
+    """The executor's allowlist used to live only in the executor.
+
+    A proposal starting `mkdir -p ... && python -c ...` was selected, dispatched, and raised a
+    PermissionError that took the entire unattended loop down -- for a constraint the proposal could
+    have been checked against before anything was committed to.
+    """
+    allowlist = ("python", "python3", "uv", "bash")
+    shell_chain = proposal.model_copy(update={"implementation_request": {"command": "mkdir -p out && python3 run.py"}})
+    result = hard_gate(shell_chain, context(command_allowlist=allowlist))
+    assert not result.passed
+    assert any("must start with one of" in reason and "mkdir" in reason for reason in result.reasons)
+
+    wrapped = proposal.model_copy(update={"implementation_request": {"command": "bash -c 'mkdir out && python3 x.py'"}})
+    assert hard_gate(wrapped, context(command_allowlist=allowlist)).passed, "bash is allowlisted; wrap in it"
+
+    absolute = proposal.model_copy(update={"implementation_request": {"command": "/usr/bin/python3 run.py"}})
+    assert hard_gate(absolute, context(command_allowlist=allowlist)).passed, "match on the basename"
+
+    unparseable = proposal.model_copy(update={"implementation_request": {"command": "python3 'unclosed"}})
+    assert any("could not be parsed" in r for r in hard_gate(unparseable, context(command_allowlist=allowlist)).reasons)
+
+
+def test_no_allowlist_means_the_executor_imposes_none(proposal: ExperimentProposal) -> None:
+    """An executor that directs a repository has no shell to protect."""
+    anything = proposal.model_copy(update={"implementation_request": {"command": "make all"}})
+    assert hard_gate(anything, context()).passed

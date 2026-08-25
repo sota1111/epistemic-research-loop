@@ -118,6 +118,9 @@ class ExecutorConfig(StrictModel):
     # `competition_repo` only: where the competition's own results convention lives, relative to
     # target_repo. Results are read from <target_repo>/<results_subdir>/<experiment>/metrics.json.
     results_subdir: str = "results"
+    # Commands a shell executor will run. The gate refuses anything else *before* selection, and
+    # the designer is shown the list, so an unrunnable command is not discovered at dispatch.
+    command_allowlist: list[str] = Field(default_factory=lambda: ["python", "python3", "uv", "bash"])
     linear_state_id: str | None = None
 
 
