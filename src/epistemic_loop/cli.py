@@ -47,6 +47,13 @@ from epistemic_loop.controller.research_graph import (
     fingerprint_path,
 )
 from epistemic_loop.controller.run_state import RunState
+from epistemic_loop.controller.submission_policy import (
+    candidates_from_state,
+    submitted_from_ledger,
+)
+from epistemic_loop.controller.submission_policy import (
+    decide as decide_submission,
+)
 from epistemic_loop.domain.enums import HypothesisStatus, Phase, VerifierResult
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
@@ -732,6 +739,43 @@ def kaggle_plan(
     typer.echo(json.dumps(plan, default=lambda value: value.__dict__, indent=2, sort_keys=True))
 
 
+@kaggle_app.command("decide")
+def kaggle_decide(
+    run_id: str = typer.Option(..., "--run-id"),
+    ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
+    artifact_suffix: str = typer.Option("submission.csv", "--artifact-suffix"),
+    minimum_calibration_points: int = typer.Option(3, "--calibration-points", min=1),
+    agreement_threshold: float = typer.Option(0.3, "--agreement-threshold"),
+    noise_multiplier: float = typer.Option(1.0, "--noise-multiplier", min=0.0),
+) -> None:
+    """Recommend whether to spend a submission now, and on which artifact.
+
+    Nothing is submitted here. The decision, its reasoning and the evidence behind it are printed
+    so that spending a submission stays a deliberate act with a recorded justification -- and so
+    that a refusal is as legible as a spend.
+    """
+    config = _run_config(run_id)
+    ledger = SubmissionLedger(ledger_path)
+    state = _state(run_id)
+    decision = decide_submission(
+        candidates_from_state(
+            state,
+            primary_metric=config.competition.primary_metric,
+            artifact_suffix=artifact_suffix,
+        ),
+        submitted_from_ledger(ledger.records(), config.competition.slug),
+        remaining_today=max(
+            0, config.budgets.max_daily_submissions - ledger.submitted_today(config.competition.slug)
+        ),
+        metric_direction=config.competition.metric_direction,
+        fingerprint_of=fingerprint,
+        minimum_calibration_points=minimum_calibration_points,
+        agreement_threshold=agreement_threshold,
+        noise_multiplier=noise_multiplier,
+    )
+    _echo({"run_id": run_id, "competition": config.competition.slug, **decision.as_dict()})
+
+
 @kaggle_app.command("submit")
 def kaggle_submit(
     competition: str = typer.Option(..., "--competition"),
@@ -742,6 +786,12 @@ def kaggle_submit(
     ledger_path: Path = typer.Option(Path(".state/kaggle-submissions.jsonl"), "--ledger"),
     wait: bool = typer.Option(True, "--wait/--no-wait"),
     seal_scores: bool = typer.Option(True, "--seal-scores/--show-scores"),
+    local_estimate: float | None = typer.Option(
+        None,
+        "--local-estimate",
+        help="the local score this artifact measured; without it the submission cannot contribute "
+        "to the local-to-public calibration and `kaggle decide` will not learn from it",
+    ),
 ) -> None:
     ledger = SubmissionLedger(ledger_path)
     digest = fingerprint(submission)
@@ -788,6 +838,7 @@ def kaggle_submit(
             "reference": receipt.reference,
             "status": "submitted",
             "score_id": score_id,
+            "local_estimate": local_estimate,
         }
     )
     if not wait:
@@ -932,6 +983,20 @@ def kaggle_feedback(
         "queries_remaining": feedback.queries_remaining,
     }
     controller.record_leaderboard_feedback(run_id, payload)
+    if feedback.public_score is not None:
+        # Append rather than edit: the spend and the disclosure are separate events and the ledger
+        # is the audit trail for both. Recording it here is not a new disclosure -- the gate has
+        # already returned the number and ledgered the query -- it is what stops the next decision
+        # having to spend another query to learn something the run was already told.
+        SubmissionLedger(_home() / ".state/kaggle-submissions.jsonl").append(
+            {
+                "created_at": datetime.now(UTC).isoformat(),
+                "mode": "score_revealed",
+                "run_id": run_id,
+                "score_id": score_id,
+                "public_score": feedback.public_score,
+            }
+        )
     _echo(payload)
 
 
