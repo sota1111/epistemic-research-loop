@@ -66,7 +66,7 @@
       "type": "object"
     },
     "command": {
-      "minLength": 1,
+      "default": "",
       "title": "Command",
       "type": "string"
     },
@@ -150,7 +150,6 @@
     "base_commit_sha",
     "implementation_mode",
     "objective",
-    "command",
     "container_image",
     "dataset_mounts",
     "resources",
