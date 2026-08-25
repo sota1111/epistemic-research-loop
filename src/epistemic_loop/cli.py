@@ -776,9 +776,7 @@ def kaggle_decide(
             artifact_suffix=artifact_suffix,
         ),
         submitted_from_ledger(ledger.records(), config.competition.slug),
-        remaining_today=max(
-            0, config.budgets.max_daily_submissions - ledger.submitted_today(config.competition.slug)
-        ),
+        remaining_today=max(0, config.budgets.max_daily_submissions - ledger.submitted_today(config.competition.slug)),
         metric_direction=config.competition.metric_direction,
         fingerprint_of=fingerprint,
         minimum_calibration_points=minimum_calibration_points,

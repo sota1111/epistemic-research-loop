@@ -134,9 +134,7 @@ def decide(
     """
     ranked = sorted(candidates, key=lambda item: higher_is_better(item.local_estimate, metric_direction), reverse=True)
     considered = tuple(item.name for item in ranked)
-    paired = [
-        item for item in submitted if item.local_estimate is not None and item.public_score is not None
-    ]
+    paired = [item for item in submitted if item.local_estimate is not None and item.public_score is not None]
     agreement = kendall_tau(
         [higher_is_better(item.local_estimate, metric_direction) for item in paired],  # type: ignore[arg-type]
         [higher_is_better(item.public_score, metric_direction) for item in paired],  # type: ignore[arg-type]

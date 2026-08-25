@@ -151,8 +151,7 @@ def test_a_forecast_of_no_gain_scores_no_gain_whatever_it_is_compared_against(pr
             ),
         ]
         return {
-            item.proposal.id: item.utility.pragmatic
-            for item in evaluate_candidates(candidates, _context(), WEIGHTS)
+            item.proposal.id: item.utility.pragmatic for item in evaluate_candidates(candidates, _context(), WEIGHTS)
         }
 
     assert _pair(10.0, 0.0)["B"] == 0.0, "no forecast gain is no pragmatic score"

@@ -191,9 +191,7 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
     assert "sign" in report
 
 
-def test_best_local_and_the_calibration_gap_follow_the_metric_s_direction(
-    hypothesis, proposal, clone_proposal
-) -> None:
+def test_best_local_and_the_calibration_gap_follow_the_metric_s_direction(hypothesis, proposal, clone_proposal) -> None:
     """A minimised competition inverts what "best" and "optimistic" mean.
 
     This used to read `roc_auc` and take a maximum, so pointed at an RMSE competition it reported

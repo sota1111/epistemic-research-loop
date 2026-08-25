@@ -51,9 +51,7 @@ def arm_summary(  # noqa: PLR0913
         for observation in state.observations.values()
         if primary_metric in observation.metrics
     ]
-    best_local_value = (
-        max(observed, key=lambda value: higher_is_better(value, metric_direction)) if observed else None
-    )
+    best_local_value = max(observed, key=lambda value: higher_is_better(value, metric_direction)) if observed else None
     return {
         "run_id": state.run_id,
         "mode": state.run.mode.value,

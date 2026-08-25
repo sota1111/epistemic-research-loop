@@ -84,9 +84,7 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("implementation_request needs a reproducible `command` or a `brief`")
     missing = [name for name in context.required_request_fields if not request.get(name)]
     if missing:
-        reasons.append(
-            f"implementation_request is missing {missing}, which the configured executor requires"
-        )
+        reasons.append(f"implementation_request is missing {missing}, which the configured executor requires")
     if context.required_brief_fields:
         brief = request.get("brief")
         if brief is not None and not isinstance(brief, dict):

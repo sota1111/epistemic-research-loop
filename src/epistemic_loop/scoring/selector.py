@@ -128,9 +128,7 @@ def evaluate_candidates(
         id(item): _combine(replace(utility, pragmatic=value), weights, cost_lambda)
         for (item, utility), value in zip(scored, rescaled, strict=True)
     }
-    return [
-        ScoredCandidate(item.proposal, item.gate, replacements.get(id(item), item.utility)) for item in result
-    ]
+    return [ScoredCandidate(item.proposal, item.gate, replacements.get(id(item), item.utility)) for item in result]
 
 
 def select_portfolio(
