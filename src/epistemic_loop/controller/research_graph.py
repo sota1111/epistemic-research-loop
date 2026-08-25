@@ -499,6 +499,7 @@ def _observation_from_result(result: ExperimentResult, artifact_root: str | Path
         runtime=dict(result.runtime),
         exit_status=result.status,
         failure_class=result.failure_class,
+        failure_excerpt=result.failure_excerpt,
         fold_metrics=_sidecar(root, SIDECAR_METRICS["fold_metrics"]),
         seed_metrics=_sidecar(root, SIDECAR_METRICS["seed_metrics"]),
         subgroup_metrics=_sidecar(root, SIDECAR_METRICS["subgroup_metrics"]),

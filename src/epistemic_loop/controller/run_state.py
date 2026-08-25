@@ -157,6 +157,15 @@ class RunState:
                 "experiment_type": proposal.experiment_type.value,
                 "hypothesis_ids": list(proposal.hypothesis_ids),
                 "research_question": proposal.research_question,
+                "command": proposal.implementation_request.get("command"),
+                "failure_excerpt": next(
+                    (
+                        item.failure_excerpt
+                        for item in self.observations.values()
+                        if item.experiment_id == identifier and item.failure_excerpt
+                    ),
+                    None,
+                ),
                 "failure_class": next(
                     (
                         item.failure_class.value

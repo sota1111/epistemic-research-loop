@@ -87,6 +87,14 @@ class LocalExecutor(ExecutorAdapter):
         if not isinstance(metrics, dict):
             metrics = {}
             failure = FailureClass.IMPLEMENTATION
+        # A failure class is a category; the next proposal needs the sentence. Without it the loop
+        # can only learn "that design did not run", and re-proposes the same invalid argument.
+        excerpt = None
+        if failure is not None:
+            tail = (stderr or stdout or "").strip().splitlines()[-12:]
+            excerpt = "\n".join(tail)[-2000:] or None
+            if missing:
+                excerpt = f"missing required outputs: {missing}\n{excerpt or ''}".strip()[:2000]
         result = ExperimentResult(
             experiment_id=request.experiment_id,
             run_id=request.run_id,
@@ -102,6 +110,7 @@ class LocalExecutor(ExecutorAdapter):
                 str(output_root / name) for name in request.required_outputs if (output_root / name).is_file()
             ],
             runtime={"wall_seconds": wall},
+            failure_excerpt=excerpt,
         )
         self._result_path(request).write_text(result.model_dump_json(indent=2), encoding="utf-8")
         return result

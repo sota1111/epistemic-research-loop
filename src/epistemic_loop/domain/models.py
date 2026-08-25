@@ -299,6 +299,7 @@ class Observation(DomainModel):
     runtime: dict[str, float] = Field(default_factory=dict)
     exit_status: str
     failure_class: FailureClass | None = None
+    failure_excerpt: str | None = Field(default=None, max_length=2000)
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -420,3 +421,11 @@ class ExperimentResult(DomainModel):
     artifact_refs: list[str] = Field(default_factory=list)
     runtime: dict[str, float] = Field(default_factory=dict)
     external_ref: str | None = None
+    failure_excerpt: str | None = Field(
+        default=None,
+        max_length=2000,
+        description=(
+            "Why the run failed, in the words of whatever failed. A failure class alone tells the "
+            "next proposal that a design did not run; it does not tell it what to change."
+        ),
+    )

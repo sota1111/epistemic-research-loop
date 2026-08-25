@@ -76,6 +76,20 @@
       ],
       "default": null
     },
+    "failure_excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Why the run failed, in the words of whatever failed. A failure class alone tells the next proposal that a design did not run; it does not tell it what to change.",
+      "title": "Failure Excerpt"
+    },
     "metrics": {
       "additionalProperties": {
         "type": "number"

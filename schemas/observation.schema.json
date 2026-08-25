@@ -117,6 +117,19 @@
       ],
       "default": null
     },
+    "failure_excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Excerpt"
+    },
     "fold_metrics": {
       "additionalProperties": true,
       "title": "Fold Metrics",
