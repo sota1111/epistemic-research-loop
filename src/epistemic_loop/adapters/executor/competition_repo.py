@@ -9,11 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.domain.enums import FailureClass
 from epistemic_loop.domain.models import ExperimentRequest, ExperimentResult
 
 #: Ordinary-looking tracking id. It is how a retry finds the ticket it already filed, and it reads
 #: as project bookkeeping rather than as a foreign system's contract.
 TASK_MARKER = "Task-ID"
+
+#: Tracker state types that mean the work has stopped moving. A ticket in one of these will not
+#: produce results later, so waiting for it is waiting for nothing.
+TERMINAL_STATE_TYPES = ("completed", "canceled")
 
 
 class CompetitionRepoAdapter(ExecutorAdapter):
@@ -85,7 +90,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
         data = self._query(
             """query($marker: String!) {
               issues(filter: { description: { contains: $marker } }, first: 10) {
-                nodes { id identifier url description }
+                nodes { id identifier url description state { name type } }
               }
             }""",
             {"marker": marker},
@@ -185,6 +190,16 @@ class CompetitionRepoAdapter(ExecutorAdapter):
             external_ref=existing.get("identifier") or existing.get("id"),
         )
 
+    @staticmethod
+    def _terminal(ticket: dict[str, Any] | None) -> str | None:
+        """The ticket's state name if the tracker considers the work finished, else None.
+
+        `completed` and `canceled` are the tracker's terminal types. A ticket in either one has
+        stopped moving: nobody is going to write the metrics later.
+        """
+        state = (ticket or {}).get("state") or {}
+        return str(state.get("name") or state.get("type")) if state.get("type") in TERMINAL_STATE_TYPES else None
+
     def metrics_path(self, request: ExperimentRequest) -> Path:
         return self.repo_path / self.results_subdir / self.experiment_name(request) / "metrics.json"
 
@@ -196,8 +211,6 @@ class CompetitionRepoAdapter(ExecutorAdapter):
         the envelope is assembled here instead.
         """
         path = self.metrics_path(request)
-        if not path.is_file():
-            return None
         # The ticket identifier is only known at submit time, and this envelope is assembled from
         # the repository's files, so it has to be recovered -- otherwise the observation cannot be
         # traced back to the task that produced it and the audit trail stops at the metrics file.
@@ -205,6 +218,34 @@ class CompetitionRepoAdapter(ExecutorAdapter):
             ticket = self._existing(self._task_id(request))
         except RuntimeError:
             ticket = None
+
+        if not path.is_file():
+            # No metrics yet is normally "still working". But a ticket the tracker has closed is
+            # not going to produce them, and treating that as "still working" costs the round its
+            # whole timeout and teaches the next proposal nothing. Reporting it as a failure with
+            # the state that ended it is what lets the loop try something else.
+            finished = self._terminal(ticket)
+            if finished is None:
+                return None
+            return ExperimentResult(
+                experiment_id=request.experiment_id,
+                run_id=request.run_id,
+                attempt=1,
+                status="failed",
+                exit_code=1,
+                failure_class=FailureClass.INFRASTRUCTURE,
+                commit_sha=_head_commit(self.repo_path) or request.base_commit_sha,
+                environment_hash="competition-repo",
+                dataset_fingerprint="competition-repo",
+                failure_excerpt=(
+                    f"the task ended in state {finished!r} without writing {path.relative_to(self.repo_path)}. "
+                    "Nothing ran that produced numbers, so there is no measurement to interpret -- the "
+                    "design was not tested. Check that the work described is something the repository "
+                    "can actually do before proposing it again."
+                )[:2000],
+                external_ref=(ticket or {}).get("identifier") or (ticket or {}).get("id"),
+            )
+
         raw = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):
             raise ValueError(f"{path} must contain a flat object of metric name to number")
@@ -216,6 +257,16 @@ class CompetitionRepoAdapter(ExecutorAdapter):
             attempt=1,
             status="completed" if metrics else "failed",
             exit_code=0 if metrics else 1,
+            failure_class=None if metrics else FailureClass.IMPLEMENTATION,
+            failure_excerpt=(
+                None
+                if metrics
+                else (
+                    f"{path.relative_to(self.repo_path)} exists but holds no numeric value; its keys are "
+                    f"{sorted(raw)[:12]}. A run that produced no numbers did not answer the question it "
+                    "was filed to answer."
+                )[:2000]
+            ),
             commit_sha=_head_commit(self.repo_path) or request.base_commit_sha,
             environment_hash="competition-repo",
             dataset_fingerprint="competition-repo",

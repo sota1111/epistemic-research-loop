@@ -12,6 +12,7 @@ from epistemic_loop.agents.falsifier import Falsifier
 from epistemic_loop.agents.research_synthesizer import derive_brief
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.config import AppConfig
+from epistemic_loop.controller.execution_contract import build_experiment_request
 from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.research_graph import ResearchController
 from epistemic_loop.controller.stop_policy import should_stop
@@ -19,6 +20,7 @@ from epistemic_loop.domain.enums import ExperimentStatus, LoopState, Phase
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
+    ExperimentRequest,
     ExperimentResult,
     FalsificationRecord,
     Observation,
@@ -89,14 +91,41 @@ class AutonomousLoop:
             raise ValueError(f"run {run_id} has no world model; start the run first")
         return CompetitionWorldModel.model_validate(payload)
 
-    def _await_result(self, run_id: str, experiment_id: str, settings: LoopSettings) -> ExperimentResult | None:
-        source = result_path(self.home / self.config.executor.result_root, run_id, experiment_id)
+    def _request_for(self, run_id: str, experiment_id: str) -> ExperimentRequest:
+        """Rebuild the worker request for an experiment already in flight.
+
+        A round can be interrupted -- the process dies, the machine reboots -- and the next one has
+        to be able to ask about work it did not itself dispatch. Everything the request needs is in
+        the event log, including the attempt number, which matters because the idempotency key
+        contains it and an executor that files a ticket uses that key to find the ticket it already
+        filed. Rebuilding at the wrong attempt opens a second ticket for the same experiment.
+        """
+        state = self.controller.state(run_id)
+        proposal = state.proposals[experiment_id]
+        return build_experiment_request(
+            state.run,
+            proposal,
+            attempt=state.experiment_attempts.get(experiment_id, 1),
+            container_image=self.config.executor.container_image,
+            dataset_mounts=self.config.executor.dataset_mounts,
+            network_policy=self.config.contamination.worker_network,
+        )
+
+    def _await_result(self, request: ExperimentRequest, settings: LoopSettings) -> ExperimentResult | None:
+        """Poll the executor until it has a terminal result, or the round gives up waiting.
+
+        Asking the executor rather than reading a fixed path is what makes this work for more than
+        one kind of worker. The local executor keeps its results in that path; an executor that
+        drives a separate repository keeps them in that repository's own convention, and one that
+        files a ticket has to consult the tracker to know whether the work ended. Hard-coding the
+        local layout here meant every non-local executor timed out on every round, which is why the
+        Linear round trip had never once closed under `run loop`.
+        """
         deadline = self.now() + settings.timeout_seconds
         while True:
-            if source.is_file():
-                result = ExperimentResult.model_validate_json(source.read_text(encoding="utf-8"))
-                if result.status in {"completed", "failed"}:
-                    return result
+            result = self.executor.result(request)
+            if result is not None and result.status in {"completed", "failed"}:
+                return result
             if self.now() >= deadline:
                 return None
             self.sleep(settings.poll_seconds)
@@ -162,7 +191,7 @@ class AutonomousLoop:
             )
         running = [item.id for item in self.controller.state(run_id).experiments_with_status(ExperimentStatus.RUNNING)]
         for experiment_id in running:
-            result = self._await_result(run_id, experiment_id, settings)
+            result = self._await_result(self._request_for(run_id, experiment_id), settings)
             if result is None:
                 outcome.pending.append(experiment_id)
                 continue

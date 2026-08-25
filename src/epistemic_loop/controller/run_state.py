@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from epistemic_loop.domain.enums import ExperimentStatus, ExperimentType, LoopState, Phase, RunStatus
 from epistemic_loop.domain.events import EventEnvelope, EventType
@@ -64,6 +64,11 @@ class RunState:
     #: What the run knows about the competition, including the interface it must write commands
     #: against. A designer that cannot see this invents entry points that do not exist.
     world_model: CompetitionWorldModel | None = None
+    #: Attempt number each experiment was last dispatched under. Needed to rebuild the worker
+    #: request after a restart: the idempotency key contains the attempt, and for an executor that
+    #: files a ticket the key *is* how a retry finds the ticket it already filed. Rebuilding at
+    #: attempt 1 when attempt 2 is outstanding opens a second ticket for the same work.
+    experiment_attempts: dict[str, int] = field(default_factory=dict)
 
     @property
     def run_id(self) -> str:
@@ -246,6 +251,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
     hypotheses: dict[str, Hypothesis] = {}
     proposals: dict[str, ExperimentProposal] = {}
     statuses: dict[str, ExperimentStatus] = {}
+    attempts: dict[str, int] = {}
     observations: dict[str, Observation] = {}
     falsifications: dict[str, FalsificationRecord] = {}
     usage = BudgetUsage()
@@ -300,6 +306,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
                     usage = _accumulate(usage, candidate.estimated_cost)
         elif event.event_type == EventType.EXPERIMENT_STARTED:
             statuses[str(payload["experiment_id"])] = ExperimentStatus.RUNNING
+            attempts[str(payload["experiment_id"])] = int(payload.get("attempt", 1))
         elif event.event_type == EventType.EXPERIMENT_COMPLETED:
             statuses[str(payload["experiment_id"])] = ExperimentStatus.COMPLETED
         elif event.event_type == EventType.EXPERIMENT_FAILED:
@@ -333,6 +340,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         hypotheses=hypotheses,
         proposals=proposals,
         experiment_statuses=statuses,
+        experiment_attempts=attempts,
         observations=observations,
         falsifications=falsifications,
         usage=usage,

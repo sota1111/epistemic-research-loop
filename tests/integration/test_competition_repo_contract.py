@@ -141,3 +141,55 @@ def test_the_tracking_id_is_stable_and_survives_the_round_trip(tmp_path: Path) -
 
     second_attempt = _request(idempotency_key="ieee-cis-2026-08:EXP-baseline-timesplit:attempt-2")
     assert "attempt-2" in adapter.issue_description(second_attempt, BRIEF)
+
+
+def _with_ticket(adapter: CompetitionRepoAdapter, state: dict[str, str] | None) -> CompetitionRepoAdapter:
+    """Stand in for the tracker. The real query needs an API key the test does not have."""
+    adapter._existing = lambda task_id: {  # type: ignore[method-assign]
+        "id": "issue-1",
+        "identifier": "SOT-1234",
+        "url": "https://linear.app/x/issue/SOT-1234",
+        "state": state,
+    }
+    return adapter
+
+
+def test_a_task_that_closed_without_metrics_is_a_failure_not_an_endless_wait(tmp_path: Path) -> None:
+    """A closed ticket will not produce numbers later, and waiting for it costs the round.
+
+    Before this, "no metrics yet" and "no metrics ever" were the same answer -- None -- so a run
+    whose task was cancelled or completed empty sat out its whole timeout and learned nothing from
+    it. The next proposal needs to know that the design was never actually tested.
+    """
+    adapter = _with_ticket(_adapter(tmp_path), {"name": "Done", "type": "completed"})
+
+    result = adapter.result(_request())
+
+    assert result is not None and result.status == "failed" and result.exit_code == 1
+    assert result.external_ref == "SOT-1234", "the failure must be traceable to the task that caused it"
+    assert result.failure_excerpt is not None
+    assert "Done" in result.failure_excerpt, "the state that ended it is the diagnosis"
+    assert "results/exp-baseline-timesplit/metrics.json" in result.failure_excerpt
+    assert "was not tested" in result.failure_excerpt
+
+
+def test_a_task_still_in_progress_without_metrics_is_still_in_progress(tmp_path: Path) -> None:
+    """The other half. Reporting an unfinished task as failed would throw away work in flight."""
+    for state in ({"name": "In Progress", "type": "started"}, {"name": "Todo", "type": "unstarted"}, None):
+        adapter = _with_ticket(_adapter(tmp_path), state)
+        assert adapter.result(_request()) is None, f"state {state} is not terminal"
+
+
+def test_an_empty_metrics_file_says_what_it_contained_instead(tmp_path: Path) -> None:
+    """A failure class is a category; the next proposal needs the sentence."""
+    adapter = _with_ticket(_adapter(tmp_path), {"name": "Done", "type": "completed"})
+    request = _request()
+    destination = adapter.metrics_path(request)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps({"note": "could not fit the model"}), encoding="utf-8")
+
+    result = adapter.result(request)
+
+    assert result is not None and result.status == "failed"
+    assert result.failure_excerpt is not None and "note" in result.failure_excerpt
+    assert "no numeric value" in result.failure_excerpt
