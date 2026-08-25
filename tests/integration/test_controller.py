@@ -245,3 +245,49 @@ def test_a_late_result_is_recorded_instead_of_discarded(tmp_path, hypothesis, pr
 
     with pytest.raises(LoopStateError, match="never dispatched"):
         controller.import_result(run_id, late.model_copy(update={"experiment_id": "EXP-001"}))
+
+
+def test_a_standing_candidate_pool_can_be_rescored_without_new_proposals(
+    tmp_path, hypothesis, proposal, clone_proposal
+) -> None:
+    """A round with nothing new to propose must still be able to select.
+
+    A preregistered candidate set is meant to be worked through one experiment at a time. Requiring
+    a fresh proposal to reach `scoring` would make the run invent work it does not want just to get
+    at work it already committed to.
+    """
+    import pytest
+
+    from epistemic_loop.config import AppConfig, CompetitionConfig, PhaseWeights, RunConfig
+    from epistemic_loop.domain.enums import LoopState
+    from epistemic_loop.domain.models import CompetitionWorldModel
+
+    run_id = "rescore-001"
+    weights = PhaseWeights(pragmatic=0.2, epistemic=0.45, robustness=0.2, diversity=0.15)
+    controller = ResearchController(ResearchRepository(tmp_path / ".runs", tmp_path / "projection.db"))
+    config = AppConfig(
+        run=RunConfig(id=run_id), competition=CompetitionConfig(slug="example", metric_direction="maximize")
+    )
+    controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id=run_id)
+    controller.start(run_id, CompetitionWorldModel())
+    controller.record_hypotheses(run_id, [hypothesis.model_copy(update={"run_id": run_id})])
+    controller.record_proposals(
+        run_id,
+        [
+            clone_proposal(proposal, run_id=run_id, id="EXP-001"),
+            clone_proposal(proposal, run_id=run_id, id="EXP-002", protocol="a second, different protocol"),
+        ],
+    )
+    first = controller.select_experiments(run_id, weights=weights, size=1)
+    assert len(first.selected_experiment_ids) == 1
+    controller.replan(run_id, "round finished without dispatching")
+    assert controller.state(run_id).loop_state == LoopState.PLANNING
+
+    second = controller.select_experiments(run_id, weights=weights, size=1)
+
+    assert second.selected_experiment_ids and second.selected_experiment_ids != first.selected_experiment_ids
+    assert controller.state(run_id).loop_state == LoopState.SELECTING
+
+    controller.replan(run_id, "and again")
+    with pytest.raises(ValueError, match="no proposed experiments"):
+        controller.select_experiments(run_id, weights=weights, size=1)

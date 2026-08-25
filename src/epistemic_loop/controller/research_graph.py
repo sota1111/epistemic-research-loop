@@ -173,6 +173,13 @@ class ResearchController:
         candidates = state.open_candidates()
         if not candidates:
             raise ValueError("no proposed experiments are available for selection")
+        if state.loop_state == LoopState.PLANNING:
+            # A round with nothing new to propose is legitimate: a preregistered candidate set is
+            # meant to be worked through one experiment at a time, and forcing a fresh proposal each
+            # round just to reach `scoring` would make the run invent work it does not want. Entering
+            # `scoring` from `planning` is only allowed while candidates are actually standing.
+            self._advance(run_id, LoopState.PLANNING, LoopState.SCORING, {LoopState.PLANNING})
+            state = self.state(run_id)
         scored = evaluate_candidates(
             candidates,
             state.gate_context(
