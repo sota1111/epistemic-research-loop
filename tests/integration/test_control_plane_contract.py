@@ -53,6 +53,9 @@ def test_linear_issue_contains_versioned_idempotent_contract() -> None:
     parsed = json.loads(template)
     assert parsed["experiment_id"] == "exp-1" and parsed["run_id"] == "run-1"
     assert parsed["status"] == "completed" and parsed["attempt"] == 1
+    # The result must carry the ticket identifier or the observation cannot be traced back to
+    # the decision that produced it.
+    assert "external_ref" in parsed
     assert "failed" in body, "the ticket must tell the worker to report failures too"
     # ExperimentResult is extra=forbid, so a worker that helpfully adds a `notes` field has its
     # whole result rejected at import. The ticket has to say the schema is closed; showing a

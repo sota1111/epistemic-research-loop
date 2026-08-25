@@ -126,6 +126,9 @@ class AiDevControlPlaneAdapter(ExecutorAdapter):
                 "metrics": {"<metrics.json の内容をそのまま>": 0.0},
                 "artifact_refs": [f"{output_dir}/{name}" for name in request.required_outputs],
                 "runtime": {"wall_seconds": 0.0},
+                # Without this the observation cannot be traced back to the ticket that produced it,
+                # and the audit trail from research decision to executed work is broken.
+                "external_ref": "<このイシューの識別子。例 SOT-1234>",
             },
             indent=2,
             ensure_ascii=False,
