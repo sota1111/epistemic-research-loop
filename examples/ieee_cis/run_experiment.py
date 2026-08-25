@@ -58,6 +58,8 @@ class Spec:
     holdout_fraction: float
     drop_columns: list[str]
     drop_prefixes: list[str]
+    drop_random: int
+    drop_random_seed: int
     group_column: str
     n_estimators: int
     learning_rate: float
@@ -124,6 +126,14 @@ def build_features(frame: pd.DataFrame, spec: Spec, reference: pd.DataFrame | No
         columns = [column for column in columns if not column.startswith("id_")]
     for dropped in spec.drop_columns:
         columns = [column for column in columns if column != dropped]
+    if spec.drop_random:
+        # Size-matched control for a block ablation: removing N columns chosen at random costs
+        # whatever losing N columns costs, with no claim about which ones. An ablation that matches
+        # this number was measuring block size, not information.
+        generator = np.random.default_rng(spec.drop_random_seed)
+        droppable = [column for column in columns if column != TIME]
+        chosen = set(generator.choice(droppable, size=min(spec.drop_random, len(droppable)), replace=False))
+        columns = [column for column in columns if column not in chosen]
     if spec.drop_prefixes:
         # Block-level ablation: remove a whole named family such as the D deltas or the C counters.
         prefixes = tuple(spec.drop_prefixes)
@@ -548,6 +558,8 @@ def parse(argv: list[str] | None = None) -> Spec:
     parser.add_argument("--holdout-fraction", type=float, default=0.2)
     parser.add_argument("--drop-columns", default="")
     parser.add_argument("--drop-prefixes", default="", help="comma-separated column-name prefixes to ablate as a block")
+    parser.add_argument("--drop-random", type=int, default=0, help="size-matched control: drop N randomly chosen columns")
+    parser.add_argument("--drop-random-seed", type=int, default=7)
     parser.add_argument("--group-column", default="")
     parser.add_argument("--n-estimators", type=int, default=300)
     parser.add_argument("--learning-rate", type=float, default=0.05)
@@ -577,6 +589,8 @@ def parse(argv: list[str] | None = None) -> Spec:
         holdout_fraction=arguments.holdout_fraction,
         drop_columns=[value for value in arguments.drop_columns.split(",") if value.strip()],
         drop_prefixes=[value for value in arguments.drop_prefixes.split(",") if value.strip()],
+        drop_random=arguments.drop_random,
+        drop_random_seed=arguments.drop_random_seed,
         group_column=arguments.group_column,
         n_estimators=arguments.n_estimators,
         learning_rate=arguments.learning_rate,
