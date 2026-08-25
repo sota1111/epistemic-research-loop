@@ -145,16 +145,26 @@ class ResearchController:
 
     def record_proposals(self, run_id: str, proposals: Sequence[ExperimentProposal]) -> list[str]:
         state = self.state(run_id)
-        incoming = list(proposals)
-        for proposal in incoming:
+        # A reused identifier is a naming accident, not a research error. Failing the batch loses the
+        # designs that were fine alongside it and ends the round, which is how the eighth unattended
+        # run stopped at round two. Drop the collision, keep the rest, and fail only if nothing is
+        # left -- there is no safe way to record two different designs under one identifier.
+        recorded: list[ExperimentProposal] = []
+        collisions: list[str] = []
+        for proposal in proposals:
             if proposal.run_id != run_id:
                 raise ValueError(f"experiment {proposal.id} belongs to run {proposal.run_id}")
-            if proposal.id in state.proposals:
-                raise ValueError(f"experiment {proposal.id} was already proposed")
+            if proposal.id in state.proposals or any(proposal.id == item.id for item in recorded):
+                collisions.append(proposal.id)
+                continue
             validate_preregistration(proposal)
+            recorded.append(proposal)
+        if not recorded:
+            raise ValueError(f"every proposed experiment reuses an existing identifier: {collisions}")
+        for proposal in recorded:
             self.repository.append(run_id, EventType.EXPERIMENT_PROPOSED, proposal)
         self._advance(run_id, state.loop_state, LoopState.SCORING, {LoopState.PLANNING})
-        return [item.id for item in incoming]
+        return [item.id for item in recorded]
 
     def select_experiments(
         self,

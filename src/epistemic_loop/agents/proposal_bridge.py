@@ -137,6 +137,9 @@ class ProposalBridge:
                 "observations": state.observation_digest(),
                 "falsification_history": state.falsification_digest(),
                 "failed_experiments": state.failed_experiments(),
+                # Identifiers are the proposer's to choose, so it has to know which are taken. A
+                # reused one is dropped, and a round that only reuses identifiers produces nothing.
+                "used_experiment_ids": sorted(state.proposals),
                 # A split that has answered its budget of selecting queries must be rotated, so the
                 # designer needs to see what has already been spent against each one.
                 "validation_reuse": state.validation_reuse(),

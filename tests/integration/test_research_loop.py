@@ -231,8 +231,14 @@ def test_proposals_are_validated_against_the_run(
 ) -> None:
     started.record_hypotheses("run-001", [hypothesis])
     started.record_proposals("run-001", [proposal])
-    with pytest.raises(ValueError, match="already proposed"):
+
+    # A reused identifier costs that proposal, not the batch: the designs beside it are still good
+    # research and dropping them ends the round for a naming accident.
+    fresh = clone_proposal(proposal, id="EXP-FRESH")
+    assert started.record_proposals("run-001", [proposal, fresh]) == ["EXP-FRESH"]
+    with pytest.raises(ValueError, match="every proposed experiment reuses"):
         started.record_proposals("run-001", [proposal])
+
     foreign = clone_proposal(proposal, id="EXP-FOREIGN", run_id="other-run")
     with pytest.raises(ValueError, match="belongs to run other-run"):
         started.record_proposals("run-001", [foreign])
