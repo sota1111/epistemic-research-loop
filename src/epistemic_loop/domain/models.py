@@ -153,7 +153,18 @@ class Hypothesis(DomainModel):
 
 
 class ScoreEstimate(DomainModel):
-    mean_gain: float = 0
+    #: Expected *improvement* on the run's primary metric. Positive always means better, whichever
+    #: way the metric runs: for a metric that is minimised, an expected drop of 0.4 is `+0.4`. This
+    #: is stated on the field because the field's JSON Schema is what the proposing model reads,
+    #: and a proposal that reports a signed metric delta instead inverts its own utility -- the
+    #: selector maximises expected gain and would then prefer the designs expected to do worst.
+    mean_gain: float = Field(
+        default=0,
+        description=(
+            "Expected improvement on the primary metric. Positive is always better. If the metric "
+            "is minimised, report the expected reduction as a positive number."
+        ),
+    )
     uncertainty: float = Field(default=0, ge=0)
     fold_std: float = Field(default=0, ge=0)
     seed_std: float = Field(default=0, ge=0)

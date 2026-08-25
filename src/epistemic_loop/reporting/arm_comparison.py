@@ -6,14 +6,17 @@ from typing import Any
 from epistemic_loop.controller.budget_manager import BudgetManager
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.domain.enums import ExperimentStatus, FalsificationDisposition, HypothesisStatus
+from epistemic_loop.scoring.normalization import higher_is_better
 
 #: Experiment types that cannot raise the metric. Their share is what "research" costs.
 NON_SCORING_TYPES = frozenset({"diagnostic", "falsification", "replication", "robustness", "ablation"})
 
 
-def arm_summary(
+def arm_summary(  # noqa: PLR0913
     state: RunState,
     *,
+    primary_metric: str,
+    metric_direction: str,
     submissions: int = 0,
     public_score: float | None = None,
     steering_estimate: float | None = None,
@@ -36,14 +39,21 @@ def arm_summary(
     types = Counter(proposal.experiment_type.value for proposal in completed)
     non_scoring = sum(count for kind, count in types.items() if kind in NON_SCORING_TYPES)
 
-    # The highest number the arm ever saw, under *any* scheme. For an exploiter this is also the
+    # The best number the arm ever saw, under *any* scheme. For an exploiter this is also the
     # number it steered by; for a research arm it is usually from a scheme the arm went on to
     # reject, so it must never be used as the arm's own estimate.
-    best_local = max(
-        (observation.metrics.get("roc_auc", float("-inf")) for observation in state.observations.values()),
-        default=float("-inf"),
+    #
+    # "Best" depends on which way the metric runs, and this used to assume roc_auc and a maximum.
+    # Pointed at a minimised competition it reported the arm's *worst* result as its best, and
+    # nothing about the output looked wrong.
+    observed = [
+        observation.metrics[primary_metric]
+        for observation in state.observations.values()
+        if primary_metric in observation.metrics
+    ]
+    best_local_value = (
+        max(observed, key=lambda value: higher_is_better(value, metric_direction)) if observed else None
     )
-    best_local_value = None if best_local == float("-inf") else best_local
     return {
         "run_id": state.run_id,
         "mode": state.run.mode.value,
@@ -59,14 +69,23 @@ def arm_summary(
         "inconclusive_experiments": dispositions.get(FalsificationDisposition.INCONCLUSIVE.value, 0),
         "cpu_hours": round(state.usage.cpu_hours, 2),
         "kaggle_submissions": submissions,
-        "best_local_roc_auc": best_local_value,
+        "primary_metric": primary_metric,
+        "metric_direction": metric_direction,
+        "best_local_score": best_local_value,
         # The estimate the arm actually made decisions against. It has to be supplied, not inferred:
         # an arm that deliberately measures pessimistic schemes has a best-ever number that is not
         # its belief about itself, and computing the calibration gap from that number is meaningless.
         "steering_estimate": steering_estimate,
         "public_score": public_score,
+        # Signed so that positive always means "the local estimate looked better than the
+        # leaderboard did", in either direction. A raw subtraction reverses that meaning the moment
+        # the metric is minimised, which is the kind of error a report is least likely to survive.
         "cv_public_gap": (
-            round(steering_estimate - public_score, 4)
+            round(
+                higher_is_better(steering_estimate, metric_direction)
+                - higher_is_better(public_score, metric_direction),
+                4,
+            )
             if steering_estimate is not None and public_score is not None
             else None
         ),
@@ -102,7 +121,7 @@ def build_arm_comparison(epistemic: dict[str, Any], exploiter: dict[str, Any], *
             epistemic["inconclusive_experiments"],
             exploiter["inconclusive_experiments"],
         ),
-        _row("Highest local number seen, any scheme", epistemic["best_local_roc_auc"], exploiter["best_local_roc_auc"]),
+        _row("Best local number seen, any scheme", epistemic["best_local_score"], exploiter["best_local_score"]),
         _row("Estimate the arm steered by", epistemic["steering_estimate"], exploiter["steering_estimate"]),
         _row("Public leaderboard score", epistemic["public_score"], exploiter["public_score"]),
         _row("Calibration gap (steering minus public)", epistemic["cv_public_gap"], exploiter["cv_public_gap"]),

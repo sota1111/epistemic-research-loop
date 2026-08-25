@@ -90,6 +90,8 @@ def test_the_summary_separates_scoring_from_non_scoring_work(
     observations = [_observation("E-DIAG", 0.90), _observation("E-OPT", 0.96)]
     summary = arm_summary(
         _state("epistemic", RunMode.EPISTEMIC, proposals, [hypothesis], observations, []),
+        primary_metric="roc_auc",
+        metric_direction="maximize",
         submissions=1,
         public_score=0.935,
         steering_estimate=0.96,
@@ -98,7 +100,7 @@ def test_the_summary_separates_scoring_from_non_scoring_work(
     assert summary["experiments_completed"] == 3
     assert summary["non_scoring_share"] == round(2 / 3, 3)
     assert summary["distinct_lineages"] == 3
-    assert summary["best_local_roc_auc"] == 0.96
+    assert summary["best_local_score"] == 0.96
     assert summary["steering_estimate"] == 0.96
     assert summary["cv_public_gap"] == 0.025
     assert summary["kaggle_submissions"] == 1
@@ -131,7 +133,9 @@ def test_refutation_is_counted_separately_from_confirmation(
             [falsified, contested, supported],
             [_observation("E-DIAG", 0.9)],
             [record],
-        )
+        ),
+        primary_metric="roc_auc",
+        metric_direction="maximize",
     )
     assert summary["refuted"] == 2, "falsified and contested both count as refutation"
     assert summary["falsification_dispositions"] == {"falsified": 1}
@@ -158,6 +162,8 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
             [_observation("E-DIAG", 0.9101)],
             [],
         ),
+        primary_metric="roc_auc",
+        metric_direction="maximize",
         public_score=0.935,
         steering_estimate=0.9101,
     )
@@ -170,6 +176,8 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
             [_observation("E-OPT", 0.9708)],
             [],
         ),
+        primary_metric="roc_auc",
+        metric_direction="maximize",
         public_score=0.935,
         steering_estimate=0.9708,
     )
@@ -181,3 +189,42 @@ def test_the_report_refuses_to_present_local_scores_as_comparable(
     assert "-0.0249" in report
     assert "0.0358" in report
     assert "sign" in report
+
+
+def test_best_local_and_the_calibration_gap_follow_the_metric_s_direction(
+    hypothesis, proposal, clone_proposal
+) -> None:
+    """A minimised competition inverts what "best" and "optimistic" mean.
+
+    This used to read `roc_auc` and take a maximum, so pointed at an RMSE competition it reported
+    the arm's *worst* result as its best and flipped the sign of the calibration gap -- and nothing
+    in the output looked wrong, which is why it needs a test rather than a reader.
+    """
+    proposals = [clone_proposal(proposal, id="E-A"), clone_proposal(proposal, id="E-B")]
+    observations = [_observation("E-A", 15.9), _observation("E-B", 12.3)]
+    for observation in observations:
+        observation.metrics["rmse"] = observation.metrics.pop("roc_auc")
+
+    summary = arm_summary(
+        _state("min", RunMode.EPISTEMIC, proposals, [hypothesis], observations, []),
+        primary_metric="rmse",
+        metric_direction="minimize",
+        public_score=13.0,
+        steering_estimate=12.3,
+    )
+
+    assert summary["best_local_score"] == 12.3, "for a minimised metric the best score is the lowest"
+    assert summary["primary_metric"] == "rmse" and summary["metric_direction"] == "minimize"
+    # Local 12.3 against a public 13.0: the local estimate flattered the arm, so the gap is
+    # positive -- the same sign it would carry for a maximised metric that overshot.
+    assert summary["cv_public_gap"] == 0.7
+
+    maximised = arm_summary(
+        _state("max", RunMode.EPISTEMIC, proposals, [hypothesis], observations, []),
+        primary_metric="rmse",
+        metric_direction="maximize",
+        public_score=13.0,
+        steering_estimate=12.3,
+    )
+    assert maximised["best_local_score"] == 15.9
+    assert maximised["cv_public_gap"] == -0.7

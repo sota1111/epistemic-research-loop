@@ -1074,14 +1074,21 @@ def report_compare(
         if record.get("mode") == "execute":
             key = str(record.get("run_id"))
             counts[key] = counts.get(key, 0) + 1
+    # Both arms are the same competition, so the metric they are judged on comes from one config.
+    # Reading it per arm would let a mismatched pair be compared without anything saying so.
+    metric = _run_config(epistemic_run).competition
     left = arm_summary(
         _state(epistemic_run),
+        primary_metric=metric.primary_metric,
+        metric_direction=metric.metric_direction,
         submissions=counts.get(epistemic_run, 0),
         public_score=epistemic_public,
         steering_estimate=epistemic_steering,
     )
     right = arm_summary(
         _state(exploiter_run),
+        primary_metric=metric.primary_metric,
+        metric_direction=metric.metric_direction,
         submissions=counts.get(exploiter_run, 0),
         public_score=exploiter_public,
         steering_estimate=exploiter_steering,
