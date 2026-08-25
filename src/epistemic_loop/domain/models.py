@@ -236,8 +236,10 @@ class ExperimentProposal(DomainModel):
             "reproducible from this string alone.\n"
             "- an executor that directs a separate repository requires `brief`, an object with "
             "`title`, `objective`, `approach` and `verification` written in that repository's terms.\n"
-            "Optional for both: `objective`, `container_image`, `network_policy`, `resources`, "
-            "`dataset_mounts`."
+            "Optional for both: `objective` (a one-line restatement), `container_image`, "
+            "`resources` ({cpu, memory_gb, gpu, timeout_seconds}), `dataset_mounts` (a list of "
+            "names), and `network_policy`, which must be exactly one of `disabled`, "
+            "`source_policy_proxy` or `enabled` -- any other value is rejected."
         ),
     )
     required_artifacts: list[str] = Field(min_length=1)

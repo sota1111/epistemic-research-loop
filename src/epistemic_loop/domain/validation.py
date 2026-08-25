@@ -10,6 +10,9 @@ from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
 from epistemic_loop.holdout.adaptivity import exhausted as validation_budget_exhausted
 from epistemic_loop.holdout.adaptivity import validation_fingerprint
 
+#: Declared here rather than imported from the contract module, which imports this one.
+NETWORK_POLICIES = ("disabled", "source_policy_proxy", "enabled")
+
 
 @dataclass(frozen=True)
 class GateContext:
@@ -63,8 +66,16 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("predicted outcomes are required")
     if not experiment.decision_rule.strip():
         reasons.append("decision rule is required")
-    if not experiment.implementation_request.get("command"):
-        reasons.append("reproducible implementation_request.command is required")
+    if not experiment.implementation_request.get("command") and not experiment.implementation_request.get("brief"):
+        reasons.append("implementation_request needs a reproducible `command` or a `brief`")
+    policy = experiment.implementation_request.get("network_policy")
+    if policy is not None and policy not in NETWORK_POLICIES:
+        # Caught here rather than when the contract is built, because by then the experiment has
+        # already been selected and the round is spent on a value the gate could have refused.
+        reasons.append(f"implementation_request.network_policy {policy!r} must be one of {list(NETWORK_POLICIES)}")
+    resources = experiment.implementation_request.get("resources")
+    if resources is not None and not isinstance(resources, dict):
+        reasons.append("implementation_request.resources must be an object")
     if not experiment.required_artifacts:
         reasons.append("required artifacts are required")
     if experiment.contamination_risk == Risk.HIGH:

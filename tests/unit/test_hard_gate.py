@@ -54,3 +54,41 @@ def test_the_consecutive_optimization_limit_is_configurable(proposal: Experiment
     stricter = hard_gate(optimization, context(recent_experiment_types=recent, max_consecutive_optimization=2))
     assert not stricter.passed
     assert any("2 consecutive" in reason for reason in stricter.reasons)
+
+
+def test_an_unusable_implementation_request_is_refused_before_selection(proposal: ExperimentProposal) -> None:
+    """The contract is built after selection, so a bad value there costs the whole round.
+
+    `implementation_request` is free-form by design -- different executors need different keys -- and
+    every constraint on it used to live in code the proposer never sees. A model that guessed
+    `network_policy: "offline"` had its experiment selected and then crashed the dispatch.
+    """
+    bad_policy = proposal.model_copy(
+        update={"implementation_request": {"command": "python3 run.py", "network_policy": "offline"}}
+    )
+    result = hard_gate(bad_policy, context())
+    assert not result.passed
+    assert any("network_policy" in reason and "offline" in reason for reason in result.reasons)
+
+    bad_resources = proposal.model_copy(
+        update={"implementation_request": {"command": "python3 run.py", "resources": "lots"}}
+    )
+    assert any("resources must be an object" in reason for reason in hard_gate(bad_resources, context()).reasons)
+
+    good = proposal.model_copy(
+        update={"implementation_request": {"command": "python3 run.py", "network_policy": "disabled"}}
+    )
+    assert hard_gate(good, context()).passed
+
+
+def test_a_brief_satisfies_the_gate_where_a_command_would(proposal: ExperimentProposal) -> None:
+    """An executor that directs a repository has no command to run; it hands over a task."""
+    brief_only = proposal.model_copy(
+        update={"implementation_request": {"brief": {"title": "t", "objective": "o", "approach": "a"}}}
+    )
+    assert hard_gate(brief_only, context()).passed
+
+    neither = proposal.model_copy(update={"implementation_request": {"objective": "just a sentence"}})
+    result = hard_gate(neither, context())
+    assert not result.passed
+    assert any("reproducible `command` or a `brief`" in reason for reason in result.reasons)
