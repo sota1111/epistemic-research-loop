@@ -16,6 +16,8 @@ Version: **0.1.0**
   claimed.
 - **[docs/progress.md](docs/progress.md)** — milestones, how to verify them yourself, known
   limitations.
+- **[docs/research_state_selection.md](docs/research_state_selection.md)** — target design for
+  preferred-state gaps, measurable information gain, and multi-agent experiment portfolios.
 - **[docs/verification/](docs/verification/)** — what happened when this was run against a real
   competition, including the parts that did not work.
 

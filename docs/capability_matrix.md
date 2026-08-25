@@ -25,6 +25,7 @@ the event log without a human or a model asserting it), **measured** (reported b
 | --- | --- | --- | --- | --- |
 | 4 | スコア改善だけでなく情報価値の高い実験を選べる | enforced | `scoring/selector.py`: `U = wp·P + wi·I + wr·R + wd·D − λ·C` | `tests/unit/test_scoring.py` |
 | 5 | Epistemic Value が実際の実験選択に影響している | enforced | Discovery weights epistemic at 0.45 against pragmatic 0.20 (`config.SelectionConfig`) | `tests/unit/test_scoring.py` |
+| 31 | 事前登録した結果尤度と現在beliefからInformation Gainを機械計算できる | enforced | `HypothesisOutcomeForecast` validates both likelihood vectors; `scoring.epistemic.binary_hypothesis_information_gain` computes mutual information; `selection/v2` records the method used | `tests/unit/test_models.py`, `tests/unit/test_scoring.py`, `tests/integration/test_research_loop.py` |
 | 17 | 同系統のモデル調整だけに偏らず多様性を保っている | enforced | greedy similarity-penalised portfolio (`select_portfolio`) plus the gate that refuses a fourth consecutive optimization run | `tests/unit/test_scoring.py`, `tests/unit/test_hard_gate.py` |
 | 18 | CPU・GPU・時間・LLM コストを考慮している | enforced | `scoring/cost.py`, `controller/budget_manager.py`, and six budget checks inside `hard_gate` | `tests/unit/test_state_budget.py`, `tests/unit/test_hard_gate.py` |
 
@@ -95,6 +96,10 @@ unattended loop, the control plane's worker fleet, and the Research-to-Exploitat
 
 - **Confidence is not calibrated.** It is an operational prioritisation number in `[0.05, 0.95]`.
   `belief/calibration.py` can score a run's Brier loss after the fact; nothing calibrates during it.
+- **Selection v2 is partial.** Likelihood-based EIG is enforced when a proposal supplies an
+  `outcome_forecast`, but old proposals use the explicitly recorded `rubric_v1` fallback. There is
+  not yet a validation-world posterior, preferred-state gap, forecast calibration loop, or
+  role-scoped multi-agent proposer.
 - **The synthetic benchmark is a harness test, not evidence about Kaggle.** Its actions and regrets
   are stipulated. It shows the selection policy prefers informative actions and that the negative
   control costs more without paying — not that the loop beats an exploiter on a real competition.

@@ -121,6 +121,38 @@ class PredictedOutcome(DomainModel):
     discriminates_from: list[str] = Field(default_factory=list)
 
 
+class OutcomeLikelihood(DomainModel):
+    """A preregistered observable outcome under a binary research hypothesis."""
+
+    label: str = Field(min_length=1)
+    probability_if_true: float = Field(ge=0, le=1)
+    probability_if_false: float = Field(ge=0, le=1)
+
+
+class HypothesisOutcomeForecast(DomainModel):
+    """Likelihood model used to calculate information gain without an LLM self-score.
+
+    The hypothesis may still be proposed by a model, but the two likelihood vectors are fixed before
+    execution. Selection combines them with the hypothesis probability from the event log.
+    """
+
+    hypothesis_id: str = Field(min_length=1)
+    outcomes: list[OutcomeLikelihood] = Field(min_length=2)
+    decisions_affected: list[str] = Field(min_length=1)
+    measurement_notes: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_probability_vectors(self) -> HypothesisOutcomeForecast:
+        labels = [item.label for item in self.outcomes]
+        if len(labels) != len(set(labels)):
+            raise ValueError("outcome likelihood labels must be unique")
+        true_total = sum(item.probability_if_true for item in self.outcomes)
+        false_total = sum(item.probability_if_false for item in self.outcomes)
+        if abs(true_total - 1.0) > 1e-6 or abs(false_total - 1.0) > 1e-6:
+            raise ValueError("outcome likelihood probabilities must sum to 1 under true and false")
+        return self
+
+
 class Hypothesis(DomainModel):
     id: str
     run_id: str
@@ -235,6 +267,10 @@ class ExperimentProposal(DomainModel):
     seeds: list[int] = Field(min_length=1)
     metrics: list[str] = Field(min_length=1)
     predicted_outcomes: list[PredictedOutcome] = Field(min_length=1)
+    #: Optional during the v1 -> v2 migration. New proposals should populate it; when present,
+    #: selection computes mutual information from the current belief instead of trusting the
+    #: proposal's 0--4 epistemic rubric.
+    outcome_forecasts: list[HypothesisOutcomeForecast] = Field(default_factory=list)
     decision_rule: str = Field(min_length=1)
     expected_score_gain: ScoreEstimate
     epistemic_assessment: EpistemicAssessment

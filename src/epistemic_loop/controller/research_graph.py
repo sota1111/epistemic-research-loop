@@ -43,7 +43,7 @@ from epistemic_loop.holdout.violations import HoldoutViolation
 from epistemic_loop.scoring.selector import ScoredCandidate, evaluate_candidates, select_portfolio
 from epistemic_loop.storage.repositories import ResearchRepository
 
-POLICY_VERSION = "selection/v1"
+POLICY_VERSION = "selection/v2"
 SIDECAR_METRICS = {
     "fold_metrics": "fold_metrics.json",
     "seed_metrics": "seed_metrics.json",
@@ -204,6 +204,7 @@ class ResearchController:
             ),
             weights,
             cost_lambda,
+            beliefs={identifier: item.current_confidence for identifier, item in state.hypotheses.items()},
         )
         selected = select_portfolio(
             scored,

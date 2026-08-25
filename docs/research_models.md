@@ -510,17 +510,15 @@ EVSI(e)
 実用上のexperiment utilityは、
 
 \[
-U(e)
-=
-\alpha \widehat{\Delta \mathrm{Performance}}
-
-- \beta EVSI(e)
-- \gamma QD(e)
-- \delta \widehat{\Delta Robustness}
-
-* \eta Cost(e)
-* \rho Risk(e)
-  \]
+\begin{aligned}
+U(e)={}&\alpha \widehat{\Delta \mathrm{Performance}}
++ \beta EVSI(e)
++ \gamma QD(e)
++ \delta \widehat{\Delta Robustness} \\
+&- \eta Cost(e)
+- \rho Risk(e)
+\end{aligned}
+\]
 
 程度で十分です。
 
@@ -749,11 +747,9 @@ fitness:
 U_B(e)
 =
 \alpha\widehat{\Delta CV}
-
-- \gamma QDContribution
-
-* \eta Cost
-  \]
++ \gamma QDContribution
+- \eta Cost
+\]
 
 model/feature/representation/split familyのdiversityを維持します。
 
@@ -779,13 +775,11 @@ belief update
 U_C(e)
 =
 \alpha\widehat{\Delta CV}
-
-- \beta EVSI
-- \gamma QDContribution
-- \delta RobustnessGain
-
-* \eta Cost
-  \]
++ \beta EVSI
++ \gamma QDContribution
++ \delta RobustnessGain
+- \eta Cost
+\]
 
 とします。
 

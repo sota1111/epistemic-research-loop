@@ -51,4 +51,6 @@ hash. LLM output can propose state but cannot mutate it without deterministic va
 `docs/` is the project record, and [capability matrix](capability_matrix.md) is its index: one row
 per capability, naming the code that enforces it and the test that would fail if it stopped being
 true. [progress](progress.md) carries milestones, the commands to verify them yourself, and the
-known limitations. Linear issues point here; they do not restate it.
+known limitations. The preferred-state and multi-agent selection target is in
+[research-state-aware experiment selection](research_state_selection.md). Linear issues point here;
+they do not restate it.

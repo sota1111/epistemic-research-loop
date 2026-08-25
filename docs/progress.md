@@ -27,6 +27,7 @@ names its Linear issue.
 | 2026-08-24 | Control-plane Linear round trip verified against the live API | `docs/verification/sot-3053/` |
 | 2026-08-24 | Capability closure: derived phase evidence, exploiter hand-off, validation adaptivity, discovery-scored benchmark, local-scoring cadence | `tests/unit/test_phase_evidence.py`, `tests/integration/test_exploiter_handoff.py`, `tests/unit/test_validation_adaptivity.py`, `tests/e2e/test_local_scoring_loop.py` |
 | 2026-08-24 | Live verification on IEEE-CIS Fraud Detection: 16 adaptive rounds, 21 auto-filed Linear tickets, 1 Kaggle submission, against an exploiter-only control | [ieee_cis_autonomous_loop](verification/ieee_cis_autonomous_loop.md) |
+| 2026-08-25 | Selection v2 started: research-state design fixed, preregistered likelihood forecasts and belief-conditioned mechanical EIG wired through the controller | `tests/unit/test_scoring.py`, `tests/integration/test_research_loop.py` |
 
 ## What the last milestone changed
 
@@ -83,6 +84,11 @@ These are deliberate and unfinished, not oversights:
   reservation-based, so a cheap experiment keeps its estimated charge.
 - **Calibration is scored after the fact only** (`belief/calibration.brier_score`); nothing calibrates
   confidence during a run, and the ontology says so.
+- **Research-state selection v2 is only at its first vertical slice.** New proposals can replace
+  the subjective epistemic rubric with belief-conditioned EIG, while old proposals retain an
+  auditable fallback. Validation-world projection, preferred-state gap estimation, calibration,
+  information-redundancy penalties, and role-scoped proposal agents are not implemented yet; see
+  [research-state-aware experiment selection](research_state_selection.md).
 - **The local executor is a development sandbox**, not the production isolation described in
   [security](security.md).
 

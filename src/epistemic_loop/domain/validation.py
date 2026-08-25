@@ -70,6 +70,11 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
     unknown = sorted(set(experiment.hypothesis_ids) - context.hypothesis_ids)
     if unknown:
         reasons.append(f"unknown hypotheses: {', '.join(unknown)}")
+    unlinked_forecasts = sorted(
+        {item.hypothesis_id for item in experiment.outcome_forecasts} - set(experiment.hypothesis_ids)
+    )
+    if unlinked_forecasts:
+        reasons.append(f"outcome forecasts target unlinked hypotheses: {', '.join(unlinked_forecasts)}")
     if not experiment.predicted_outcomes:
         reasons.append("predicted outcomes are required")
     if not experiment.decision_rule.strip():

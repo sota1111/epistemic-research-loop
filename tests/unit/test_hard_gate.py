@@ -1,5 +1,11 @@
 from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName
-from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
+from epistemic_loop.domain.models import (
+    Budget,
+    BudgetUsage,
+    ExperimentProposal,
+    HypothesisOutcomeForecast,
+    OutcomeLikelihood,
+)
 from epistemic_loop.domain.validation import GateContext, experiment_fingerprint, hard_gate
 
 
@@ -16,6 +22,24 @@ def context(**changes: object) -> GateContext:
 
 def test_valid_preregistration_passes(proposal: ExperimentProposal) -> None:
     assert hard_gate(proposal, context()).passed
+
+
+def test_outcome_forecast_must_target_a_linked_hypothesis(proposal: ExperimentProposal) -> None:
+    forecast = HypothesisOutcomeForecast(
+        hypothesis_id="H-UNLINKED",
+        outcomes=[
+            OutcomeLikelihood(label="yes", probability_if_true=0.9, probability_if_false=0.1),
+            OutcomeLikelihood(label="no", probability_if_true=0.1, probability_if_false=0.9),
+        ],
+        decisions_affected=["choose a validation split"],
+        measurement_notes="fixed protocol",
+    )
+    candidate = proposal.model_copy(update={"outcome_forecasts": [forecast]})
+
+    result = hard_gate(candidate, context())
+
+    assert not result.passed
+    assert any("unlinked hypotheses" in reason for reason in result.reasons)
 
 
 def test_strict_holdout_is_always_rejected(proposal: ExperimentProposal) -> None:
