@@ -121,3 +121,21 @@ def test_no_allowlist_means_the_executor_imposes_none(proposal: ExperimentPropos
     """An executor that directs a repository has no shell to protect."""
     anything = proposal.model_copy(update={"implementation_request": {"command": "make all"}})
     assert hard_gate(anything, context()).passed
+
+
+def test_a_required_artifact_that_is_not_a_file_name_is_refused(proposal: ExperimentProposal) -> None:
+    """These are checked for existence after the run, so a sentence is a guaranteed failure.
+
+    An unattended designer listed "adversarial_roc_auc mean and per-seed values in metrics.json" as
+    a required artifact. It cannot exist, and the round was already spent by the time anyone looked.
+    """
+    prose = proposal.model_copy(update={"required_artifacts": ["metrics.json", "per-seed values in metrics.json"]})
+    result = hard_gate(prose, context())
+    assert not result.passed
+    assert any("plain relative file names" in reason for reason in result.reasons)
+
+    absolute = proposal.model_copy(update={"required_artifacts": ["/tmp/metrics.json"]})
+    assert not hard_gate(absolute, context()).passed
+
+    fine = proposal.model_copy(update={"required_artifacts": ["metrics.json", "seed_metrics.json"]})
+    assert hard_gate(fine, context()).passed

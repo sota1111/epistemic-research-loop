@@ -33,11 +33,17 @@ class LocalExecutor(ExecutorAdapter):
         return self.result_root / request.run_id / request.experiment_id / "result.json"
 
     def submit(self, request: ExperimentRequest) -> ExperimentResult:
-        arguments = shlex.split(request.command)
-        if not arguments or Path(arguments[0]).name not in self.command_allowlist:
-            raise PermissionError(f"command is not allowlisted: {arguments[0] if arguments else ''}")
         output_root = self._result_path(request).parent
         output_root.mkdir(parents=True, exist_ok=True)
+        # The proposal is written before the output directory is known, so the command has to be
+        # able to name it symbolically. Without this the only way to pass `--output` is to guess a
+        # path, and an experiment that runs but writes somewhere else is scored as a failure.
+        command = request.command.replace("${ERL_OUTPUT_DIR}", str(output_root)).replace(
+            "$ERL_OUTPUT_DIR", str(output_root)
+        )
+        arguments = shlex.split(command)
+        if not arguments or Path(arguments[0]).name not in self.command_allowlist:
+            raise PermissionError(f"command is not allowlisted: {arguments[0] if arguments else ''}")
         environment = {
             "PATH": os.environ.get("PATH", ""),
             "LANG": os.environ.get("LANG", "C.UTF-8"),

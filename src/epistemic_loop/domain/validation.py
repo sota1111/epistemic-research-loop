@@ -97,6 +97,11 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("implementation_request.resources must be an object")
     if not experiment.required_artifacts:
         reasons.append("required artifacts are required")
+    for artifact in experiment.required_artifacts:
+        # Checked for existence after the run, so a sentence describing a file is a guaranteed
+        # failure -- and one discovered only after the experiment has already been executed.
+        if not artifact or " " in artifact or artifact.startswith("/") or ".." in artifact:
+            reasons.append(f"required_artifacts must be plain relative file names, not {artifact!r}")
     if experiment.contamination_risk == Risk.HIGH:
         reasons.append("high contamination risk")
     if context.source_policy_strict and any(not source.allowed for source in experiment.source_refs):

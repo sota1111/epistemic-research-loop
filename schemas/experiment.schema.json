@@ -471,6 +471,7 @@
       "type": "string"
     },
     "required_artifacts": {
+      "description": "File names the experiment must leave in its output directory, relative and without directories -- for example `metrics.json`. These are checked for existence after the run, so a description of what a file should contain is not one of these; it belongs in the protocol. `metrics.json` is expected by every executor.",
       "items": {
         "type": "string"
       },

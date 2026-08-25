@@ -247,7 +247,15 @@ class ExperimentProposal(DomainModel):
             "`source_policy_proxy` or `enabled` -- any other value is rejected."
         ),
     )
-    required_artifacts: list[str] = Field(min_length=1)
+    required_artifacts: list[str] = Field(
+        min_length=1,
+        description=(
+            "File names the experiment must leave in its output directory, relative and without "
+            "directories -- for example `metrics.json`. These are checked for existence after the "
+            "run, so a description of what a file should contain is not one of these; it belongs in "
+            "the protocol. `metrics.json` is expected by every executor."
+        ),
+    )
     lineage: str = Field(default="default", min_length=1)
     source_refs: list[SourceRef] = Field(default_factory=list)
     status: ExperimentStatus = ExperimentStatus.PROPOSED
