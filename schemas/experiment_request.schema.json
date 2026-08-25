@@ -60,6 +60,11 @@
       "title": "Base Commit Sha",
       "type": "string"
     },
+    "brief": {
+      "additionalProperties": true,
+      "title": "Brief",
+      "type": "object"
+    },
     "command": {
       "minLength": 1,
       "title": "Command",

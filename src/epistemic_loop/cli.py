@@ -13,6 +13,7 @@ import yaml
 
 from epistemic_loop.adapters.executor.ai_dev_control_plane import AiDevControlPlaneAdapter
 from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
+from epistemic_loop.adapters.executor.competition_repo import CompetitionRepoAdapter
 from epistemic_loop.adapters.executor.linear_local_worker import LinearLocalWorkerAdapter
 from epistemic_loop.adapters.executor.local import LocalExecutor
 from epistemic_loop.adapters.kaggle import (
@@ -121,6 +122,18 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
         return LocalExecutor(_home() / config.executor.workspace, result_root)
     if not config.executor.linear_team_id or not config.executor.linear_project_id:
         raise typer.BadParameter("executor.linear_team_id and executor.linear_project_id must be configured")
+    if config.executor.adapter == "competition_repo":
+        if not config.executor.target_repo:
+            raise typer.BadParameter("executor.target_repo must point at the competition repository")
+        return CompetitionRepoAdapter(
+            team_id=config.executor.linear_team_id,
+            project_id=config.executor.linear_project_id,
+            repo_path=config.executor.target_repo,
+            results_subdir=config.executor.results_subdir,
+            worker=config.executor.worker,
+            handoff=config.executor.handoff,
+            state_id=config.executor.linear_state_id,
+        )
     control_plane = AiDevControlPlaneAdapter(
         team_id=config.executor.linear_team_id,
         project_id=config.executor.linear_project_id,

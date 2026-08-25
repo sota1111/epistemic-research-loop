@@ -358,6 +358,10 @@ class ExperimentRequest(DomainModel):
     seeds: list[int] = Field(min_length=1)
     required_outputs: list[str] = Field(min_length=1)
     network_policy: Literal["disabled", "source_policy_proxy", "enabled"] = "disabled"
+    #: Human-readable task description for an executor whose worker develops rather than executes.
+    #: `command` tells a shell what to run; this tells a developer what to build and what counts as
+    #: done, in the target repository's own terms.
+    brief: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_execution_contract(self) -> ExperimentRequest:

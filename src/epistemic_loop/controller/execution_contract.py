@@ -62,4 +62,5 @@ def build_experiment_request(
         seeds=list(proposal.seeds),
         required_outputs=list(proposal.required_artifacts),
         network_policy=cast(Any, str(request.get("network_policy") or network_policy)),
+        brief=cast("dict[str, Any]", brief) if isinstance(brief := request.get("brief"), dict) else {},
     )

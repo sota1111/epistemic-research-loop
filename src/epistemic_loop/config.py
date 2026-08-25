@@ -101,7 +101,7 @@ class ContaminationConfig(StrictModel):
 class ExecutorConfig(StrictModel):
     # `linear_local_worker` files the real Linear ticket and runs it locally. It is a verification
     # harness for the auto-filing half of the contract, never a production executor.
-    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane|linear_local_worker)$")
+    adapter: str = Field(default="local", pattern="^(local|ai_dev_control_plane|linear_local_worker|competition_repo)$")
     queue: str = "kaggle-research"
     retry_infrastructure_failures: int = Field(default=2, ge=0)
     linear_team_id: str | None = None
@@ -115,6 +115,9 @@ class ExecutorConfig(StrictModel):
     worker: str = "claude:opus"
     handoff: bool = False
     target_repo: str | None = None
+    # `competition_repo` only: where the competition's own results convention lives, relative to
+    # target_repo. Results are read from <target_repo>/<results_subdir>/<experiment>/metrics.json.
+    results_subdir: str = "results"
     linear_state_id: str | None = None
 
 
