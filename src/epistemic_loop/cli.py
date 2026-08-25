@@ -440,8 +440,17 @@ def hypotheses_record(
 @experiments_app.command("request")
 def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
+    config = _run_config(run_id)
+    # A human filling the proposal slot needs the executor's contract as much as a model does.
     typer.echo(
-        str(_bridge().request_experiments(run_id, _state(run_id), _run_config(run_id).executor.command_allowlist))
+        str(
+            _bridge().request_experiments(
+                run_id,
+                _state(run_id),
+                config.executor.command_allowlist,
+                _executor(config).contract,
+            )
+        )
     )
 
 
@@ -478,6 +487,7 @@ def experiments_select(
             max_validation_reuse=config.loop.max_validation_reuse,
             max_consecutive_optimization=config.loop.max_consecutive_optimization_experiments,
             command_allowlist=tuple(config.executor.command_allowlist),
+            execution_contract=_executor(config).contract,
         )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error

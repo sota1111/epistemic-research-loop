@@ -193,3 +193,74 @@ def test_an_empty_metrics_file_says_what_it_contained_instead(tmp_path: Path) ->
     assert result is not None and result.status == "failed"
     assert result.failure_excerpt is not None and "note" in result.failure_excerpt
     assert "no numeric value" in result.failure_excerpt
+
+
+def _gate_context(hypothesis, contract):  # type: ignore[no-untyped-def]
+    from epistemic_loop.domain.enums import HoldoutPolicyName
+    from epistemic_loop.domain.models import Budget, BudgetUsage
+    from epistemic_loop.domain.validation import GateContext
+
+    return GateContext(
+        hypothesis_ids=frozenset({hypothesis.id}),
+        budget=Budget(),
+        usage=BudgetUsage(),
+        holdout_policy=HoldoutPolicyName.STRICT_BLIND,
+        required_request_fields=contract.required_fields,
+        required_brief_fields=contract.required_brief_fields,
+    )
+
+
+def test_the_executor_declares_what_a_proposal_must_carry(tmp_path: Path) -> None:
+    """The requirement has to be readable by the party expected to satisfy it.
+
+    This executor needs a brief and ignores a command, but that was stated only inside `submit`,
+    which runs after design, gating and selection have all succeeded. A proposal written against
+    the wrong shape took the whole round -- and the loop -- down at dispatch.
+    """
+    contract = _adapter(tmp_path).contract
+
+    assert contract.kind == "brief"
+    assert contract.required_fields == ("brief",)
+    assert set(contract.required_brief_fields) == {"title", "objective", "approach", "verification"}
+    assert "not by a shell" in contract.note, "the note is what the designer actually reads"
+    assert "command" in contract.note.lower(), "and it has to say that a command is wasted here"
+
+
+def test_the_gate_refuses_a_proposal_the_executor_could_not_run(hypothesis, proposal, clone_proposal) -> None:
+    """Refused before selection, not at dispatch. The two differ by a whole round."""
+    from epistemic_loop.adapters.executor.base import BRIEF_CONTRACT
+    from epistemic_loop.domain.validation import hard_gate
+
+    context = _gate_context(hypothesis, BRIEF_CONTRACT)
+
+    shell_shaped = clone_proposal(proposal, implementation_request={"command": "python3 run.py"})
+    refused = hard_gate(shell_shaped, context)
+    assert not refused.passed
+    assert any("missing ['brief']" in reason for reason in refused.reasons)
+
+    half_written = clone_proposal(
+        proposal,
+        implementation_request={"brief": {"title": "t", "objective": "o", "approach": "", "verification": " "}},
+    )
+    partial = hard_gate(half_written, context)
+    assert not partial.passed
+    assert any("'approach'" in reason and "'verification'" in reason for reason in partial.reasons)
+
+    complete = clone_proposal(
+        proposal,
+        implementation_request={
+            "brief": {"title": "t", "objective": "o", "approach": "a", "verification": "v"},
+        },
+    )
+    assert hard_gate(complete, context).passed, complete and hard_gate(complete, context).reasons
+
+
+def test_a_shell_run_is_unaffected_by_the_brief_requirement(hypothesis, proposal, clone_proposal) -> None:
+    """The contract is per-executor. A local run must not start demanding briefs."""
+    from epistemic_loop.adapters.executor.base import SHELL_CONTRACT
+    from epistemic_loop.domain.validation import hard_gate
+
+    context = _gate_context(hypothesis, SHELL_CONTRACT)
+    shell_shaped = clone_proposal(proposal, implementation_request={"command": "python3 run.py"})
+
+    assert hard_gate(shell_shaped, context).passed

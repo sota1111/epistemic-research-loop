@@ -228,7 +228,12 @@ class AutonomousLoop:
         if state.loop_state == LoopState.PLANNING:
             outcome.experiments = self.controller.record_proposals(
                 run_id,
-                self.proposer.experiments(run_id, state, tuple(self.config.executor.command_allowlist)),
+                self.proposer.experiments(
+                    run_id,
+                    state,
+                    tuple(self.config.executor.command_allowlist),
+                    self.executor.contract,
+                ),
             )
             state = self.controller.state(run_id)
 
@@ -244,6 +249,7 @@ class AutonomousLoop:
                 max_validation_reuse=self.config.loop.max_validation_reuse,
                 max_consecutive_optimization=self.config.loop.max_consecutive_optimization_experiments,
                 command_allowlist=tuple(self.config.executor.command_allowlist),
+                execution_contract=self.executor.contract,
             )
             outcome.selected = list(decision.selected_experiment_ids)
             utilities = [

@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import Field
 
+from epistemic_loop.adapters.executor.base import ExecutionContract
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.domain.enums import VerifierResult
 from epistemic_loop.domain.models import (
@@ -115,7 +116,11 @@ class ProposalBridge:
         )
 
     def experiment_request(
-        self, run_id: str, state: RunState, command_allowlist: Sequence[str] = ()
+        self,
+        run_id: str,
+        state: RunState,
+        command_allowlist: Sequence[str] = (),
+        execution_contract: ExecutionContract | None = None,
     ) -> ProposalRequest:
         return ProposalRequest(
             request_id=f"ED-{uuid.uuid4().hex[:12]}",
@@ -146,6 +151,10 @@ class ProposalBridge:
                 # What the executor will actually accept. A command outside this is refused by
                 # the gate, so telling the designer costs nothing and saves the round.
                 "allowed_command_prefixes": list(command_allowlist),
+                # *How* this run's work is carried out at all -- by a shell, or by a developer
+                # reading a brief. A designer that assumes the wrong one writes a proposal the
+                # executor cannot accept, and finds out after gating and selection have passed.
+                "execution_contract": execution_contract.describe() if execution_contract else {},
                 "holdout_policy": state.run.holdout_policy.model_dump(mode="json"),
             },
             json_schema=ExperimentBatch.model_json_schema(),
@@ -197,8 +206,14 @@ class ProposalBridge:
     ) -> Path:
         return self.write(self.hypothesis_request(run_id, world_model, state))
 
-    def request_experiments(self, run_id: str, state: RunState, command_allowlist: Sequence[str] = ()) -> Path:
-        return self.write(self.experiment_request(run_id, state, command_allowlist))
+    def request_experiments(
+        self,
+        run_id: str,
+        state: RunState,
+        command_allowlist: Sequence[str] = (),
+        execution_contract: ExecutionContract | None = None,
+    ) -> Path:
+        return self.write(self.experiment_request(run_id, state, command_allowlist, execution_contract))
 
     @staticmethod
     def load_hypotheses(path: str | Path) -> list[Hypothesis]:

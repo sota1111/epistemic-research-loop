@@ -8,7 +8,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.adapters.executor.base import BRIEF_CONTRACT, ExecutorAdapter
 from epistemic_loop.domain.enums import FailureClass
 from epistemic_loop.domain.models import ExperimentRequest, ExperimentResult
 
@@ -37,6 +37,8 @@ class CompetitionRepoAdapter(ExecutorAdapter):
     that repository's own documented convention. This adapter reads it and reports the outcome; it
     does not ask the worker to fill in a schema it would otherwise never see.
     """
+
+    contract = BRIEF_CONTRACT
 
     def __init__(
         self,

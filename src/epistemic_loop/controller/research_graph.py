@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.adapters.executor.base import ExecutionContract, ExecutorAdapter
 from epistemic_loop.agents.experiment_designer import validate_preregistration
 from epistemic_loop.agents.hypothesis_generator import validate_generated_hypotheses
 from epistemic_loop.config import AppConfig, PhaseWeights, config_hash
@@ -179,6 +179,7 @@ class ResearchController:
         max_validation_reuse: int = 0,
         max_consecutive_optimization: int = 3,
         command_allowlist: tuple[str, ...] = (),
+        execution_contract: ExecutionContract | None = None,
     ) -> DecisionRecord:
         state = self.state(run_id)
         candidates = state.open_candidates()
@@ -198,6 +199,8 @@ class ResearchController:
                 max_validation_reuse=max_validation_reuse,
                 max_consecutive_optimization=max_consecutive_optimization,
                 command_allowlist=command_allowlist,
+            required_request_fields=execution_contract.required_fields if execution_contract else (),
+            required_brief_fields=execution_contract.required_brief_fields if execution_contract else (),
             ),
             weights,
             cost_lambda,

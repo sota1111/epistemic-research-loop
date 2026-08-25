@@ -34,6 +34,11 @@ class GateContext:
     approved_lineages: frozenset[str] = frozenset()
     #: Executables a shell executor will accept. Empty means the executor imposes no list.
     command_allowlist: tuple[str, ...] = ()
+    #: What the configured executor needs a proposal to carry. Checked here so a proposal is never
+    #: refused at dispatch -- after design, gating and selection have all succeeded -- for
+    #: something that could have been refused before any of them.
+    required_request_fields: tuple[str, ...] = ()
+    required_brief_fields: tuple[str, ...] = ()
     #: Shortcuts the brief prohibited, matched against the experiment's holdout access.
     prohibited_shortcuts: tuple[str, ...] = ()
 
@@ -69,8 +74,22 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append("predicted outcomes are required")
     if not experiment.decision_rule.strip():
         reasons.append("decision rule is required")
-    if not experiment.implementation_request.get("command") and not experiment.implementation_request.get("brief"):
+    request = experiment.implementation_request
+    if not request.get("command") and not request.get("brief"):
         reasons.append("implementation_request needs a reproducible `command` or a `brief`")
+    missing = [name for name in context.required_request_fields if not request.get(name)]
+    if missing:
+        reasons.append(
+            f"implementation_request is missing {missing}, which the configured executor requires"
+        )
+    if context.required_brief_fields:
+        brief = request.get("brief")
+        if brief is not None and not isinstance(brief, dict):
+            reasons.append("implementation_request.brief must be an object")
+        elif isinstance(brief, dict):
+            absent = [name for name in context.required_brief_fields if not str(brief.get(name) or "").strip()]
+            if absent:
+                reasons.append(f"implementation_request.brief is missing {absent}")
     command = str(experiment.implementation_request.get("command") or "")
     if command and context.command_allowlist:
         import shlex

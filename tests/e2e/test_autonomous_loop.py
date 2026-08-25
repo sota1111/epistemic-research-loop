@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
+from epistemic_loop.adapters.executor.base import SHELL_CONTRACT
 from epistemic_loop.adapters.executor.local import LocalExecutor
 from epistemic_loop.agents.auto import AutomaticProposer
 from epistemic_loop.agents.proposal_bridge import (
@@ -163,6 +164,11 @@ def test_the_loop_stops_when_a_result_never_arrives(
     )
 
     class NeverWrites:
+        # Doubles declare the executor contract like the real adapters do. Letting the loop fall
+        # back to a default when it is absent would silently switch off the gate check that this
+        # attribute exists to drive.
+        contract = SHELL_CONTRACT
+
         def submit(self, request: Any) -> Any:
             from epistemic_loop.domain.models import ExperimentResult
 
@@ -294,6 +300,8 @@ class OutOfBandExecutor:
     which is the single path the round used to poll -- so under `run loop` they timed out on every
     round, every time, and the Linear round trip had never once closed.
     """
+
+    contract = SHELL_CONTRACT
 
     def __init__(self, terminal: ExperimentResult | None, *, ready_after: int = 0):
         self.terminal = terminal
