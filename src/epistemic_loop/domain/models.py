@@ -227,7 +227,19 @@ class ExperimentProposal(DomainModel):
     estimated_cost: CostEstimate
     holdout_access: HoldoutAccess = HoldoutAccess.NONE
     contamination_risk: Risk = Risk.LOW
-    implementation_request: dict[str, Any]
+    implementation_request: dict[str, Any] = Field(
+        description=(
+            "How the experiment is to be carried out. What is required depends on the executor, and "
+            "a proposal missing it is rejected by the hard gate before it is scored:\n"
+            "- a shell executor requires `command`: the exact, runnable invocation, including every "
+            "flag that fixes the split, seeds, features and output directory. It must be "
+            "reproducible from this string alone.\n"
+            "- an executor that directs a separate repository requires `brief`, an object with "
+            "`title`, `objective`, `approach` and `verification` written in that repository's terms.\n"
+            "Optional for both: `objective`, `container_image`, `network_policy`, `resources`, "
+            "`dataset_mounts`."
+        ),
+    )
     required_artifacts: list[str] = Field(min_length=1)
     lineage: str = Field(default="default", min_length=1)
     source_refs: list[SourceRef] = Field(default_factory=list)

@@ -29,9 +29,11 @@ def should_stop(
     blocked = False
     if usage.experiments >= budget.max_experiments:
         reasons.append("experiment budget exhausted")
-    if usage.cpu_hours >= budget.max_cpu_hours:
+    # A budget of zero means the run does not use that resource. Reading it as "exhausted" stops
+    # every CPU-only run on its first round for having consumed no GPU at all.
+    if budget.max_cpu_hours and usage.cpu_hours >= budget.max_cpu_hours:
         reasons.append("CPU budget exhausted")
-    if usage.gpu_hours >= budget.max_gpu_hours:
+    if budget.max_gpu_hours and usage.gpu_hours >= budget.max_gpu_hours:
         reasons.append("GPU budget exhausted")
     if maximum_candidate_utility is not None and maximum_candidate_utility < minimum_utility:
         reasons.append("maximum candidate utility is below threshold")

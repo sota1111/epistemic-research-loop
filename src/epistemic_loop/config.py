@@ -142,14 +142,24 @@ class StorageConfig(StrictModel):
 
 
 class LlmConfig(StrictModel):
-    """Proposal-stage model. ai-dev-control-plane is reached only through Linear, never as an LLM."""
+    """Proposal-stage model. ai-dev-control-plane is reached only through Linear, never as an LLM.
 
-    adapter: str = Field(default="claude", pattern="^(claude|file_bridge)$")
+    `cli` shells out to an already-authenticated coding CLI, which is what makes an unattended run
+    possible without provisioning a second credential; `claude` uses the API directly and needs
+    `ANTHROPIC_API_KEY`; `file_bridge` puts a human in the proposal slot.
+    """
+
+    adapter: str = Field(default="cli", pattern="^(cli|claude|file_bridge)$")
     model: str = "claude-opus-5"
     max_tokens: int = Field(default=16000, ge=1024)
     effort: str = Field(default="high", pattern="^(low|medium|high|xhigh|max)$")
     structured_output_required: bool = True
     store_raw_response: bool = True
+    #: `cli` adapter: which installed CLI to drive, or an explicit command overriding the preset.
+    cli_preset: str = Field(default="claude", pattern="^(claude|codex)$")
+    cli_command: str | None = None
+    cli_timeout_seconds: float = Field(default=900, gt=0)
+    cli_max_attempts: int = Field(default=3, ge=1, le=6)
 
 
 class AppConfig(StrictModel):

@@ -153,6 +153,17 @@ def _bridge() -> ProposalBridge:
 
 
 def _llm(config: AppConfig) -> StructuredLlm:
+    if config.llm.adapter == "cli":
+        from epistemic_loop.adapters.llm.cli import CliStructuredLlm
+
+        return CliStructuredLlm(
+            config.llm.cli_command,
+            preset=config.llm.cli_preset,
+            model=config.llm.model,
+            timeout_seconds=config.llm.cli_timeout_seconds,
+            max_attempts=config.llm.cli_max_attempts,
+            transcript_dir=str(_home() / ".proposals" / "transcripts") if config.llm.store_raw_response else None,
+        )
     if config.llm.adapter != "claude":
         raise typer.BadParameter(
             f"llm.adapter={config.llm.adapter} has no automatic driver; "

@@ -421,6 +421,7 @@
     },
     "implementation_request": {
       "additionalProperties": true,
+      "description": "How the experiment is to be carried out. What is required depends on the executor, and a proposal missing it is rejected by the hard gate before it is scored:\n- a shell executor requires `command`: the exact, runnable invocation, including every flag that fixes the split, seeds, features and output directory. It must be reproducible from this string alone.\n- an executor that directs a separate repository requires `brief`, an object with `title`, `objective`, `approach` and `verification` written in that repository's terms.\nOptional for both: `objective`, `container_image`, `network_policy`, `resources`, `dataset_mounts`.",
       "title": "Implementation Request",
       "type": "object"
     },
