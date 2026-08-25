@@ -152,7 +152,11 @@ def test_an_exhausted_allowance_and_a_duplicate_artifact_both_refuse(files) -> N
     assert not duplicate.spend and "already known" in duplicate.reason
 
     missing = _decide([Candidate("gone", "/nowhere/x.csv", local_estimate=1.0)], [])
-    assert not missing.spend
+    assert not missing.spend and "missing: ['gone']" in missing.reason
+
+    nothing = _decide([], [])
+    assert not nothing.spend and "nothing to submit" in nothing.reason
+    assert "already submitted" not in nothing.reason, "an empty run has no duplicate problem to report"
 
 
 def test_direction_decides_which_candidate_is_best(files) -> None:

@@ -137,3 +137,31 @@ Still open, unchanged from the cycle retrospective: the `competition_repo` execu
 `result.json`, so `run loop` cannot yet close the Linear round trip; `metric_direction` is read
 only into the world model and never reaches scoring; and submission timing is still a static
 priority list rather than a decision.
+
+### The three gaps, closed
+
+**The Linear round trip.** `run loop` polled `.results/<run>/<experiment>/result.json` for every
+executor, and only the local one writes there — so the `competition_repo` executor timed out on
+every round it ever ran, which is why no unattended run had completed a round trip. The round now
+asks the executor. `RunState` remembers the dispatch attempt so the request can be rebuilt after a
+restart without opening a second ticket, and a task the tracker closed without writing metrics
+comes back as a failure carrying the state that ended it instead of as silence.
+
+**Metric direction.** `higher_is_better` had no caller in `src/`. `arm_summary` read `roc_auc` and
+took a maximum, so on a minimised competition it reported an arm's worst result as its best and
+reversed the sign of the calibration gap. It now takes the metric and direction from the run
+config. The proposer's exposure is different in kind — `mean_gain` is an expected improvement
+whose sign the model chooses, and utility is maximised over it — so the convention is stated on
+the field's own schema, which is what the model reads.
+
+**When to submit.** `plan_submission` was a duplicate guard dressed as a decision. The new policy
+(`controller/submission_policy.py`, `erlctl kaggle decide`) starts from the measured fact that a
+local estimate need not order the leaderboard: before the relationship is measured, a submission
+buys it and spread beats quality; once measured and holding, only an improvement larger than the
+local noise is worth spending on; once measured and absent, being locally best is not a reason at
+all. Candidates are read from the event log so the artifact and its number cannot drift apart, and
+the command submits nothing — it prints a recommendation whose refusals are as legible as its
+spends.
+
+`rogii-late-2026-08` is initialised and in `hypothesizing`, with the world model carrying the
+solver interface and its accepted argument values.

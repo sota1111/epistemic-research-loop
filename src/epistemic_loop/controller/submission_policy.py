@@ -166,11 +166,19 @@ def decide(
     if remaining_today <= 0:
         return refuse("the daily allowance is spent; the next one resets at 00:00 UTC")
 
+    if not ranked:
+        # Not the same situation as "everything is a duplicate", and saying so matters: the reason
+        # string is the entire product of this decision, and one that misdescribes why it refused
+        # sends the reader to look at the ledger when the run has simply not produced a prediction.
+        return refuse("no experiment has produced a submittable artifact yet, so there is nothing to submit")
+
     available = _eligible(ranked, {item.fingerprint for item in submitted}, fingerprint_of)
     if not available:
+        missing = [item.name for item in ranked if not Path(item.file).is_file()]
         return refuse(
-            "no candidate is both present on disk and unsubmitted; an identical artifact would "
-            "return a score that is already known"
+            f"every candidate is either already submitted or missing from disk"
+            f"{f' (missing: {missing})' if missing else ''}; resubmitting an identical artifact "
+            "would return a score that is already known"
         )
 
     submitted_locals = [item.local_estimate for item in submitted if item.local_estimate is not None]
