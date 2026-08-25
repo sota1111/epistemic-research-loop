@@ -558,7 +558,9 @@ def parse(argv: list[str] | None = None) -> Spec:
     parser.add_argument("--holdout-fraction", type=float, default=0.2)
     parser.add_argument("--drop-columns", default="")
     parser.add_argument("--drop-prefixes", default="", help="comma-separated column-name prefixes to ablate as a block")
-    parser.add_argument("--drop-random", type=int, default=0, help="size-matched control: drop N randomly chosen columns")
+    parser.add_argument(
+        "--drop-random", type=int, default=0, help="size-matched control: drop N randomly chosen columns"
+    )
     parser.add_argument("--drop-random-seed", type=int, default=7)
     parser.add_argument("--group-column", default="")
     parser.add_argument("--n-estimators", type=int, default=300)
