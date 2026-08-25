@@ -8,7 +8,7 @@
 # named `rogii-late`, mapped explicitly in that repository's config/project_repos.json to
 # /workspaces/rogii-late. target_repo must agree with that path.
 run:
-  id: rogii-late-2026-08
+  id: rogii-late-2026-08-r2
   mode: epistemic
   seed: 101
 competition:

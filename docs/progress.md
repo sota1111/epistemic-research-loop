@@ -165,3 +165,23 @@ spends.
 
 `rogii-late-2026-08` is initialised and in `hypothesizing`, with the world model carrying the
 solver interface and its accepted argument values.
+
+### Defect 10, found on the first ROGII round
+
+The same shape as the nine before it: *a constraint enforced in code that the party expected to
+satisfy it never reads.*
+
+`CompetitionRepoAdapter.submit` requires `implementation_request.brief` with four fields. It said
+so nowhere else. The designer was handed `allowed_command_prefixes` — a shell executor's
+vocabulary — and wrote a command. Design, the hard gate and selection all passed; the round died
+at dispatch on a requirement any of them could have checked.
+
+What makes it the tenth rather than a new kind: the requirement lived at the point of use, not at
+the point of authorship. The fix is the same shape too — `ExecutionContract` moves it to both
+places that need it, the gate and the designer. Adding the check without also telling the designer
+would have converted a dispatch failure into a selection failure and kept the round lost.
+
+The proposals themselves were sound — `duplicate_scan` over the full parquet, `baseline --method
+zero` to re-derive the harness calibration against the known public all-zero score,
+`split_comparison` of random against spatial folds. Only their shape was wrong, which is the
+signature of this defect class: the research is fine and the plumbing loses it.
