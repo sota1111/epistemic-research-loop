@@ -703,6 +703,21 @@ def kaggle_submit(
         raise typer.BadParameter("daily submission cap reached")
     if digest in ledger.fingerprints(competition):
         raise typer.BadParameter("this exact artifact was already submitted")
+    blind = ledger.unfingerprinted(competition)
+    if blind:
+        # Not fatal -- the submission may well be new -- but the caller has to know the guard is
+        # not covering every spent submission, because the cost of being wrong is a whole day's
+        # allowance spent re-measuring something already measured.
+        typer.echo(
+            json.dumps(
+                {
+                    "warning": "duplicate detection is degraded",
+                    "unfingerprinted_submissions": blind,
+                    "detail": "reconciled ledger records carry no artifact hash; a duplicate of one cannot be caught",
+                }
+            ),
+            err=True,
+        )
     if not seal_scores:
         raise typer.BadParameter("plaintext score output is forbidden; use evaluator unseal after paired runs")
     token = os.environ.get("BENCHMARK_UNSEAL_TOKEN")

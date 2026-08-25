@@ -42,3 +42,30 @@ def test_ledger_is_append_only_and_counts_utc_day(tmp_path) -> None:
     )
     assert ledger.submitted_today("example", datetime(2026, 8, 24, tzinfo=UTC)) == 1
     assert ledger.fingerprints("example") == {"abc"}
+
+
+def test_reconciled_records_leave_duplicate_detection_degraded(tmp_path) -> None:
+    """A ledger record without an artifact hash protects against nothing, and must say so.
+
+    `kaggle reconcile` recovers a spent submission from Kaggle, which reports every file as
+    `submission.csv` and gives no hash -- so the record cannot contribute to duplicate detection.
+    Left silent, the next submission of a byte-identical file passes the guard and spends a day's
+    allowance re-measuring a score the sealed store already holds. That happened.
+    """
+    from epistemic_loop.adapters.kaggle.submission import SubmissionLedger
+
+    ledger = SubmissionLedger(tmp_path / "ledger.jsonl")
+    ledger.append({"competition": "example", "mode": "execute", "created_at": "2026-08-24T00:00:00Z", "sha256": "abc"})
+    ledger.append(
+        {
+            "competition": "example",
+            "mode": "execute",
+            "created_at": "2026-08-24T01:00:00Z",
+            "sha256": "",
+            "reconciled": True,
+        }
+    )
+
+    assert ledger.fingerprints("example") == {"abc"}
+    assert ledger.unfingerprinted("example") == 1, "the reconciled record is invisible to the duplicate guard"
+    assert ledger.unfingerprinted("other") == 0

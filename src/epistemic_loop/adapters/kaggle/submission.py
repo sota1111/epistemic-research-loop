@@ -84,6 +84,19 @@ class SubmissionLedger:
             if record.get("competition") == competition and record.get("sha256")
         }
 
+    def unfingerprinted(self, competition: str) -> int:
+        """Spent submissions the ledger cannot identify, so duplicates of them cannot be caught.
+
+        A record reconciled from Kaggle has no local artifact to hash -- Kaggle reports every
+        submission as `submission.csv` -- so it contributes nothing to duplicate detection. Silently
+        degraded protection is how an identical file gets submitted twice and a day's allowance is
+        spent on a number that was already known.
+        """
+        return sum(
+            record.get("competition") == competition and record.get("mode") == "execute" and not record.get("sha256")
+            for record in self.records()
+        )
+
 
 def plan_record(plan: SubmissionPlan) -> dict[str, Any]:
     value = asdict(plan)
