@@ -108,3 +108,32 @@ carrying forward:
   minutes before the operator fixed the same thing.
 - Eight of the nine defects fixed this cycle were one defect: a constraint enforced in code that the
   party expected to satisfy it never reads.
+
+## 2026-08-25 — ROGII late-submission run stood up
+
+New competition substrate: `rogii-late` (`sota1111/rogii-late`, Linear project `rogii-late`,
+`configs/verification/rogii_late.yaml`). The competition closed 2026-08-05 but still accepts
+scored submissions, five a day, notebook-only.
+
+Three findings from standing it up, all recorded in that repository's `docs/`:
+
+- **The advertised metric is wrong.** The Kaggle API reports `Mean Squared Error`; the organiser's
+  task deck says RMSE, and an all-zero submission scores 11551.955 — the scale of TVT, not its
+  square. `metric_direction: minimize`, `primary_metric: rmse`.
+- **The apparent leak is not one.** All three test wells appear under `train/` with every shared
+  input column identical, and the train copy carries TVT for the withheld rows. It cannot be the
+  graded answer: the smallest absolute TVT in those copies is 11587.05, and no subset of values
+  that large has an RMS of 11551.955. Cost of checking: zero submissions.
+- **A single-well method interface would have made the task's own stated signal inexpressible.**
+  The deck says neighbouring wells share geological dip. The first harness fitted nothing and saw
+  one well at a time, which showed up as `rmse_split_gap: 0.0` — a split comparison that could not
+  ever differ. The interface now has a fit stage over the fold's complement.
+
+The private score is sealed on arrival (`.sealed-scores-rogii`, `public_feedback: numeric`), since
+a late submission returns it unasked. `rogii-late/scripts/submissions.sh` redacts it from the
+submission listing.
+
+Still open, unchanged from the cycle retrospective: the `competition_repo` executor writes no
+`result.json`, so `run loop` cannot yet close the Linear round trip; `metric_direction` is read
+only into the world model and never reaches scoring; and submission timing is still a static
+priority list rather than a decision.
