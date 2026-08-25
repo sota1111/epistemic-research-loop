@@ -12,7 +12,7 @@ import typer
 import yaml
 
 from epistemic_loop.adapters.executor.ai_dev_control_plane import AiDevControlPlaneAdapter
-from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
+from epistemic_loop.adapters.executor.base import ExecutorAdapter
 from epistemic_loop.adapters.executor.competition_repo import CompetitionRepoAdapter
 from epistemic_loop.adapters.executor.linear_local_worker import LinearLocalWorkerAdapter
 from epistemic_loop.adapters.executor.local import LocalExecutor
@@ -38,6 +38,7 @@ from epistemic_loop.benchmark.protocol import BenchmarkPlan, load_plan, save_pla
 from epistemic_loop.config import AppConfig, load_config
 from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
 from epistemic_loop.controller.budget_manager import BudgetManager
+from epistemic_loop.controller.execution_contract import build_experiment_request
 from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.phase_policy import PhaseEvidence
 from epistemic_loop.controller.research_graph import (
@@ -51,7 +52,6 @@ from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
     ExperimentProposal,
-    ExperimentResult,
     Hypothesis,
 )
 from epistemic_loop.holdout.leaderboard import LeaderboardGate
@@ -500,14 +500,33 @@ def experiments_import_result(
     run_id: str = typer.Option(..., "--run-id"),
     experiment_id: str = typer.Option(..., "--experiment-id"),
 ) -> None:
-    """Import the worker's ExperimentResult and derive an Observation from local metrics."""
+    """Import the executor's result and derive an Observation from it.
+
+    Where the result lives is the executor's business, not this command's. A local worker writes an
+    `ExperimentResult` to the shared store; an executor directing a separate repository reads that
+    repository's own convention and assembles the envelope itself. Asking the executor keeps both
+    working without this command knowing which is in use.
+    """
     config = _run_config(run_id)
-    source = result_path(_home() / config.executor.result_root, run_id, experiment_id)
-    if not source.is_file():
-        raise typer.BadParameter(f"no result has been written yet: {source}")
-    result = ExperimentResult.model_validate_json(source.read_text(encoding="utf-8"))
+    controller = _controller()
+    state = _state(run_id)
+    proposal = state.proposals.get(experiment_id)
+    if proposal is None:
+        raise typer.BadParameter(f"unknown experiment: {experiment_id}")
+    request = build_experiment_request(
+        state.run,
+        proposal,
+        attempt=1,
+        container_image=config.executor.container_image,
+        dataset_mounts=config.executor.dataset_mounts,
+        network_policy=config.contamination.worker_network,
+    )
+    result = _executor(config).result(request)
+    if result is None:
+        raise typer.BadParameter(f"no result has been produced yet for {experiment_id}")
+    artifact_root = Path(result.artifact_refs[0]).parent if result.artifact_refs else None
     try:
-        observation = _controller().import_result(run_id, result, artifact_root=source.parent)
+        observation = controller.import_result(run_id, result, artifact_root=artifact_root)
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
     if observation is None:

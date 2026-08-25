@@ -111,6 +111,9 @@ def test_the_result_is_assembled_from_the_repository_s_own_convention(tmp_path: 
     assert result.metrics == {"roc_auc": 0.913, "roc_auc_seed_std": 0.004}, "non-numeric entries are dropped"
     assert any(item.endswith("seed_metrics.json") for item in result.artifact_refs)
     assert result.experiment_id == request.experiment_id and result.run_id == request.run_id
+    # Ticket recovery needs the Linear API, which the test does not have; it must degrade to None
+    # rather than failing the import, but the field has to exist so traceability is possible at all.
+    assert "external_ref" in result.model_dump()
 
 
 def test_an_empty_metrics_file_is_a_failure_not_a_success(tmp_path: Path) -> None:

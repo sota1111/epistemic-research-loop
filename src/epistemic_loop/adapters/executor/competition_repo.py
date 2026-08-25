@@ -198,6 +198,13 @@ class CompetitionRepoAdapter(ExecutorAdapter):
         path = self.metrics_path(request)
         if not path.is_file():
             return None
+        # The ticket identifier is only known at submit time, and this envelope is assembled from
+        # the repository's files, so it has to be recovered -- otherwise the observation cannot be
+        # traced back to the task that produced it and the audit trail stops at the metrics file.
+        try:
+            ticket = self._existing(self._task_id(request))
+        except RuntimeError:
+            ticket = None
         raw = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):
             raise ValueError(f"{path} must contain a flat object of metric name to number")
@@ -215,6 +222,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
             metrics=metrics,
             artifact_refs=sorted(str(item) for item in directory.iterdir() if item.is_file()),
             runtime={},
+            external_ref=(ticket or {}).get("identifier") or (ticket or {}).get("id"),
         )
 
 
