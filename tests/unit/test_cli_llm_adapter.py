@@ -143,6 +143,16 @@ def test_both_presets_are_non_interactive_and_take_a_model() -> None:
         assert any(flag in joined for flag in ("-p", "exec")), f"{name} must run non-interactively"
 
 
+def test_the_claude_preset_answers_rather_than_acts() -> None:
+    """These are coding agents. Left with their tools they explore the filesystem to answer a
+    schema question -- measured at 13 turns and 419k cached tokens before failing, against one turn
+    and five seconds with tools off."""
+    joined = " ".join(PRESETS["claude"])
+    assert "--tools" in joined, "tools must be disabled or the CLI acts instead of answering"
+    assert "--disable-slash-commands" in joined
+    assert PRESETS["claude"][PRESETS["claude"].index("--tools") + 1] == ""
+
+
 def test_an_explicit_command_overrides_the_preset() -> None:
     llm = CliStructuredLlm("my-agent --json --model {model}", model="some-model")
     assert llm.command == ["my-agent", "--json", "--model", "some-model"]

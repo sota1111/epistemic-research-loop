@@ -28,10 +28,23 @@ that cannot fail is not a proposal."""
 #: Envelope keys a coding CLI may wrap the model's answer in. Checked in order.
 RESULT_KEYS = ("result", "output", "response", "text", "content", "message")
 
-#: Presets for the CLIs that are commonly installed. Each must run non-interactively, take the
-#: prompt on stdin or as an argument, and do no work beyond answering.
+#: Presets for the CLIs that are commonly installed. Each must run non-interactively and **answer
+#: rather than act**: these are coding agents, and left with their tools they will explore the
+#: filesystem to answer a schema question. Measured on the first unattended run, an unconstrained
+#: `claude -p` took 13 turns and 419k cached tokens before failing; with tools disabled the same
+#: question took one turn and five seconds.
 PRESETS: dict[str, list[str]] = {
-    "claude": ["claude", "-p", "--output-format", "json", "--model", "{model}"],
+    "claude": [
+        "claude",
+        "-p",
+        "--output-format",
+        "json",
+        "--model",
+        "{model}",
+        "--tools",
+        "",
+        "--disable-slash-commands",
+    ],
     "codex": ["codex", "exec", "--model", "{model}", "--sandbox", "read-only", "-"],
 }
 
