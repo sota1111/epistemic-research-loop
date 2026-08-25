@@ -45,7 +45,7 @@ dev = [
 erlctl = "epistemic_loop.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/epistemic_loop"]
+packages = ["src/epistemic_loop", "src/epistemic_research_loop"]
 
 [tool.ruff]
 target-version = "py311"

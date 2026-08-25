@@ -65,6 +65,20 @@
           "title": "Condition",
           "type": "string"
         },
+        "coverage_level": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Level"
+        },
         "description": {
           "minLength": 1,
           "title": "Description",
@@ -310,6 +324,20 @@
     },
     "type": {
       "$ref": "#/$defs/HypothesisType"
+    },
+    "uncalibrated_prior_confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.95,
+          "minimum": 0.05,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uncalibrated Prior Confidence"
     },
     "version": {
       "default": 1,

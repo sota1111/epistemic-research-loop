@@ -51,6 +51,18 @@
       },
       "title": "ResourceRequest",
       "type": "object"
+    },
+    "RunMode": {
+      "enum": [
+        "system_a",
+        "system_b",
+        "system_b_plus",
+        "system_c",
+        "epistemic",
+        "exploiter_only"
+      ],
+      "title": "RunMode",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -70,9 +82,19 @@
       "title": "Command",
       "type": "string"
     },
+    "config_hash": {
+      "default": "unavailable",
+      "title": "Config Hash",
+      "type": "string"
+    },
     "container_image": {
       "minLength": 1,
       "title": "Container Image",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "default": "unavailable",
+      "title": "Dataset Fingerprint",
       "type": "string"
     },
     "dataset_mounts": {
@@ -140,6 +162,10 @@
       "minItems": 1,
       "title": "Seeds",
       "type": "array"
+    },
+    "system_mode": {
+      "$ref": "#/$defs/RunMode",
+      "default": "epistemic"
     }
   },
   "required": [

@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "category": {
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "interval_coverage": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "title": "Interval Coverage",
+      "type": "object"
+    },
+    "observed_label": {
+      "minLength": 1,
+      "title": "Observed Label",
+      "type": "string"
+    },
+    "probabilities": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "minProperties": 2,
+      "title": "Probabilities",
+      "type": "object"
+    },
+    "proposer_agent": {
+      "minLength": 1,
+      "title": "Proposer Agent",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "experiment_id",
+    "proposer_agent",
+    "category",
+    "probabilities",
+    "observed_label"
+  ],
+  "title": "ForecastCalibrationRecord",
+  "type": "object"
+}

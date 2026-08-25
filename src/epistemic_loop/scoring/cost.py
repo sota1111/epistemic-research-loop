@@ -19,4 +19,6 @@ def normalized_cost(
         + estimate.llm_tokens / token_scale
         + estimate.monetary_cost / monetary_scale
     ) / 5.0
-    return min(1.0, max(0.0, resource + 0.25 * estimate.failure_probability))
+    # Failure probability is risk, not resource consumption. The selector
+    # accounts for it separately through rho*Risk so it is not charged twice.
+    return min(1.0, max(0.0, resource))

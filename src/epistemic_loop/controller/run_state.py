@@ -2,24 +2,38 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
-from epistemic_loop.domain.enums import ExperimentStatus, ExperimentType, LoopState, Phase, RunStatus
+from epistemic_loop.domain.enums import ExperimentStatus, ExperimentType, HypothesisType, LoopState, Phase, RunStatus
 from epistemic_loop.domain.events import EventEnvelope, EventType
 from epistemic_loop.domain.models import (
+    AgentResourceRecord,
     BeliefUpdate,
     BudgetUsage,
     CompetitionWorldModel,
     CostEstimate,
     DecisionRecord,
     ExperimentProposal,
+    ExperimentRetryRecord,
+    FalsificationProposal,
     FalsificationRecord,
+    FinalSelectionRule,
+    ForecastCalibrationRecord,
     Hypothesis,
     Observation,
+    OOFArtifact,
+    OOFEnsemble,
+    QDCandidate,
     ResearchBrief,
     ResearchRun,
+    ResourceReconciliation,
+    ValidationWorld,
+    ValidationWorldUpdate,
 )
 from epistemic_loop.domain.validation import GateContext, experiment_fingerprint
 from epistemic_loop.holdout.adaptivity import validation_reuse as compute_validation_reuse
+from epistemic_loop.qd.archive import QDArchive
+from epistemic_loop.qd.descriptors import descriptor_names_for_mode
 
 SETTLED_STATUSES = frozenset(
     {
@@ -41,6 +55,43 @@ def _accumulate(usage: BudgetUsage, estimate: CostEstimate) -> BudgetUsage:
             "wall_hours": usage.wall_hours + estimate.wall_hours,
             "llm_tokens": usage.llm_tokens + estimate.llm_tokens,
             "cost": usage.cost + estimate.monetary_cost,
+        }
+    )
+
+
+def _reconcile(usage: BudgetUsage, reconciliation: ResourceReconciliation) -> BudgetUsage:
+    estimated = reconciliation.estimated
+    charged = reconciliation.charged
+    return usage.model_copy(
+        update={
+            "cpu_hours": max(0.0, usage.cpu_hours - estimated.cpu_hours + charged.cpu_hours),
+            "gpu_hours": max(0.0, usage.gpu_hours - estimated.gpu_hours + charged.gpu_hours),
+            "wall_hours": max(0.0, usage.wall_hours - estimated.wall_hours + charged.wall_hours),
+            "llm_tokens": max(0, usage.llm_tokens - estimated.llm_tokens + charged.llm_tokens),
+            "cost": max(0.0, usage.cost - estimated.monetary_cost + charged.monetary_cost),
+        }
+    )
+
+
+def _accumulate_agent_usage(usage: BudgetUsage, record: AgentResourceRecord) -> BudgetUsage:
+    return usage.model_copy(
+        update={
+            "llm_tokens": usage.llm_tokens + record.total_tokens,
+            "cost": usage.cost + record.monetary_cost,
+        }
+    )
+
+
+def _accumulate_retry_usage(usage: BudgetUsage, record: ExperimentRetryRecord) -> BudgetUsage:
+    """Charge a worker attempt without counting it as another research experiment."""
+    charged = record.charged_cost
+    return usage.model_copy(
+        update={
+            "cpu_hours": usage.cpu_hours + charged.cpu_hours,
+            "gpu_hours": usage.gpu_hours + charged.gpu_hours,
+            "wall_hours": usage.wall_hours + charged.wall_hours,
+            "llm_tokens": usage.llm_tokens + charged.llm_tokens,
+            "cost": usage.cost + charged.monetary_cost,
         }
     )
 
@@ -69,6 +120,16 @@ class RunState:
     #: files a ticket the key *is* how a retry finds the ticket it already filed. Rebuilding at
     #: attempt 1 when attempt 2 is outstanding opens a second ticket for the same work.
     experiment_attempts: dict[str, int] = field(default_factory=dict)
+    validation_worlds: dict[str, ValidationWorld] = field(default_factory=dict)
+    qd_candidates: dict[str, QDCandidate] = field(default_factory=dict)
+    oof_artifacts: dict[str, OOFArtifact] = field(default_factory=dict)
+    falsification_proposals: dict[str, FalsificationProposal] = field(default_factory=dict)
+    oof_analyses: tuple[dict[str, Any], ...] = ()
+    oof_ensembles: dict[str, OOFEnsemble] = field(default_factory=dict)
+    final_selection_rule: FinalSelectionRule | None = None
+    forecast_calibrations: tuple[ForecastCalibrationRecord, ...] = ()
+    agent_resource_records: tuple[AgentResourceRecord, ...] = ()
+    experiment_retries: tuple[ExperimentRetryRecord, ...] = ()
 
     @property
     def run_id(self) -> str:
@@ -98,14 +159,32 @@ class RunState:
         consume several times its nominal compute without any gate noticing, which also silently
         breaks the equal-budget premise of any A/B comparison built on those runs.
         """
-        wall_seconds = sum(
-            float(observation.runtime.get("wall_seconds", 0.0)) for observation in self.observations.values()
+        wall_hours = sum(
+            observation.resource_usage.wall_hours
+            if observation.resource_usage.wall_hours is not None
+            else float(observation.runtime.get("wall_seconds", 0.0)) / 3600
+            for observation in self.observations.values()
+        ) + sum(item.charged_cost.wall_hours for item in self.experiment_retries)
+        cpu_hours = sum(
+            observation.resource_usage.cpu_hours or 0.0 for observation in self.observations.values()
+        ) + sum(item.charged_cost.cpu_hours for item in self.experiment_retries)
+        gpu_hours = sum(
+            observation.resource_usage.gpu_hours or 0.0 for observation in self.observations.values()
+        ) + sum(item.charged_cost.gpu_hours for item in self.experiment_retries)
+        estimated_wall_hours = sum(
+            self.proposals[identifier].estimated_cost.wall_hours
+            for identifier in dict.fromkeys(self.selection_order)
+            if identifier in self.proposals
         )
         return {
-            "wall_hours": round(wall_seconds / 3600, 4),
-            "estimated_wall_hours": round(self.usage.wall_hours, 4),
-            "estimate_ratio": round(wall_seconds / 3600 / self.usage.wall_hours, 2) if self.usage.wall_hours else 0.0,
+            "cpu_hours": round(cpu_hours, 4),
+            "gpu_hours": round(gpu_hours, 4),
+            "wall_hours": round(wall_hours, 4),
+            "estimated_wall_hours": round(estimated_wall_hours, 4),
+            "charged_wall_hours": round(self.usage.wall_hours, 4),
+            "estimate_ratio": round(wall_hours / estimated_wall_hours, 2) if estimated_wall_hours else 0.0,
             "experiments_observed": len(self.observations),
+            "retry_attempts": len(self.experiment_retries),
         }
 
     def validation_reuse(self) -> dict[str, int]:
@@ -192,6 +271,22 @@ class RunState:
             if self.experiment_statuses.get(identifier) in SETTLED_STATUSES
         )
 
+    def retained_qd_candidates(
+        self,
+        *,
+        maximum_size: int = 100,
+        quality_floor_relative_to_best: float = 0.97,
+    ) -> tuple[QDCandidate, ...]:
+        names = descriptor_names_for_mode(self.run.mode)
+        if not names or not self.qd_candidates:
+            return ()
+        return QDArchive.rebuild(
+            self.qd_candidates.values(),
+            descriptor_names=names,
+            maximum_size=maximum_size,
+            quality_floor_relative_to_best=quality_floor_relative_to_best,
+        ).candidates
+
     def recent_experiment_types(self, window: int = 3) -> tuple[ExperimentType, ...]:
         recent = [
             self.proposals[identifier].experiment_type
@@ -218,7 +313,13 @@ class RunState:
         command_allowlist: tuple[str, ...] = (),
         required_request_fields: tuple[str, ...] = (),
         required_brief_fields: tuple[str, ...] = (),
+        qd_maximum_size: int = 100,
+        qd_quality_floor_relative_to_best: float = 0.97,
     ) -> GateContext:
+        retained_candidates = self.retained_qd_candidates(
+            maximum_size=qd_maximum_size,
+            quality_floor_relative_to_best=qd_quality_floor_relative_to_best,
+        )
         return GateContext(
             hypothesis_ids=frozenset(self.hypotheses),
             budget=self.run.budgets,
@@ -245,6 +346,18 @@ class RunState:
                 if enforce_brief and self.brief and self.phase == Phase.EXPLOITATION
                 else ()
             ),
+            run_mode=self.run.mode,
+            hypotheses_with_alternatives=frozenset(
+                identifier for identifier, item in self.hypotheses.items() if item.alternative_hypothesis_ids
+            ),
+            validation_hypothesis_ids=frozenset(
+                identifier for identifier, item in self.hypotheses.items() if item.type == HypothesisType.VALIDATION
+            ),
+            validation_world_ids=frozenset(self.validation_worlds),
+            qd_candidate_ids=frozenset(item.id for item in retained_candidates),
+            falsification_targets={
+                identifier: item.target_hypothesis for identifier, item in self.falsification_proposals.items()
+            },
         )
 
 
@@ -258,6 +371,16 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
     attempts: dict[str, int] = {}
     observations: dict[str, Observation] = {}
     falsifications: dict[str, FalsificationRecord] = {}
+    falsification_proposals: dict[str, FalsificationProposal] = {}
+    validation_worlds: dict[str, ValidationWorld] = {}
+    qd_candidates: dict[str, QDCandidate] = {}
+    oof_artifacts: dict[str, OOFArtifact] = {}
+    oof_analyses: list[dict[str, Any]] = []
+    oof_ensembles: dict[str, OOFEnsemble] = {}
+    final_selection_rule: FinalSelectionRule | None = None
+    forecast_calibrations: list[ForecastCalibrationRecord] = []
+    agent_resource_records: list[AgentResourceRecord] = []
+    experiment_retries: list[ExperimentRetryRecord] = []
     usage = BudgetUsage()
     selection_order: list[str] = []
     violations = 0
@@ -294,6 +417,16 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
                         "version": existing.version + 1,
                     }
                 )
+        elif event.event_type == EventType.FORECAST_CALIBRATION_RECORDED:
+            forecast_calibrations.append(ForecastCalibrationRecord.model_validate(payload))
+        elif event.event_type == EventType.AGENT_RESOURCE_RECORDED:
+            agent_record = AgentResourceRecord.model_validate(payload)
+            agent_resource_records.append(agent_record)
+            usage = _accumulate_agent_usage(usage, agent_record)
+        elif event.event_type == EventType.EXPERIMENT_RETRY_SCHEDULED:
+            retry_record = ExperimentRetryRecord.model_validate(payload)
+            experiment_retries.append(retry_record)
+            usage = _accumulate_retry_usage(usage, retry_record)
         elif event.event_type == EventType.EXPERIMENT_PROPOSED:
             proposal = ExperimentProposal.model_validate(payload)
             proposals[proposal.id] = proposal
@@ -315,16 +448,49 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
             statuses[str(payload["experiment_id"])] = ExperimentStatus.COMPLETED
         elif event.event_type == EventType.EXPERIMENT_FAILED:
             statuses[str(payload["experiment_id"])] = ExperimentStatus.FAILED
+        elif event.event_type == EventType.RESOURCE_RECONCILED:
+            usage = _reconcile(usage, ResourceReconciliation.model_validate(payload))
         elif event.event_type == EventType.OBSERVATION_RECORDED:
             observation = Observation.model_validate(payload)
             observations[observation.id] = observation
         elif event.event_type == EventType.FALSIFICATION_RECORDED:
             record = FalsificationRecord.model_validate(payload)
             falsifications[record.id] = record
+        elif event.event_type == EventType.FALSIFICATION_PROPOSED:
+            falsification_proposal = FalsificationProposal.model_validate(payload)
+            falsification_proposals[falsification_proposal.id] = falsification_proposal
+        elif event.event_type == EventType.VALIDATION_WORLD_REGISTERED:
+            validation_world = ValidationWorld.model_validate(payload)
+            validation_worlds[validation_world.id] = validation_world
+        elif event.event_type == EventType.VALIDATION_POSTERIOR_UPDATED:
+            world_update = ValidationWorldUpdate.model_validate(payload)
+            for identifier, probability in world_update.posterior.items():
+                current_world = validation_worlds.get(identifier)
+                if current_world is not None:
+                    validation_worlds[identifier] = current_world.model_copy(
+                        update={
+                            "posterior_probability": probability,
+                            "evidence_ids": [*current_world.evidence_ids, world_update.evidence_id],
+                            "version": current_world.version + 1,
+                        }
+                    )
+        elif event.event_type == EventType.QD_CANDIDATE_EVALUATED:
+            qd_candidate = QDCandidate.model_validate(payload)
+            qd_candidates[qd_candidate.id] = qd_candidate
+        elif event.event_type == EventType.OOF_ARTIFACT_RECORDED:
+            artifact = OOFArtifact.model_validate(payload)
+            oof_artifacts[artifact.id] = artifact
+        elif event.event_type == EventType.OOF_ANALYSIS_RECORDED:
+            oof_analyses.append(dict(payload))
+        elif event.event_type == EventType.OOF_ENSEMBLE_CREATED:
+            ensemble = OOFEnsemble.model_validate(payload)
+            oof_ensembles[ensemble.id] = ensemble
         elif event.event_type == EventType.WORLD_MODEL_RECORDED:
             world_model = CompetitionWorldModel.model_validate(payload)
         elif event.event_type == EventType.RESEARCH_BRIEF_CREATED:
             brief = ResearchBrief.model_validate(payload)
+        elif event.event_type == EventType.FINAL_SELECTION_RULE_REGISTERED:
+            final_selection_rule = FinalSelectionRule.model_validate(payload)
         elif event.event_type == EventType.VIOLATION_DETECTED:
             violations += 1
             if run is not None:
@@ -332,7 +498,7 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         elif event.event_type == EventType.RUN_FINALIZED:
             phase = Phase.FINALIZED
             if run is not None:
-                run = run.model_copy(update={"status": RunStatus.COMPLETED})
+                run = run.model_copy(update={"status": RunStatus.COMPLETED, "finalized_at": event.occurred_at})
 
     if run is None:
         raise ValueError("event log does not contain a RunCreated event")
@@ -352,4 +518,14 @@ def load_run_state(events: Sequence[EventEnvelope]) -> RunState:
         violations=violations,
         brief=brief,
         world_model=world_model,
+        validation_worlds=validation_worlds,
+        qd_candidates=qd_candidates,
+        oof_artifacts=oof_artifacts,
+        falsification_proposals=falsification_proposals,
+        oof_analyses=tuple(oof_analyses),
+        oof_ensembles=oof_ensembles,
+        final_selection_rule=final_selection_rule,
+        forecast_calibrations=tuple(forecast_calibrations),
+        agent_resource_records=tuple(agent_resource_records),
+        experiment_retries=tuple(experiment_retries),
     )

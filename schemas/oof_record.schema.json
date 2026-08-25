@@ -1,0 +1,91 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "minLength": 1,
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "entity_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Entity Id"
+    },
+    "fold_id": {
+      "minLength": 1,
+      "title": "Fold Id",
+      "type": "string"
+    },
+    "oof_prediction": {
+      "title": "Oof Prediction",
+      "type": "number"
+    },
+    "residual": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Residual"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "subgroup_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Subgroup Id"
+    },
+    "target": {
+      "title": "Target",
+      "type": "number"
+    },
+    "timestamp": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Timestamp"
+    },
+    "validation_world": {
+      "minLength": 1,
+      "title": "Validation World",
+      "type": "string"
+    }
+  },
+  "required": [
+    "row_id",
+    "fold_id",
+    "target",
+    "oof_prediction",
+    "validation_world",
+    "candidate_id"
+  ],
+  "title": "OOFRecord",
+  "type": "object"
+}

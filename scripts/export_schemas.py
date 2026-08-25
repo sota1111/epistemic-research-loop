@@ -5,22 +5,52 @@ from pathlib import Path
 
 from epistemic_loop.domain.events import EventEnvelope
 from epistemic_loop.domain.models import (
+    AgentResourceRecord,
+    CalibrationSummary,
+    ExperimentManifest,
     ExperimentProposal,
     ExperimentRequest,
     ExperimentResult,
+    ExperimentRetryRecord,
+    FinalSelectionRule,
+    FoldAssignment,
+    ForecastCalibrationRecord,
     Hypothesis,
     Observation,
+    OOFArtifact,
+    OOFEnsemble,
+    OOFRecord,
+    QDCandidate,
     ResearchBrief,
+    ResearchStateSnapshot,
+    ResourceReconciliation,
+    ValidationWorld,
+    ValidationWorldEvidence,
 )
 
 SCHEMAS = {
     "hypothesis.schema.json": Hypothesis,
     "experiment.schema.json": ExperimentProposal,
+    "experiment_manifest.schema.json": ExperimentManifest,
     "experiment_request.schema.json": ExperimentRequest,
     "experiment_result.schema.json": ExperimentResult,
+    "experiment_retry_record.schema.json": ExperimentRetryRecord,
     "observation.schema.json": Observation,
     "research_brief.schema.json": ResearchBrief,
     "event.schema.json": EventEnvelope,
+    "validation_world.schema.json": ValidationWorld,
+    "validation_world_evidence.schema.json": ValidationWorldEvidence,
+    "candidate.schema.json": QDCandidate,
+    "oof_record.schema.json": OOFRecord,
+    "oof_artifact.schema.json": OOFArtifact,
+    "oof_ensemble.schema.json": OOFEnsemble,
+    "research_state.schema.json": ResearchStateSnapshot,
+    "fold_assignment.schema.json": FoldAssignment,
+    "forecast_calibration.schema.json": ForecastCalibrationRecord,
+    "calibration_summary.schema.json": CalibrationSummary,
+    "resource_reconciliation.schema.json": ResourceReconciliation,
+    "final_selection_rule.schema.json": FinalSelectionRule,
+    "agent_resource_record.schema.json": AgentResourceRecord,
 }
 
 

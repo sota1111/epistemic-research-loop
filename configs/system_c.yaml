@@ -1,0 +1,9 @@
+run:
+  id: null
+  mode: system_c
+  seed: 101
+competition:
+  slug: local-competition
+  metric_direction: maximize
+  primary_metric: score
+

@@ -57,6 +57,10 @@ def finalize_benchmark(
     for row in rows:
         grouped[row["scenario"]][int(row["replicate"])][row["system"]] = row
     scenarios: dict[str, Any] = {}
+    baseline_name = "exploiter_only" if "exploiter_only" in plan.systems else plan.systems[0]
+    epistemic_name = (
+        "epistemic" if "epistemic" in plan.systems else ("system_c" if "system_c" in plan.systems else plan.systems[-1])
+    )
     total_wins = 0
     total_pairs = 0
     for scenario, replicates in grouped.items():
@@ -66,8 +70,8 @@ def finalize_benchmark(
         for replicate, systems in sorted(replicates.items()):
             if set(systems) != set(plan.systems):
                 raise ValueError(f"unpaired run: {scenario}/{replicate}")
-            a = systems["exploiter_only"]
-            b = systems["epistemic"]
+            a = systems[baseline_name]
+            b = systems[epistemic_name]
             won = b["sealed_regret"] < a["sealed_regret"]
             total_wins += int(won)
             total_pairs += 1
@@ -93,6 +97,15 @@ def finalize_benchmark(
                     "regret_removed_per_extra_cpu_hour": (
                         regret_removed / extra_cpu if extra_cpu > EFFICIENCY_EPSILON else None
                     ),
+                    "systems": {
+                        name: {
+                            "sealed_regret": row["sealed_regret"],
+                            "sealed_private_score": row["sealed_private_score"],
+                            "cv_score": row["cv_score"],
+                            "cpu_hours": row["cpu_hours"],
+                        }
+                        for name, row in sorted(systems.items())
+                    },
                 }
             )
         scenarios[scenario] = {
@@ -107,6 +120,14 @@ def finalize_benchmark(
             "mean_epistemic_cv_private_gap": mean(item["epistemic_cv_private_gap"] for item in pairs),
             "exploiter_discovery_rate": mean(item["exploiter_discovery"] for item in pairs),
             "epistemic_discovery_rate": mean(item["epistemic_discovery"] for item in pairs),
+            "systems": {
+                name: {
+                    "mean_regret": mean(item["systems"][name]["sealed_regret"] for item in pairs),
+                    "mean_private_score": mean(item["systems"][name]["sealed_private_score"] for item in pairs),
+                    "mean_cpu_hours": mean(item["systems"][name]["cpu_hours"] for item in pairs),
+                }
+                for name in plan.systems
+            },
         }
     discovery_scenarios = [item for item in scenarios.values() if item["gold_findings"]]
     controls = [item for item in scenarios.values() if item["negative_control"]]
@@ -116,6 +137,9 @@ def finalize_benchmark(
         "paired_runs": total_pairs,
         "overall_pairwise_win_rate": total_wins / total_pairs,
         "holdout_violations": 0,
+        "systems": list(plan.systems),
+        "baseline_system": baseline_name,
+        "epistemic_system": epistemic_name,
         # The headline claim is discovery, not rank: how much of the planted structure each arm named.
         "overall_epistemic_discovery_rate": (
             mean(item["epistemic_discovery_rate"] for item in discovery_scenarios) if discovery_scenarios else 0.0

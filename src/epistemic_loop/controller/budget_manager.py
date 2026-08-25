@@ -49,7 +49,12 @@ class BudgetManager:
         return self.usage
 
     def reconcile(self, result: ExperimentResult, *, infrastructure_retry: bool = False) -> BudgetUsage:
-        """Replace estimates is future work; retries never increment the research experiment count."""
+        """Compatibility hook; event replay performs authoritative resource reconciliation.
+
+        `ResourceReconciled` replaces a selected experiment's reservation and
+        `ExperimentRetryScheduled` charges discarded attempts without incrementing the research
+        experiment count. Keeping mutation out of this helper prevents two competing budget states.
+        """
         if infrastructure_retry:
             return self.usage
         return self.usage

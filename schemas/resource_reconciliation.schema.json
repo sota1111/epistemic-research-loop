@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "CostEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cpu Hours",
+          "type": "number"
+        },
+        "failure_probability": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "gpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Hours",
+          "type": "number"
+        },
+        "llm_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Llm Tokens",
+          "type": "integer"
+        },
+        "monetary_cost": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Monetary Cost",
+          "type": "number"
+        },
+        "wall_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Wall Hours",
+          "type": "number"
+        }
+      },
+      "title": "CostEstimate",
+      "type": "object"
+    },
+    "ObservedResourceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Hours"
+        },
+        "gpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Hours"
+        },
+        "llm_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Tokens"
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monetary Cost"
+        },
+        "peak_ram_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Ram Gb"
+        },
+        "wall_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Hours"
+        }
+      },
+      "title": "ObservedResourceUsage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "charged": {
+      "$ref": "#/$defs/CostEstimate"
+    },
+    "estimated": {
+      "$ref": "#/$defs/CostEstimate"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "observed": {
+      "$ref": "#/$defs/ObservedResourceUsage"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "experiment_id",
+    "estimated",
+    "observed",
+    "charged"
+  ],
+  "title": "ResourceReconciliation",
+  "type": "object"
+}

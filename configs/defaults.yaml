@@ -24,10 +24,41 @@ loop:
   minimum_replications_for_support: 1
 selection:
   cost_lambda: 0.15
+  risk_lambda: 0.5
   minimum_utility: 0.0
+  eig_method: monte_carlo
+  eig_monte_carlo_samples: 4000
   discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
   consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
   exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+  discovery_allocation: {exploit: 0.30, qd_explore: 0.30, epistemic: 0.40}
+  consolidation_allocation: {exploit: 0.45, qd_explore: 0.30, epistemic: 0.25}
+  exploitation_allocation: {exploit: 0.65, qd_explore: 0.25, epistemic: 0.10}
+validation:
+  worlds: [random, time, group]
+  entropy_priority_threshold: 0.65
+qd:
+  maximum_archive_size: 100
+  quality_floor_relative_to_best: 0.97
+oof:
+  save_row_level_predictions: true
+  format: parquet
+calibration:
+  enabled: true
+  minimum_records: 3
+  poor_brier_threshold: 0.25
+  prior_shrinkage: 0.25
+preferred_state:
+  targets:
+    validation_fidelity: 0.80
+    hypothesis_resolution: 0.70
+    falsification_coverage: 0.60
+    representation_coverage: 0.35
+    error_diversity: 0.50
+    robustness: 0.80
+  weights: {}
+ablation:
+  remove: []
 holdout:
   policy: strict_blind
   max_queries: 0
@@ -48,6 +79,8 @@ contamination:
   block_competition_specific_github: true
   require_source_provenance: true
   worker_network: disabled
+  obfuscate_competition_name: false
+  hash_column_names: false
 executor:
   adapter: local
   queue: kaggle-research

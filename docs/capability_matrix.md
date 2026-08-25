@@ -23,7 +23,7 @@ the event log without a human or a model asserting it), **measured** (reported b
 
 | # | Requirement | Status | Where | Proof |
 | --- | --- | --- | --- | --- |
-| 4 | スコア改善だけでなく情報価値の高い実験を選べる | enforced | `scoring/selector.py`: `U = wp·P + wi·I + wr·R + wd·D − λ·C` | `tests/unit/test_scoring.py` |
+| 4 | スコア改善だけでなく情報価値の高い実験を選べる | enforced | `scoring/selector.py`: `U = wp·P + wi·I + wr·R + wd·D − λ·C − ρ·Risk`; an EVSI proxy is computed from decision-change probability × utility difference | `tests/unit/test_scoring.py`, `tests/unit/test_system_modes.py` |
 | 5 | Epistemic Value が実際の実験選択に影響している | enforced | Discovery weights epistemic at 0.45 against pragmatic 0.20 (`config.SelectionConfig`) | `tests/unit/test_scoring.py` |
 | 31 | 事前登録した結果尤度と現在beliefからInformation Gainを機械計算できる | enforced | `HypothesisOutcomeForecast` validates both likelihood vectors; `scoring.epistemic.binary_hypothesis_information_gain` computes mutual information; `selection/v2` records the method used | `tests/unit/test_models.py`, `tests/unit/test_scoring.py`, `tests/integration/test_research_loop.py` |
 | 17 | 同系統のモデル調整だけに偏らず多様性を保っている | enforced | greedy similarity-penalised portfolio (`select_portfolio`) plus the gate that refuses a fourth consecutive optimization run | `tests/unit/test_scoring.py`, `tests/unit/test_hard_gate.py` |
@@ -35,7 +35,7 @@ See [experiment selection](experiment_selection.md).
 
 | # | Requirement | Status | Where | Proof |
 | --- | --- | --- | --- | --- |
-| 6 | Explorer と Exploiter の役割が明確に分かれている | enforced | `RunMode.{EPISTEMIC, EXPLOITER_ONLY}`; exploitation cannot begin until `handoff_to_exploiter` records a `ResearchBriefCreated` event | `tests/integration/test_exploiter_handoff.py` |
+| 6 | Explorer と Exploiter の役割が明確に分かれている | enforced | `RunMode.{SYSTEM_A,SYSTEM_B,SYSTEM_B_PLUS,SYSTEM_C}` has a deterministic capability boundary; legacy `EPISTEMIC`/`EXPLOITER_ONLY` map to C/A | `tests/unit/test_system_modes.py`, `tests/integration/test_exploiter_handoff.py` |
 | 7 | 序盤は探索、終盤は最適化へ自動的に移行できる | derived | `controller/phase_evidence.py` folds the log into `PhaseEvidence`; `phase_policy.decide_phase` consumes it; the autoloop calls both every round | `tests/unit/test_phase_evidence.py`, `tests/e2e/test_local_scoring_loop.py` |
 | 21 | Researcher から Exploiter へ検証済みの知見を明示的に引き渡している | enforced | `agents/research_synthesizer.derive_brief` builds the brief from the event log only, and refuses when no completed experiment established a validation scheme | `tests/integration/test_exploiter_handoff.py` |
 | 22 | Exploiter の異常結果から Researcher に戻れる | derived | `phase_evidence.anomaly_detected` (contested-after-support, model-class failure, seed/fold spread) returns exploitation to consolidation and retires the brief | `tests/unit/test_phase_evidence.py`, `tests/integration/test_exploiter_handoff.py` |
@@ -46,7 +46,7 @@ See [exploiter handoff](exploiter_handoff.md).
 
 | # | Requirement | Status | Where | Proof |
 | --- | --- | --- | --- | --- |
-| 8 | Falsifier が代替仮説や反証実験を生成している | enforced | `FalsificationRecord.{strongest_alternative_explanation, alternative_claims, recommended_next_test}` are recorded as events and replayed into the next round's hypothesis and experiment prompts | `tests/e2e/test_local_scoring_loop.py` |
+| 8 | Falsifier が代替仮説や反証実験を生成している | enforced | `Falsifier.propose` ranks supported beliefs by probability × impact × overconfidence × falsifiability and emits a minimal `FalsificationProposal` without the originating rationale/context | `tests/unit/test_falsifier_proposal.py`, `tests/e2e/test_local_scoring_loop.py` |
 | 9 | 失敗した実験や反証された仮説も知識として蓄積している | enforced | `ExperimentFailed` events; falsified hypotheses are kept, never deleted; `RunState.failed_experiments()` and `falsification_digest()` feed the proposal context | `tests/e2e/test_local_scoring_loop.py`, `tests/integration/test_event_projection.py` |
 | 10 | 実験結果に基づいて Belief を更新している | enforced | `belief/updater.py` log-odds update clipped to `[0.05, 0.95]`, weight fixed by `EVIDENCE_WEIGHTS` | `tests/unit/test_belief.py` |
 | 11 | LLM が研究状態やスコアを恣意的に直接変更できない | enforced | the model returns only `HypothesisBatch`, `ExperimentBatch`, `FalsificationAssessment`; disposition, evidence weight, posterior, gates, budgets, state transitions, and hashes are computed | `tests/e2e/test_autonomous_loop.py` |
@@ -84,26 +84,49 @@ See [benchmark protocol](benchmark_protocol.md).
 | 29 | Kaggle 提出は 1 日 5 回まで。ローカル採点でループは 10 回以上回せる | enforced | `Budget.max_daily_submissions = 5` and `erlctl kaggle submit --daily-cap` (default 5) refuse an exhausted day; the loop reads only worker-written `metrics.json`, so its cadence is bounded by compute, not by Kaggle | `tests/e2e/test_local_scoring_loop.py` (12 rounds, 0 submissions), `tests/unit/test_kaggle_submission.py` |
 | 30 | 進捗はリポジトリのドキュメントから確認でき、Linear には詳細を書かない | documented | this file and [progress](progress.md); the Linear issue carries only a pointer | — |
 
+## 8. C-lite specification components
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 32 | Random / Time / Group validation worlds and their posterior are explicit | enforced | `validation/worlds.py`; validation evidence and posterior updates are append-only events and SQLite projections | `tests/unit/test_validation_worlds.py`, `tests/integration/test_c_lite_components.py` |
+| 33 | Multiple-descriptor QD cells retain quality, cost, robustness, and error-diversity elites | enforced | `qd/archive.py`; System B uses solution descriptors and B+ / C add epistemic descriptors | `tests/unit/test_qd_archive.py`, `tests/integration/test_c_lite_components.py` |
+| 34 | Row-level OOF predictions, residual correlation, disagreement, effective rank, and ensemble gain are available | enforced | `oof/store.py`, `oof/diversity.py`; JSONL is core and Parquet is available with the solver extra | `tests/unit/test_oof_diversity.py`, `tests/integration/test_c_lite_components.py` |
+| 35 | Candidate-producing completed experiments enter QD automatically and final artifacts are content-locked | enforced | `ResearchController.import_result` and `finalize`; final artifacts must exist and originate in a recorded observation | `tests/integration/test_c_lite_components.py` |
+| 36 | A/B/B+/C can be benchmarked under one plan | measured | `BenchmarkPlan.systems`, `benchmark/paired_runner.py`, `reporting/benchmark_report.py`; profile `configs/benchmarks/system_comparison.yaml` | `tests/e2e/test_synthetic_benchmark.py`, `tests/unit/test_system_modes.py` |
+| 37 | Strong System B candidate production is evolutionary after seeding | enforced | `qd/evolution.py` emits deterministic mutation/crossover parent directives; `hard_gate` refuses seed-only or unknown-parent candidates once a retained population exists | `tests/unit/test_qd_archive.py`, `tests/unit/test_system_modes.py` |
+| 38 | Random, Group, Time, and Time+Group folds are executable and leakage-checked | enforced | `validation/splits.py`; assignments validate unique, disjoint train/validation/purge rows | `tests/unit/test_validation_splits.py` |
+| 39 | EIG, calibration feedback, and preferred-state gaps affect System C online | enforced | seeded Monte Carlo in `scoring/epistemic.py`; calibration events and prior shrinkage in `research_graph.py`; gap-derived allocation in `research_state.py` / `allocation.py` | `tests/unit/test_calibration_and_monte_carlo.py`, `tests/integration/test_calibration_prior_shrinkage.py` |
+| 40 | Ensemble weights are learned and evaluated on separate OOF folds | enforced | `oof/ensemble.py` fits one simplex weight vector with each evaluation fold excluded and records marginal gain | `tests/unit/test_oof_ensemble.py` |
+| 41 | Actual resources and complete replay provenance are persisted | enforced | local executor records resource usage, environment lock and `ExperimentManifest`; import emits `ResourceReconciled`; LLM adapters expose agent/stage token usage; infrastructure retries record and charge every failed attempt; artifacts carry provenance content addresses | `tests/integration/test_local_executor.py`, `tests/e2e/test_autonomous_loop.py`, `tests/unit/test_run_state.py`, `tests/unit/test_cli_llm_adapter.py` |
+| 42 | Final lock enforces preregistered selection and reproducibility conditions | enforced | `ResearchController.finalize` validates rule timing, candidate/ensemble provenance, reproduction, leakage, folds, OOF, manifest, submission schema, hashes and query cap; repositories become terminal | `tests/integration/test_c_lite_components.py`, `tests/unit/test_run_state.py` |
+| 43 | Required contamination variants and local network denial are executable | enforced | `contamination/anonymize.py`, `erlctl contamination anonymize-csv`, and the local Python network guard | `tests/unit/test_contamination_anonymization.py`, `tests/integration/test_local_executor.py` |
+| 44 | Infrastructure failures do not stop the run and debug retries are bounded | enforced | the autonomous loop retries only `FailureClass.INFRASTRUCTURE`, caps attempts with `executor.retry_infrastructure_failures`, charges each discarded attempt, and replans after terminal failure | `tests/e2e/test_autonomous_loop.py` |
+| 45 | Branch-isolated agents can start from identical information and select different approaches | measured | neutral competition-repository branches and independent System C Runs; verifier compares descriptors, split, experiment type and command rather than IDs | `docs/verification/ieee_cis_branch_agents.md`, `scripts/verify_branch_agent_diversity.py` |
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
 is the separate question of whether they hold on a real competition: 16 adaptive rounds, 21 auto-filed
 Linear tickets, one Kaggle submission, and an exploiter-only control arm at matched budget. It records
-five defects that only appeared under real data, and three claims it did **not** establish -- the
-unattended loop, the control plane's worker fleet, and the Research-to-Exploitation transition.
+five defects that only appeared under real data. A later
+[branch-agent verification](verification/ieee_cis_branch_agents.md) established CLI-backed unattended
+proposal, selection, execution and belief update on three isolated Runs. Native role-scoped agents
+inside one Run, the production worker fleet, and the Research-to-Exploitation transition remain open.
 
 ## What is *not* claimed
 
-- **Confidence is not calibrated.** It is an operational prioritisation number in `[0.05, 0.95]`.
-  `belief/calibration.py` can score a run's Brier loss after the fact; nothing calibrates during it.
-- **Selection v2 is partial.** Likelihood-based EIG is enforced when a proposal supplies an
-  `outcome_forecast`, but old proposals use the explicitly recorded `rubric_v1` fallback. There is
-  not yet a validation-world posterior, preferred-state gap, forecast calibration loop, or
-  role-scoped multi-agent proposer.
+- **Preferred-state targets are not learned.** Their configurable gap affects allocation, but
+  cross-competition leave-one-domain-out target-distribution learning is not part of C-lite.
+- **Calibration feedback is conservative rather than a fitted calibration model.** Online records
+  shrink future priors toward 0.5 after poor Brier performance; small runs do not justify isotonic or
+  Platt-style fitting.
+- **Role-scoped proposal generation remains narrow.** The falsifier has a separately restricted
+  context, while most solution proposals still share one experiment-designer role.
 - **The synthetic benchmark is a harness test, not evidence about Kaggle.** Its actions and regrets
   are stipulated. It shows the selection policy prefers informative actions and that the negative
   control costs more without paying — not that the loop beats an exploiter on a real competition.
   Real-competition profiles exist in `configs/benchmarks/` but have not been run in this repository.
 - **`normalized_cost` scales are stipulated defaults**, not measured from a real worker fleet.
-- **The local executor is a development sandbox.** Production isolation (read-only mounts, network
-  policy, resource caps) belongs to `ai-dev-control-plane`; see [security](security.md).
+- **The local executor is a development sandbox.** It enforces Linux CPU/RAM and Python-network
+  limits, but read-only mounts and language-agnostic network namespaces belong to
+  `ai-dev-control-plane`; see [security](security.md).

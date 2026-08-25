@@ -10,6 +10,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
+from epistemic_loop.adapters.llm.base import LlmUsage
+
 T = TypeVar("T", bound=BaseModel)
 
 SYSTEM_PROMPT = """You are the proposal stage of a hypothesis-centric research loop.
@@ -132,6 +134,7 @@ class CliStructuredLlm:
         self.max_attempts = max(1, max_attempts)
         self._run = runner
         self.transcript_dir = transcript_dir
+        self._pending_usage: LlmUsage | None = None
 
     # ------------------------------------------------------------------ prompt
 
@@ -203,6 +206,7 @@ class CliStructuredLlm:
         for attempt in range(1, self.max_attempts + 1):
             message = self.build_prompt(prompt, schema, context, correction)
             raw = self._invoke(message)
+            self._add_usage(_extract_usage(raw, self.model))
             self._record(schema, attempt, message, raw)
             try:
                 return schema.model_validate(extract_json(raw))
@@ -212,6 +216,21 @@ class CliStructuredLlm:
         raise CliInvocationError(
             f"{self.command[0]} did not return a valid {schema.__name__} in {self.max_attempts} attempts; "
             + " | ".join(failures)
+        )
+
+    def take_usage(self) -> LlmUsage | None:
+        usage, self._pending_usage = self._pending_usage, None
+        return usage
+
+    def _add_usage(self, usage: LlmUsage | None) -> None:
+        if usage is None:
+            return
+        current = self._pending_usage
+        self._pending_usage = LlmUsage(
+            model=usage.model,
+            input_tokens=usage.input_tokens + (current.input_tokens if current else 0),
+            output_tokens=usage.output_tokens + (current.output_tokens if current else 0),
+            cache_tokens=usage.cache_tokens + (current.cache_tokens if current else 0),
         )
 
     def _record(self, schema: type[T], attempt: int, message: str, raw: str) -> None:
@@ -225,3 +244,33 @@ class CliStructuredLlm:
         stem = f"{schema.__name__}-{attempt}"
         (directory / f"{stem}.prompt.txt").write_text(message, encoding="utf-8")
         (directory / f"{stem}.response.txt").write_text(raw, encoding="utf-8")
+
+
+def _extract_usage(raw: str, model: str) -> LlmUsage | None:
+    try:
+        envelope = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(envelope, dict) or not isinstance(envelope.get("usage"), dict):
+        return None
+    usage = envelope["usage"]
+
+    def token_count(*names: str) -> int:
+        return sum(int(usage.get(name, 0) or 0) for name in names)
+
+    input_tokens = token_count("input_tokens", "inputTokens")
+    output_tokens = token_count("output_tokens", "outputTokens")
+    cache_tokens = token_count(
+        "cache_read_input_tokens",
+        "cache_creation_input_tokens",
+        "cacheReadInputTokens",
+        "cacheCreationInputTokens",
+    )
+    if input_tokens + output_tokens + cache_tokens == 0:
+        return None
+    return LlmUsage(
+        model=str(envelope.get("model") or model),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_tokens=cache_tokens,
+    )

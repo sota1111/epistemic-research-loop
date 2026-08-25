@@ -2,8 +2,31 @@ from enum import StrEnum
 
 
 class RunMode(StrEnum):
+    SYSTEM_A = "system_a"
+    SYSTEM_B = "system_b"
+    SYSTEM_B_PLUS = "system_b_plus"
+    SYSTEM_C = "system_c"
+    # Backwards-compatible names used by existing run manifests. Their policy is
+    # intentionally mapped to A and C rather than silently rewriting old logs.
     EPISTEMIC = "epistemic"
     EXPLOITER_ONLY = "exploiter_only"
+
+
+class ValidationSplitType(StrEnum):
+    RANDOM = "random"
+    STRATIFIED = "stratified"
+    GROUP = "group"
+    TIME = "time"
+    ROLLING_TIME = "rolling_time"
+    TIME_GROUP = "time_group"
+    ENTITY_SEEN = "entity_seen"
+    ENTITY_UNSEEN = "entity_unseen"
+    ADVERSARIAL_WEIGHTED = "adversarial_weighted"
+
+
+class ValidationWorldStatus(StrEnum):
+    ACTIVE = "active"
+    DISABLED = "disabled"
 
 
 class Phase(StrEnum):
@@ -86,10 +109,14 @@ class Direction(StrEnum):
 
 
 class ExperimentType(StrEnum):
+    EXPLOIT = "exploit"
+    SOLUTION_EXPLORE = "solution_explore"
+    EPISTEMIC = "epistemic"
     DIAGNOSTIC = "diagnostic"
     OPTIMIZATION = "optimization"
     FALSIFICATION = "falsification"
     ROBUSTNESS = "robustness"
+    ENSEMBLE = "ensemble"
     REPLICATION = "replication"
     ABLATION = "ablation"
 

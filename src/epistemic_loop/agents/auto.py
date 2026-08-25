@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from epistemic_loop.adapters.executor.base import ExecutionContract
-from epistemic_loop.adapters.llm.base import StructuredLlm
+from epistemic_loop.adapters.llm.base import LlmUsage, StructuredLlm
 from epistemic_loop.agents.experiment_designer import validate_preregistration
 from epistemic_loop.agents.hypothesis_generator import validate_generated_hypotheses
 from epistemic_loop.agents.proposal_bridge import (
@@ -72,3 +72,7 @@ class AutomaticProposer:
         request = self.bridge.falsification_request(run_id, hypothesis, observations, proposal, state)
         assessment = self.llm.generate(request.prompt, FalsificationAssessment, request.context)
         return assessment.model_copy(update={"hypothesis_id": hypothesis.id})
+
+    def take_usage(self) -> LlmUsage | None:
+        take = getattr(self.llm, "take_usage", None)
+        return take() if callable(take) else None

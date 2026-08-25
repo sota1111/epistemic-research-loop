@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 from anthropic.types import OutputConfigParam
 from pydantic import BaseModel
 
+from epistemic_loop.adapters.llm.base import LlmUsage
+
 if TYPE_CHECKING:  # pragma: no cover - import guard for the optional dependency
     from anthropic import Anthropic
 
@@ -58,6 +60,7 @@ class ClaudeStructuredLlm:
         self.model = model
         self.max_tokens = max_tokens
         self.effort = effort
+        self._last_usage: LlmUsage | None = None
 
     def generate(self, prompt: str, schema: type[T], context: dict[str, Any]) -> T:
         response = self.client.messages.parse(
@@ -80,6 +83,18 @@ class ClaudeStructuredLlm:
             output_format=schema,
         )
         parsed = response.parsed_output
+        usage = response.usage
+        self._last_usage = LlmUsage(
+            model=self.model,
+            input_tokens=int(usage.input_tokens),
+            output_tokens=int(usage.output_tokens),
+            cache_tokens=int(getattr(usage, "cache_read_input_tokens", 0) or 0)
+            + int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
+        )
         if parsed is None:
             raise RuntimeError(f"Claude returned no parsable {schema.__name__}; stop_reason={response.stop_reason}")
         return parsed
+
+    def take_usage(self) -> LlmUsage | None:
+        usage, self._last_usage = self._last_usage, None
+        return usage

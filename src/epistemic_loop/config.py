@@ -5,12 +5,12 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from epistemic_loop.domain.enums import LeaderboardFeedbackMode, Phase, RunMode
+from epistemic_loop.domain.enums import LeaderboardFeedbackMode, Phase, RunMode, ValidationSplitType
 from epistemic_loop.domain.models import Budget, HoldoutPolicy
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
@@ -45,7 +45,7 @@ class RunConfig(StrictModel):
 
 class CompetitionConfig(StrictModel):
     slug: str
-    metric_direction: str = Field(pattern="^(maximize|minimize)$")
+    metric_direction: Literal["maximize", "minimize"]
     primary_metric: str = "score"
     data_path: str | None = None
     sample_submission: str | None = None
@@ -74,12 +74,28 @@ class PhaseWeights(StrictModel):
     diversity: float = Field(ge=0)
 
 
+class PortfolioAllocation(StrictModel):
+    exploit: float = Field(ge=0, le=1)
+    qd_explore: float = Field(ge=0, le=1)
+    epistemic: float = Field(ge=0, le=1)
+
+    def model_post_init(self, __context: Any) -> None:
+        if abs(self.exploit + self.qd_explore + self.epistemic - 1.0) > 1e-6:
+            raise ValueError("portfolio allocation fractions must sum to 1")
+
+
 class SelectionConfig(StrictModel):
     cost_lambda: float = Field(default=0.15, ge=0)
+    risk_lambda: float = Field(default=0.5, ge=0)
     minimum_utility: float = 0.0
+    eig_method: Literal["exact", "monte_carlo"] = "monte_carlo"
+    eig_monte_carlo_samples: int = Field(default=4000, ge=100)
     discovery: PhaseWeights = PhaseWeights(pragmatic=0.20, epistemic=0.45, robustness=0.20, diversity=0.15)
     consolidation: PhaseWeights = PhaseWeights(pragmatic=0.35, epistemic=0.30, robustness=0.25, diversity=0.10)
     exploitation: PhaseWeights = PhaseWeights(pragmatic=0.55, epistemic=0.15, robustness=0.25, diversity=0.05)
+    discovery_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.30, qd_explore=0.30, epistemic=0.40)
+    consolidation_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.45, qd_explore=0.30, epistemic=0.25)
+    exploitation_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.65, qd_explore=0.25, epistemic=0.10)
 
     def for_phase(self, phase: Phase) -> PhaseWeights:
         if phase == Phase.DISCOVERY:
@@ -87,6 +103,66 @@ class SelectionConfig(StrictModel):
         if phase == Phase.CONSOLIDATION:
             return self.consolidation
         return self.exploitation
+
+    def allocation_for_phase(self, phase: Phase) -> PortfolioAllocation:
+        if phase == Phase.DISCOVERY:
+            return self.discovery_allocation
+        if phase == Phase.CONSOLIDATION:
+            return self.consolidation_allocation
+        return self.exploitation_allocation
+
+
+class ValidationConfig(StrictModel):
+    worlds: list[ValidationSplitType] = Field(
+        default_factory=lambda: [ValidationSplitType.RANDOM, ValidationSplitType.TIME, ValidationSplitType.GROUP],
+        min_length=2,
+    )
+    entropy_priority_threshold: float = Field(default=0.65, ge=0, le=1)
+
+
+class QDConfig(StrictModel):
+    maximum_archive_size: int = Field(default=100, ge=1)
+    quality_floor_relative_to_best: float = Field(default=0.97, ge=0, le=1)
+
+
+class OOFConfig(StrictModel):
+    save_row_level_predictions: bool = True
+    format: str = Field(default="parquet", pattern="^(parquet|jsonl)$")
+
+
+class CalibrationConfig(StrictModel):
+    enabled: bool = True
+    minimum_records: int = Field(default=3, ge=1)
+    poor_brier_threshold: float = Field(default=0.25, ge=0)
+    prior_shrinkage: float = Field(default=0.25, ge=0, le=1)
+
+
+class PreferredStateConfig(StrictModel):
+    targets: dict[str, float] = Field(
+        default_factory=lambda: {
+            "validation_fidelity": 0.80,
+            "hypothesis_resolution": 0.70,
+            "falsification_coverage": 0.60,
+            "representation_coverage": 0.35,
+            "error_diversity": 0.50,
+            "robustness": 0.80,
+        }
+    )
+    weights: dict[str, float] = Field(default_factory=dict)
+
+    def model_post_init(self, __context: Any) -> None:
+        if any(value < 0 or value > 1 for value in self.targets.values()):
+            raise ValueError("preferred-state targets must be between 0 and 1")
+        if any(value < 0 for value in self.weights.values()):
+            raise ValueError("preferred-state weights must be non-negative")
+
+
+class AblationConfig(StrictModel):
+    remove: list[Literal["eig", "falsifier", "preferred-state"]] = Field(default_factory=list)
+
+    def model_post_init(self, __context: Any) -> None:
+        if len(self.remove) != len(set(self.remove)):
+            raise ValueError("ablation components must be unique")
 
 
 class ContaminationConfig(StrictModel):
@@ -96,6 +172,8 @@ class ContaminationConfig(StrictModel):
     block_competition_specific_github: bool = True
     require_source_provenance: bool = True
     worker_network: str = "disabled"
+    obfuscate_competition_name: bool = False
+    hash_column_names: bool = False
 
 
 class ExecutorConfig(StrictModel):
@@ -171,6 +249,12 @@ class AppConfig(StrictModel):
     budgets: Budget = Field(default_factory=Budget)
     loop: LoopConfig = Field(default_factory=LoopConfig)
     selection: SelectionConfig = Field(default_factory=SelectionConfig)
+    validation: ValidationConfig = Field(default_factory=ValidationConfig)
+    qd: QDConfig = Field(default_factory=QDConfig)
+    oof: OOFConfig = Field(default_factory=OOFConfig)
+    calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
+    preferred_state: PreferredStateConfig = Field(default_factory=PreferredStateConfig)
+    ablation: AblationConfig = Field(default_factory=AblationConfig)
     holdout: HoldoutPolicy = Field(default_factory=HoldoutPolicy)
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     contamination: ContaminationConfig = Field(default_factory=ContaminationConfig)

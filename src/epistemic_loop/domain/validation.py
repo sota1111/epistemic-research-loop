@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk
+from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk, RunMode
 from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
 from epistemic_loop.holdout.adaptivity import exhausted as validation_budget_exhausted
 from epistemic_loop.holdout.adaptivity import validation_fingerprint
@@ -41,6 +41,12 @@ class GateContext:
     required_brief_fields: tuple[str, ...] = ()
     #: Shortcuts the brief prohibited, matched against the experiment's holdout access.
     prohibited_shortcuts: tuple[str, ...] = ()
+    run_mode: RunMode = RunMode.EPISTEMIC
+    hypotheses_with_alternatives: frozenset[str] = frozenset()
+    validation_hypothesis_ids: frozenset[str] = frozenset()
+    validation_world_ids: frozenset[str] = frozenset()
+    qd_candidate_ids: frozenset[str] = frozenset()
+    falsification_targets: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -67,6 +73,57 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
     reasons: list[str] = []
     fingerprint = experiment_fingerprint(experiment)
 
+    if context.run_mode == RunMode.SYSTEM_A and experiment.experiment_type not in {
+        ExperimentType.EXPLOIT,
+        ExperimentType.OPTIMIZATION,
+    }:
+        reasons.append("System A permits only exploit/optimization experiments")
+    if context.run_mode == RunMode.SYSTEM_B and experiment.experiment_type not in {
+        ExperimentType.EXPLOIT,
+        ExperimentType.OPTIMIZATION,
+        ExperimentType.SOLUTION_EXPLORE,
+        ExperimentType.ENSEMBLE,
+        ExperimentType.ROBUSTNESS,
+        ExperimentType.ABLATION,
+    }:
+        reasons.append("System B excludes epistemic and falsification experiments")
+    if context.run_mode == RunMode.SYSTEM_B_PLUS and experiment.experiment_type == ExperimentType.FALSIFICATION:
+        reasons.append("System B+ excludes independent falsification experiments")
+    if (
+        context.run_mode in {RunMode.SYSTEM_B, RunMode.SYSTEM_B_PLUS, RunMode.SYSTEM_C}
+        and experiment.experiment_type
+        in {
+            ExperimentType.EXPLOIT,
+            ExperimentType.OPTIMIZATION,
+            ExperimentType.SOLUTION_EXPLORE,
+            ExperimentType.ENSEMBLE,
+        }
+        and experiment.descriptors is None
+    ):
+        reasons.append(f"{context.run_mode.value} candidate-producing experiments require QD descriptors")
+    unknown_parents = sorted(set(experiment.parent_candidate_ids) - set(context.qd_candidate_ids))
+    if unknown_parents:
+        reasons.append(f"unknown QD parent candidates: {', '.join(unknown_parents)}")
+    if (
+        context.run_mode in {RunMode.SYSTEM_B, RunMode.SYSTEM_B_PLUS, RunMode.SYSTEM_C}
+        and context.qd_candidate_ids
+        and experiment.experiment_type
+        in {
+            ExperimentType.EXPLOIT,
+            ExperimentType.OPTIMIZATION,
+            ExperimentType.SOLUTION_EXPLORE,
+            ExperimentType.ENSEMBLE,
+        }
+        and experiment.variation_operator == "seed"
+    ):
+        reasons.append("an established QD population requires mutation or crossover lineage")
+    if context.run_mode == RunMode.SYSTEM_C and experiment.experiment_type == ExperimentType.FALSIFICATION:
+        target = context.falsification_targets.get(experiment.falsification_proposal_id or "")
+        if target is None:
+            reasons.append("System C falsification experiments must consume an independent falsifier proposal")
+        elif target not in experiment.hypothesis_ids:
+            reasons.append("falsification experiment does not target its independent proposal hypothesis")
+
     unknown = sorted(set(experiment.hypothesis_ids) - context.hypothesis_ids)
     if unknown:
         reasons.append(f"unknown hypotheses: {', '.join(unknown)}")
@@ -77,6 +134,30 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append(f"outcome forecasts target unlinked hypotheses: {', '.join(unlinked_forecasts)}")
     if not experiment.predicted_outcomes:
         reasons.append("predicted outcomes are required")
+    if (
+        context.run_mode == RunMode.SYSTEM_C
+        and experiment.experiment_type
+        in {ExperimentType.DIAGNOSTIC, ExperimentType.EPISTEMIC, ExperimentType.FALSIFICATION}
+        and not experiment.outcome_forecasts
+    ):
+        reasons.append("System C epistemic experiments require preregistered likelihood forecasts")
+    if context.run_mode == RunMode.SYSTEM_C:
+        no_alternative = sorted(
+            {
+                item.hypothesis_id
+                for item in experiment.outcome_forecasts
+                if item.hypothesis_id not in context.hypotheses_with_alternatives
+            }
+        )
+        if no_alternative:
+            reasons.append(f"EIG hypotheses require an explicit alternative: {', '.join(no_alternative)}")
+        targets_validation = bool(set(experiment.hypothesis_ids) & context.validation_hypothesis_ids)
+        if targets_validation and experiment.validation_world_forecast is None:
+            reasons.append("System C validation experiments require a validation-world outcome forecast")
+        if experiment.validation_world_forecast is not None:
+            forecast_worlds = set(experiment.validation_world_forecast.outcomes[0].probability_by_world)
+            if forecast_worlds != set(context.validation_world_ids):
+                reasons.append("validation-world forecast must cover every active validation world exactly")
     if not experiment.decision_rule.strip():
         reasons.append("decision rule is required")
     request = experiment.implementation_request

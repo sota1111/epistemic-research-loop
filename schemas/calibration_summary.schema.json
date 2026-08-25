@@ -1,0 +1,97 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "accuracy": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Accuracy",
+      "type": "number"
+    },
+    "brier_score": {
+      "minimum": 0,
+      "title": "Brier Score",
+      "type": "number"
+    },
+    "count": {
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+    },
+    "interval_coverage_50": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interval Coverage 50"
+    },
+    "interval_coverage_80": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interval Coverage 80"
+    },
+    "interval_coverage_95": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interval Coverage 95"
+    },
+    "log_loss": {
+      "minimum": 0,
+      "title": "Log Loss",
+      "type": "number"
+    },
+    "mean_confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Mean Confidence",
+      "type": "number"
+    },
+    "overconfidence_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Overconfidence Rate",
+      "type": "number"
+    },
+    "underconfidence_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Underconfidence Rate",
+      "type": "number"
+    }
+  },
+  "required": [
+    "count",
+    "brier_score",
+    "log_loss",
+    "accuracy",
+    "mean_confidence",
+    "overconfidence_rate",
+    "underconfidence_rate"
+  ],
+  "title": "CalibrationSummary",
+  "type": "object"
+}

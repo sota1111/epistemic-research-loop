@@ -1,0 +1,61 @@
+{
+  "additionalProperties": false,
+  "description": "A preregistered likelihood of one observation under every active world.",
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "likelihood_by_world": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "minProperties": 2,
+      "title": "Likelihood By World",
+      "type": "object"
+    },
+    "metric_name": {
+      "minLength": 1,
+      "title": "Metric Name",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "observed_value": {
+      "title": "Observed Value",
+      "type": "number"
+    },
+    "preregistration_ref": {
+      "minLength": 1,
+      "title": "Preregistration Ref",
+      "type": "string"
+    },
+    "reliability": {
+      "default": 1,
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Reliability",
+      "type": "number"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "observation_id",
+    "likelihood_by_world",
+    "metric_name",
+    "observed_value",
+    "preregistration_ref"
+  ],
+  "title": "ValidationWorldEvidence",
+  "type": "object"
+}

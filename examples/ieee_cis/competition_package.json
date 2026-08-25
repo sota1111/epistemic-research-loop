@@ -459,5 +459,50 @@
     "TransactionDT is a time delta in seconds from an unstated reference point.",
     "Columns V1..V339 are anonymised and undocumented.",
     "The identity table covers only a subset of transactions and was joined left."
-  ]
+  ],
+  "solver_interface": {
+    "entry_point": ".venv/bin/python src/solver/experiment.py",
+    "working_directory": ".",
+    "how_to_use": "Use the existing generic runner and its prepared environment at .venv/bin/python. Pass --output $ERL_OUTPUT_DIR; it writes metrics.json and diagnostic sidecars there. Keep --sample at or below 200000. The available modes, splits, feature policies and models are capabilities, not a prescribed solution.",
+    "accepted_values": {
+      "--mode": [
+        "adversarial_validation",
+        "duplicate_scan",
+        "feature_auc",
+        "feature_comparison",
+        "split_comparison",
+        "train"
+      ],
+      "--model": [
+        "lgbm",
+        "logistic"
+      ],
+      "--split / --baseline-split / --contrast-split": [
+        "time_holdout",
+        "time_kfold",
+        "random_kfold",
+        "group_time",
+        "group_uid",
+        "group_<column name>"
+      ],
+      "--features / --baseline-features / --contrast-features": [
+        "base",
+        "minimal",
+        "no_id",
+        "no_v",
+        "time_aware",
+        "freq_enc",
+        "uid_agg"
+      ]
+    },
+    "required_output_argument": "--output $ERL_OUTPUT_DIR"
+  },
+  "data_layout": {
+    "root": ".data/ieee-cis/parquet",
+    "train": ".data/ieee-cis/parquet/train.parquet",
+    "test": ".data/ieee-cis/parquet/test.parquet",
+    "sample_submission": ".data/ieee-cis/sample_submission.csv",
+    "dataset_fingerprint": "cc0739ccb12aeabff19c2a9801dc9dd03ee0accf8f8cacc37af4b0b4b40cfcbc",
+    "note": "Prepared parquet is mounted locally and is not committed. Raw transaction and identity tables were joined by TransactionID."
+  }
 }

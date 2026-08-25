@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import subprocess
 import tempfile
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -31,21 +33,26 @@ from epistemic_loop.agents.falsifier import Falsifier
 from epistemic_loop.agents.observer import CompetitionObserver
 from epistemic_loop.agents.proposal_bridge import ProposalBridge
 from epistemic_loop.agents.research_synthesizer import derive_brief
+from epistemic_loop.belief.calibration import summarize_calibration
 from epistemic_loop.belief.updater import belief_update
 from epistemic_loop.benchmark.evaluator import finalize_benchmark
 from epistemic_loop.benchmark.paired_runner import run_synthetic_plan
 from epistemic_loop.benchmark.protocol import BenchmarkPlan, load_plan, save_plan
 from epistemic_loop.config import AppConfig, load_config
+from epistemic_loop.contamination.anonymize import anonymize_competition_package, anonymize_csv_columns
 from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
 from epistemic_loop.controller.budget_manager import BudgetManager
 from epistemic_loop.controller.execution_contract import build_experiment_request
+from epistemic_loop.controller.mode_policy import capabilities
 from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.phase_policy import PhaseEvidence
 from epistemic_loop.controller.research_graph import (
     LoopStateError,
     ResearchController,
+    file_sha256,
     fingerprint_path,
 )
+from epistemic_loop.controller.research_state import derive_research_state
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.controller.submission_policy import (
     candidates_from_state,
@@ -58,18 +65,29 @@ from epistemic_loop.domain.enums import HypothesisStatus, Phase, VerifierResult
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
+    ExperimentManifest,
     ExperimentProposal,
     Hypothesis,
+    OOFArtifact,
+    QDCandidate,
+    ValidationWorld,
+    ValidationWorldEvidence,
 )
 from epistemic_loop.holdout.leaderboard import LeaderboardGate
 from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
 from epistemic_loop.holdout.violations import HoldoutViolationError
+from epistemic_loop.oof.diversity import analyze as analyze_oof
+from epistemic_loop.oof.ensemble import build_cross_fitted_ensemble
+from epistemic_loop.oof.store import OOFStore
+from epistemic_loop.qd.archive import QDArchive
+from epistemic_loop.qd.descriptors import descriptor_names_for_mode
 from epistemic_loop.reporting.arm_comparison import arm_summary, build_arm_comparison
 from epistemic_loop.reporting.benchmark_report import write_benchmark_report
 from epistemic_loop.reporting.run_report import write_run_report
 from epistemic_loop.scoring.selector import score_experiment
 from epistemic_loop.storage.repositories import ResearchRepository
+from epistemic_loop.validation.worlds import posterior_entropy
 
 app = typer.Typer(help="Epistemic Research Loop control CLI", no_args_is_help=True)
 run_app = typer.Typer(help="Manage research runs", no_args_is_help=True)
@@ -81,6 +99,11 @@ report_app = typer.Typer(help="Build reports", no_args_is_help=True)
 kaggle_app = typer.Typer(help="Evaluator-only Kaggle submission automation", no_args_is_help=True)
 beliefs_app = typer.Typer(help="Falsify hypotheses and update beliefs", no_args_is_help=True)
 brief_app = typer.Typer(help="Hand validated findings to the exploiter", no_args_is_help=True)
+validation_app = typer.Typer(help="Manage competing validation worlds", no_args_is_help=True)
+archive_app = typer.Typer(help="Inspect the quality-diversity archive", no_args_is_help=True)
+oof_app = typer.Typer(help="Store and analyze row-level OOF predictions", no_args_is_help=True)
+falsifier_app = typer.Typer(help="Generate independent counter-experiments", no_args_is_help=True)
+contamination_app = typer.Typer(help="Build contamination-resistant data variants", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -90,6 +113,11 @@ app.add_typer(report_app, name="report")
 app.add_typer(kaggle_app, name="kaggle")
 app.add_typer(beliefs_app, name="beliefs")
 app.add_typer(brief_app, name="brief")
+app.add_typer(validation_app, name="validation")
+app.add_typer(archive_app, name="archive")
+app.add_typer(oof_app, name="oof")
+app.add_typer(falsifier_app, name="falsifier")
+app.add_typer(contamination_app, name="contamination")
 
 
 def _home() -> Path:
@@ -159,7 +187,7 @@ def _bridge() -> ProposalBridge:
     return ProposalBridge(_home() / ".proposals", _home() / "prompts")
 
 
-def _llm(config: AppConfig) -> StructuredLlm:
+def _llm(config: AppConfig, *, run_id: str | None = None) -> StructuredLlm:
     if config.llm.adapter == "cli":
         from epistemic_loop.adapters.llm.cli import CliStructuredLlm
 
@@ -169,7 +197,11 @@ def _llm(config: AppConfig) -> StructuredLlm:
             model=config.llm.model,
             timeout_seconds=config.llm.cli_timeout_seconds,
             max_attempts=config.llm.cli_max_attempts,
-            transcript_dir=str(_home() / ".proposals" / "transcripts") if config.llm.store_raw_response else None,
+            transcript_dir=(
+                str(_home() / ".proposals" / "transcripts" / (run_id or "unscoped"))
+                if config.llm.store_raw_response
+                else None
+            ),
         )
     if config.llm.adapter != "claude":
         raise typer.BadParameter(
@@ -189,11 +221,13 @@ def _echo(payload: object) -> None:
     typer.echo(json.dumps(payload, indent=2, sort_keys=True, default=str))
 
 
-def _git_sha() -> str:
+def _git_sha(workspace: str | Path | None = None) -> str:
+    candidate = Path(workspace) if workspace else Path(".")
+    root = candidate.resolve() if candidate.is_absolute() else (_home() / candidate).resolve()
     try:
         return subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            cwd=_home(),
+            cwd=root,
             check=True,
             capture_output=True,
             text=True,
@@ -215,7 +249,9 @@ def initialize(
     controller = ResearchController(_repository())
     run = controller.create_run(
         loaded,
-        base_commit_sha=_git_sha(),
+        # The immutable code identity belongs to what the executor will run. In branch-isolated
+        # research that is the competition worktree, not this orchestration repository.
+        base_commit_sha=_git_sha(loaded.executor.workspace),
         dataset_fingerprint=fingerprint_path(loaded.competition.data_path),
         run_id=run_id,
     )
@@ -256,8 +292,29 @@ def run_start(
         if not isinstance(supplied, dict):
             raise typer.BadParameter("competition package must be a JSON object")
         package.update(supplied)
+    if loaded.contamination.obfuscate_competition_name or loaded.contamination.hash_column_names:
+        package, _ = anonymize_competition_package(
+            package,
+            salt=_state(run_id).run.config_hash,
+            hash_column_names=loaded.contamination.hash_column_names,
+        )
     controller = ResearchController(_repository())
     controller.start(run_id, CompetitionObserver().observe(package))
+    if capabilities(loaded.run.mode).belief_posterior:
+        probability = 1 / len(loaded.validation.worlds)
+        controller.record_validation_worlds(
+            run_id,
+            [
+                ValidationWorld(
+                    id=f"W-{split.value}",
+                    run_id=run_id,
+                    split_type=split,
+                    assumptions=[f"hidden test is represented by the {split.value} split"],
+                    posterior_probability=probability,
+                )
+                for split in loaded.validation.worlds
+            ],
+        )
     typer.echo(json.dumps({"run_id": run_id, "state": "hypothesizing", "status": "running"}))
 
 
@@ -284,6 +341,23 @@ def run_status(run_id: str = typer.Option(..., "--run-id")) -> None:
             },
             "experiments": statuses,
             "observations": len(state.observations),
+            "validation_worlds": {
+                "posterior": {
+                    identifier: world.posterior_probability for identifier, world in state.validation_worlds.items()
+                },
+                "entropy": posterior_entropy(list(state.validation_worlds.values()), normalized=True),
+            },
+            "qd_candidates": len(state.qd_candidates),
+            "oof_artifacts": len(state.oof_artifacts),
+            "oof_ensembles": len(state.oof_ensembles),
+            "agent_resources": [item.model_dump(mode="json") for item in state.agent_resource_records],
+            "experiment_retries": [item.model_dump(mode="json") for item in state.experiment_retries],
+            "research_state": derive_research_state(
+                state,
+                maximum_archive_size=_run_config(run_id).qd.maximum_archive_size,
+                preferred_targets=_run_config(run_id).preferred_state.targets,
+                preferred_weights=_run_config(run_id).preferred_state.weights,
+            ).model_dump(mode="json"),
             "violations": state.violations,
             "validation_reuse": state.validation_reuse(),
             # Estimates gate the budget; observations say what was actually spent. A ratio far from
@@ -308,9 +382,228 @@ def _entities(run_id: str, event_type: EventType) -> list[dict[str, Any]]:
     return [event.payload for event in _repository().event_store(run_id).read_all() if event.event_type == event_type]
 
 
+@validation_app.command("list")
+def validation_list(run_id: str = typer.Option(..., "--run-id")) -> None:
+    worlds = list(_state(run_id).validation_worlds.values())
+    _echo(
+        {
+            "run_id": run_id,
+            "entropy_bits": posterior_entropy(worlds),
+            "normalized_entropy": posterior_entropy(worlds, normalized=True),
+            "worlds": [item.model_dump(mode="json") for item in worlds],
+        }
+    )
+
+
+@validation_app.command("update")
+def validation_update(
+    run_id: str = typer.Option(..., "--run-id"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    """Apply preregistered likelihoods from a completed diagnostic observation."""
+    try:
+        evidence = ValidationWorldEvidence.model_validate_json(source.read_text(encoding="utf-8"))
+        posterior = _controller().update_validation_posterior(run_id, evidence)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"run_id": run_id, "evidence_id": evidence.id, "posterior": posterior})
+
+
+@archive_app.command("add")
+def archive_add(
+    run_id: str = typer.Option(..., "--run-id"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    config = _run_config(run_id)
+    try:
+        candidate = QDCandidate.model_validate_json(source.read_text(encoding="utf-8"))
+        update = _controller().archive_candidate(
+            run_id,
+            candidate,
+            maximum_size=config.qd.maximum_archive_size,
+            quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(update.__dict__)
+
+
+@archive_app.command("status")
+def archive_status(run_id: str = typer.Option(..., "--run-id")) -> None:
+    state = _state(run_id)
+    names = descriptor_names_for_mode(state.run.mode)
+    if not names:
+        _echo({"run_id": run_id, "enabled": False, "mode": state.run.mode.value})
+        return
+    config = _run_config(run_id)
+    archive = QDArchive.rebuild(
+        state.qd_candidates.values(),
+        descriptor_names=names,
+        maximum_size=config.qd.maximum_archive_size,
+        quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+    )
+    _echo(
+        {
+            "run_id": run_id,
+            "enabled": True,
+            "descriptors": names,
+            "occupancy": archive.occupancy,
+            "retained_candidates": len(archive.candidates),
+            "cells": [item.model_dump(mode="json") for item in archive.entries],
+        }
+    )
+
+
+@archive_app.command("export")
+def archive_export(
+    run_id: str = typer.Option(..., "--run-id"),
+    destination: Path = typer.Option(..., "--out", dir_okay=False),
+) -> None:
+    """Export the replayed QD population as JSON or Parquet."""
+
+    rows = [item.model_dump(mode="json") for item in _state(run_id).qd_candidates.values()]
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.suffix.lower() == ".parquet":
+        try:
+            pa = importlib.import_module("pyarrow")
+            pq = importlib.import_module("pyarrow.parquet")
+        except ImportError as error:
+            raise typer.BadParameter("Parquet export requires the 'solver' optional dependencies") from error
+        pq.write_table(pa.Table.from_pylist(rows), destination)
+    elif destination.suffix.lower() == ".json":
+        destination.write_text(json.dumps(rows, indent=2, sort_keys=True), encoding="utf-8")
+    else:
+        raise typer.BadParameter("archive export must end in .json or .parquet")
+    typer.echo(str(destination))
+
+
+@oof_app.command("record")
+def oof_record(
+    run_id: str = typer.Option(..., "--run-id"),
+    candidate_id: str = typer.Option(..., "--candidate-id"),
+    validation_world: str = typer.Option(..., "--validation-world"),
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+) -> None:
+    store = OOFStore()
+    try:
+        rows = store.read(source)
+        if {item.candidate_id for item in rows} != {candidate_id}:
+            raise ValueError("OOF rows do not match --candidate-id")
+        if {item.validation_world for item in rows} != {validation_world}:
+            raise ValueError("OOF rows do not match --validation-world")
+        digest = file_sha256(source)
+        artifact = OOFArtifact(
+            id=f"OOF-{digest[:12]}",
+            run_id=run_id,
+            candidate_id=candidate_id,
+            validation_world=validation_world,
+            uri=str(source.resolve()),
+            sha256=digest,
+            row_count=len(rows),
+            format="parquet" if source.suffix == ".parquet" else "jsonl",
+        )
+        _controller().record_oof_artifact(run_id, artifact)
+    except (RuntimeError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(artifact.model_dump(mode="json"))
+
+
+@oof_app.command("analyze")
+def oof_analyze(
+    sources: list[Path] = typer.Option(..., "--from", exists=True, dir_okay=False),
+    run_id: str | None = typer.Option(None, "--run-id"),
+) -> None:
+    try:
+        records = [record for source in sources for record in OOFStore().read(source)]
+        analysis = analyze_oof(records)
+        payload = {
+            "candidate_ids": list(analysis.candidate_ids),
+            "residual_correlations": analysis.residual_correlations,
+            "prediction_disagreements": analysis.prediction_disagreements,
+            "covariance_effective_rank": analysis.covariance_effective_rank,
+        }
+        if run_id is not None:
+            _controller().record_oof_analysis(run_id, payload)
+    except (RuntimeError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(payload)
+
+
+@oof_app.command("ensemble")
+def oof_ensemble(
+    run_id: str = typer.Option(..., "--run-id"),
+    sources: list[Path] = typer.Option(..., "--from", exists=True, dir_okay=False),
+    ensemble_id: str | None = typer.Option(None, "--ensemble-id"),
+    artifact_sha: list[str] = typer.Option([], "--artifact-sha"),
+) -> None:
+    """Learn non-negative blend weights with fold-held-out evaluation."""
+
+    try:
+        records = [record for source in sources for record in OOFStore().read(source)]
+        ensemble = build_cross_fitted_ensemble(
+            records,
+            run_id=run_id,
+            ensemble_id=ensemble_id or f"ENS-{file_sha256(sources[0])[:12]}",
+            artifact_ids=artifact_sha,
+        )
+        config = _run_config(run_id)
+        _controller().record_oof_ensemble(
+            run_id,
+            ensemble,
+            qd_maximum_size=config.qd.maximum_archive_size,
+            qd_quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+        )
+    except (RuntimeError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(ensemble.model_dump(mode="json"))
+
+
+@falsifier_app.command("propose")
+def falsifier_propose(
+    run_id: str = typer.Option(..., "--run-id"),
+    available_data: list[str] = typer.Option([], "--available-data"),
+) -> None:
+    try:
+        proposal = _controller().propose_falsification(run_id, available_data=available_data)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(proposal.model_dump(mode="json"))
+
+
 @hypotheses_app.command("list")
 def hypotheses_list(run_id: str = typer.Option(..., "--run-id")) -> None:
     typer.echo(json.dumps(_entities(run_id, EventType.HYPOTHESIS_PROPOSED), indent=2, sort_keys=True))
+
+
+@hypotheses_app.command("export")
+def hypotheses_export(
+    run_id: str = typer.Option(..., "--run-id"),
+    destination: Path | None = typer.Option(None, "--out", dir_okay=False),
+) -> None:
+    """Export the current registry, including revisions, as auditable YAML."""
+
+    path = destination or (_home() / ".runs" / run_id / "hypotheses" / "registry.yaml")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "run_id": run_id,
+        "hypotheses": [item.model_dump(mode="json") for item in _state(run_id).hypotheses.values()],
+    }
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    typer.echo(str(path))
+
+
+@hypotheses_app.command("calibration")
+def hypotheses_calibration(run_id: str = typer.Option(..., "--run-id")) -> None:
+    """Show Brier/log-loss, confidence errors, and registered interval coverage."""
+
+    records = list(_state(run_id).forecast_calibrations)
+    _echo(
+        {
+            "run_id": run_id,
+            "summary": summarize_calibration(records).model_dump(mode="json") if records else None,
+            "records": [item.model_dump(mode="json") for item in records],
+        }
+    )
 
 
 @hypotheses_app.command("show")
@@ -380,7 +673,15 @@ def experiments_utility(experiment_id: str) -> None:
             proposal = ExperimentProposal.model_validate(payload)
             config = load_config(_run_config_path(run_id))
             weights = config.selection.for_phase(_current_phase(run_id))
-            breakdown = score_experiment(proposal, weights, config.selection.cost_lambda)
+            state = _state(run_id)
+            breakdown = score_experiment(
+                proposal,
+                weights,
+                config.selection.cost_lambda,
+                beliefs={identifier: item.current_confidence for identifier, item in state.hypotheses.items()},
+                mode=state.run.mode,
+                risk_lambda=config.selection.risk_lambda,
+            )
             typer.echo(json.dumps(breakdown.__dict__, indent=2, sort_keys=True))
             return
     raise typer.BadParameter(f"unknown experiment: {experiment_id}")
@@ -431,7 +732,14 @@ def hypotheses_record(
     config = _run_config(run_id)
     try:
         hypotheses = ProposalBridge.load_hypotheses(source)
-        recorded = _controller().record_hypotheses(run_id, hypotheses, max_active=config.loop.max_active_hypotheses)
+        recorded = _controller().record_hypotheses(
+            run_id,
+            hypotheses,
+            max_active=config.loop.max_active_hypotheses,
+            calibration_minimum_records=config.calibration.minimum_records,
+            poor_brier_threshold=config.calibration.poor_brier_threshold,
+            prior_shrinkage=(config.calibration.prior_shrinkage if config.calibration.enabled else 0.0),
+        )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
     _echo({"run_id": run_id, "recorded": recorded})
@@ -481,13 +789,23 @@ def experiments_select(
             run_id,
             weights=config.selection.for_phase(state.phase),
             cost_lambda=config.selection.cost_lambda,
+            risk_lambda=config.selection.risk_lambda,
             size=size,
             minimum_utility=config.selection.minimum_utility,
+            allocation=config.selection.allocation_for_phase(state.phase).model_dump(),
             source_policy_strict=config.contamination.require_source_provenance,
             max_validation_reuse=config.loop.max_validation_reuse,
             max_consecutive_optimization=config.loop.max_consecutive_optimization_experiments,
             command_allowlist=tuple(config.executor.command_allowlist),
             execution_contract=_executor(config).contract,
+            eig_method=config.selection.eig_method,
+            eig_monte_carlo_samples=config.selection.eig_monte_carlo_samples,
+            preferred_state_targets=config.preferred_state.targets,
+            preferred_state_weights=config.preferred_state.weights,
+            qd_maximum_size=config.qd.maximum_archive_size,
+            qd_quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+            information_value_enabled="eig" not in config.ablation.remove,
+            preferred_state_enabled="preferred-state" not in config.ablation.remove,
         )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
@@ -559,7 +877,13 @@ def experiments_import_result(
         raise typer.BadParameter(f"no result has been produced yet for {experiment_id}")
     artifact_root = Path(result.artifact_refs[0]).parent if result.artifact_refs else None
     try:
-        observation = controller.import_result(run_id, result, artifact_root=artifact_root)
+        observation = controller.import_result(
+            run_id,
+            result,
+            artifact_root=artifact_root,
+            qd_maximum_size=config.qd.maximum_archive_size,
+            qd_quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+        )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
     if observation is None:
@@ -571,6 +895,64 @@ def experiments_import_result(
             "status": result.status,
             "observation_id": observation.id,
             "metrics": observation.metrics,
+        }
+    )
+
+
+@experiments_app.command("rerun-manifest")
+def experiments_rerun_manifest(
+    manifest_path: Path = typer.Option(..., "--manifest", exists=True, dir_okay=False),
+    workspace: Path = typer.Option(Path("."), "--workspace", exists=True, file_okay=False),
+    result_root: Path = typer.Option(Path(".replays"), "--result-root", file_okay=False),
+) -> None:
+    """Re-execute an immutable local manifest without overwriting the original run result."""
+
+    try:
+        manifest = ExperimentManifest.model_validate_json(manifest_path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        raise typer.BadParameter(f"invalid experiment manifest: {error}") from error
+    request = manifest.request
+    current_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=workspace,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if current_sha and current_sha != request.base_commit_sha:
+        raise typer.BadParameter(
+            f"workspace commit {current_sha} does not match manifest commit {request.base_commit_sha}"
+        )
+    attempt = manifest.result.attempt + 1
+    replay_request = request.model_copy(
+        update={
+            "request_id": f"REQ-{uuid.uuid4().hex[:12]}",
+            "idempotency_key": f"{request.run_id}:{request.experiment_id}:attempt-{attempt}",
+        }
+    )
+    replay_root = result_root / file_sha256(manifest_path)[:12] / f"attempt-{attempt}"
+    result = LocalExecutor(workspace, replay_root).submit(replay_request)
+    metric_delta = {
+        name: result.metrics[name] - manifest.result.metrics[name]
+        for name in result.metrics.keys() & manifest.result.metrics.keys()
+    }
+    provenance_matches = (
+        result.commit_sha == manifest.result.commit_sha
+        and result.dataset_fingerprint == manifest.result.dataset_fingerprint
+        and result.environment_lock_hash == manifest.environment_lock_hash
+    )
+    _echo(
+        {
+            "manifest": str(manifest_path.resolve()),
+            "result": result.model_dump(mode="json"),
+            "metric_delta": metric_delta,
+            "provenance_matches": provenance_matches,
+            "reproduced": (
+                result.status == "completed"
+                and provenance_matches
+                and set(result.metrics) == set(manifest.result.metrics)
+                and all(abs(value) <= 1e-12 for value in metric_delta.values())
+            ),
         }
     )
 
@@ -663,7 +1045,7 @@ def run_loop(
     config = _run_config(run_id)
     loop = AutonomousLoop(
         _controller(),
-        AutomaticProposer(_llm(config), _bridge()),
+        AutomaticProposer(_llm(config, run_id=run_id), _bridge()),
         _executor(config),
         config=config,
         home=_home(),
@@ -1030,6 +1412,7 @@ def benchmark_plan(
         replicates=replicates,
         seeds=[101 + index * 17 for index in range(replicates)],
         budgets=raw.get("budgets", {"max_experiments": 40, "max_cpu_hours": 120}),
+        systems=tuple(raw.get("systems", ("exploiter_only", "epistemic"))),
     )
     save_plan(plan, output)
     typer.echo(str(output))
@@ -1078,7 +1461,15 @@ def benchmark_finalize(
 def report_run(run_id: str = typer.Option(..., "--run-id")) -> None:
     events = _repository().event_store(run_id).read_all()
     destination = _home() / ".runs" / run_id / "report.md"
-    write_run_report(run_id, events, destination)
+    config = _run_config(run_id)
+    write_run_report(
+        run_id,
+        events,
+        destination,
+        qd_maximum_size=config.qd.maximum_archive_size,
+        preferred_targets=config.preferred_state.targets,
+        preferred_weights=config.preferred_state.weights,
+    )
     typer.echo(str(destination))
 
 
@@ -1088,10 +1479,6 @@ def report_benchmark(benchmark_id: str = typer.Option(..., "--benchmark-id")) ->
     result = json.loads((root / "benchmark-result.json").read_text(encoding="utf-8"))
     destination = write_benchmark_report(result, root / "benchmark-report.md")
     typer.echo(str(destination))
-
-
-if __name__ == "__main__":
-    app()
 
 
 @brief_app.command("create")
@@ -1190,7 +1577,119 @@ def run_finalize(
     instead, which is what `FINALIZING` was always for.
     """
     try:
-        payload = _controller().finalize(run_id, artifacts=artifact, note=note)
+        config = _run_config(run_id)
+        payload = _controller().finalize(
+            run_id,
+            artifacts=artifact,
+            note=note,
+            qd_maximum_size=config.qd.maximum_archive_size,
+            qd_quality_floor_relative_to_best=config.qd.quality_floor_relative_to_best,
+        )
     except (ValueError, LoopStateError) as error:
         raise typer.BadParameter(str(error)) from error
     _echo(payload)
+
+
+@run_app.command("lock-rule")
+def run_lock_rule(
+    run_id: str = typer.Option(..., "--run-id"),
+    description: str = typer.Option(..., "--description"),
+    policy: str = typer.Option("final_candidate_utility_v1", "--policy"),
+) -> None:
+    """Preregister the deterministic final-selection rule before results are locked."""
+
+    if policy not in {"final_candidate_utility_v1", "cross_fitted_ensemble_v1"}:
+        raise typer.BadParameter("unknown final selection policy")
+    try:
+        rule = _controller().register_final_selection_rule(
+            run_id,
+            description=description,
+            policy=cast(Any, policy),
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(rule.model_dump(mode="json"))
+
+
+@app.command("baseline")
+def baseline(
+    run_id: str = typer.Option(..., "--run-id"),
+    poll_seconds: float = typer.Option(10.0, "--poll-seconds", min=0.0),
+    timeout_seconds: float = typer.Option(3600.0, "--timeout-seconds", min=1.0),
+) -> None:
+    """Build and evaluate the first candidate using one complete research cycle."""
+
+    run_loop(run_id=run_id, rounds=1, size=1, poll_seconds=poll_seconds, timeout_seconds=timeout_seconds)
+
+
+@app.command("run-cycle")
+def run_cycle(
+    run_id: str = typer.Option(..., "--run-id"),
+    size: int = typer.Option(1, "--size", min=1),
+    poll_seconds: float = typer.Option(10.0, "--poll-seconds", min=0.0),
+    timeout_seconds: float = typer.Option(3600.0, "--timeout-seconds", min=1.0),
+) -> None:
+    """Execute exactly one proposal-to-update research cycle."""
+
+    run_loop(run_id=run_id, rounds=1, size=size, poll_seconds=poll_seconds, timeout_seconds=timeout_seconds)
+
+
+@app.command("finalize")
+def finalize_command(
+    run_id: str = typer.Option(..., "--run-id"),
+    note: str = typer.Option(..., "--note"),
+    artifact: list[str] = typer.Option([], "--artifact"),
+) -> None:
+    """Compatibility entry point for the specification's top-level finalize command."""
+
+    run_finalize(run_id=run_id, note=note, artifact=artifact)
+
+
+@app.command("ablation")
+def ablation(
+    remove: list[str] = typer.Option(..., "--remove"),
+    config_path: Path = typer.Option(Path("configs/system_c.yaml"), "--config", exists=True, dir_okay=False),
+    destination: Path | None = typer.Option(None, "--out", dir_okay=False),
+) -> None:
+    """Create a runnable System-C component-ablation configuration."""
+
+    allowed = {"eig", "falsifier", "preferred-state"}
+    unknown = sorted(set(remove) - allowed)
+    if unknown:
+        raise typer.BadParameter(f"unknown ablation components: {', '.join(unknown)}")
+    loaded = load_config(config_path)
+    updated = AppConfig.model_validate(
+        {
+            **loaded.model_dump(mode="json"),
+            "ablation": {"remove": sorted(set(remove))},
+        }
+    )
+    output = destination or (
+        _home() / ".ablations" / f"{config_path.stem}-without-{'-'.join(sorted(set(remove)))}.yaml"
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(yaml.safe_dump(updated.model_dump(mode="json"), sort_keys=False), encoding="utf-8")
+    _echo({"config": str(output), "removed": updated.ablation.remove})
+
+
+@contamination_app.command("anonymize-csv")
+def contamination_anonymize_csv(
+    source: Path = typer.Option(..., "--from", exists=True, dir_okay=False),
+    destination: Path = typer.Option(..., "--out", dir_okay=False),
+    salt: str | None = typer.Option(None, "--salt", help="non-secret salt for deterministic aliases"),
+    run_id: str | None = typer.Option(None, "--run-id", help="use this run's config hash as the alias salt"),
+) -> None:
+    """Create the required column-neutral contamination-test dataset variant."""
+
+    if (salt is None) == (run_id is None):
+        raise typer.BadParameter("provide exactly one of --salt or --run-id")
+    effective_salt = salt if salt is not None else _state(str(run_id)).run.config_hash
+    try:
+        mapping = anonymize_csv_columns(source, destination, salt=effective_salt)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo({"output": str(destination), "renamed_columns": len(mapping)})
+
+
+if __name__ == "__main__":
+    app()

@@ -1,0 +1,17 @@
+run:
+  id: null
+  mode: system_c
+  seed: 101
+competition:
+  slug: local-competition
+  metric_direction: maximize
+  primary_metric: score
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: true
+  worker_network: disabled
+  obfuscate_competition_name: true
+  hash_column_names: true

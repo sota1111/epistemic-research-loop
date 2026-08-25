@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from epistemic_loop.adapters.executor.base import SHELL_CONTRACT
 from epistemic_loop.adapters.executor.local import LocalExecutor
+from epistemic_loop.adapters.llm.base import LlmUsage
 from epistemic_loop.agents.auto import AutomaticProposer
 from epistemic_loop.agents.proposal_bridge import (
     ExperimentBatch,
@@ -19,12 +20,13 @@ from epistemic_loop.agents.proposal_bridge import (
 from epistemic_loop.config import AppConfig, CompetitionConfig, ExecutorConfig, RunConfig
 from epistemic_loop.controller.autoloop import AutonomousLoop, LoopSettings
 from epistemic_loop.controller.research_graph import ResearchController
-from epistemic_loop.domain.enums import HypothesisStatus, VerifierResult
+from epistemic_loop.domain.enums import FailureClass, HypothesisStatus, VerifierResult
 from epistemic_loop.domain.models import (
     CompetitionWorldModel,
     ExperimentProposal,
     ExperimentResult,
     Hypothesis,
+    ObservedResourceUsage,
 )
 from epistemic_loop.storage.repositories import ResearchRepository
 
@@ -46,9 +48,12 @@ class ScriptedLlm:
         self.hypotheses = hypotheses
         self.experiments = experiments
         self.calls: list[str] = []
+        self.usage_enabled = False
+        self._usage_pending = False
 
     def generate(self, prompt: str, schema: type[BaseModel], context: dict[str, Any]) -> Any:
         self.calls.append(schema.__name__)
+        self._usage_pending = True
         if schema is HypothesisBatch:
             return HypothesisBatch(hypotheses=self.hypotheses)
         if schema is ExperimentBatch:
@@ -65,6 +70,12 @@ class ScriptedLlm:
                 evidence_summary="observed gap 0.061 exceeds the preregistered 0.02 threshold",
             )
         raise AssertionError(f"unexpected schema: {schema}")
+
+    def take_usage(self) -> LlmUsage | None:
+        if not self.usage_enabled or not self._usage_pending:
+            return None
+        self._usage_pending = False
+        return LlmUsage(model="scripted", input_tokens=2, output_tokens=1)
 
 
 @pytest.fixture
@@ -103,6 +114,7 @@ def test_one_autonomous_round_completes_the_whole_cycle(
         implementation_request={"command": f"python3 {workspace / 'worker.py'}"},
     )
     llm = ScriptedLlm([hypothesis.model_copy(update={"run_id": "auto-001"})], [runnable])
+    llm.usage_enabled = True
     loop = AutonomousLoop(
         controller,
         AutomaticProposer(llm, ProposalBridge(workspace / ".proposals", ROOT / "prompts")),
@@ -131,6 +143,8 @@ def test_one_autonomous_round_completes_the_whole_cycle(
     assert observation.metrics == {"auc_gap": 0.061}
     assert observation.fold_metrics == {"folds": [0.05, 0.07]}
     assert state.usage.experiments == 1
+    assert state.usage.llm_tokens == 9
+    assert len(state.agent_resource_records) == 3
 
     events = controller.repository.event_store("auto-001").read_all()
     recorded = {event.event_type.value for event in events}
@@ -143,6 +157,7 @@ def test_one_autonomous_round_completes_the_whole_cycle(
         "ObservationRecorded",
         "FalsificationRecorded",
         "BeliefUpdated",
+        "AgentResourceRecorded",
     } <= recorded
 
 
@@ -326,6 +341,39 @@ class OutOfBandExecutor:
         return self.terminal if len(self.polls) > self.ready_after else None
 
 
+class RetryOnceExecutor:
+    contract = SHELL_CONTRACT
+
+    def __init__(self, *, success_attempt: int | None = 2) -> None:
+        self.results: dict[str, ExperimentResult] = {}
+        self.attempts: list[int] = []
+        self.success_attempt = success_attempt
+
+    def submit(self, request):  # type: ignore[no-untyped-def]
+        attempt = int(request.idempotency_key.rsplit("-", 1)[1])
+        self.attempts.append(attempt)
+        completed = attempt == self.success_attempt
+        result = ExperimentResult(
+            experiment_id=request.experiment_id,
+            run_id=request.run_id,
+            attempt=attempt,
+            status="completed" if completed else "failed",
+            exit_code=0 if completed else 137,
+            failure_class=None if completed else FailureClass.INFRASTRUCTURE,
+            failure_excerpt=None if completed else "worker was evicted",
+            commit_sha=request.base_commit_sha,
+            environment_hash="retry-environment",
+            dataset_fingerprint=request.dataset_fingerprint,
+            metrics={"auc_gap": 0.061} if completed else {},
+            resource_usage=ObservedResourceUsage(cpu_hours=0.01, wall_hours=0.01),
+        )
+        self.results[request.idempotency_key] = result
+        return result
+
+    def result(self, request):  # type: ignore[no-untyped-def]
+        return self.results.get(request.idempotency_key)
+
+
 def _prepared_run(workspace: Path, config: AppConfig, controller, hypothesis, runnable):  # type: ignore[no-untyped-def]
     controller.create_run(config, base_commit_sha="abc123", dataset_fingerprint="f" * 64, run_id="auto-001")
     controller.start("auto-001", CompetitionWorldModel(unresolved_questions=["which split?"]))
@@ -378,6 +426,74 @@ def test_a_round_collects_from_an_executor_that_stores_results_elsewhere(
     assert len(outcome.observations) == 1
     assert len(executor.polls) == 3, "polling continues until the executor has a terminal result"
     assert not (workspace / "results" / "auto-001").exists(), "nothing was written to the local layout"
+
+
+def test_an_infrastructure_failure_is_retried_once_and_charged(
+    workspace: Path,
+    config: AppConfig,
+    hypothesis: Hypothesis,
+    proposal: ExperimentProposal,
+    clone_proposal,
+) -> None:
+    controller = ResearchController(ResearchRepository(workspace / ".runs", workspace / "projection.db"))
+    runnable = clone_proposal(proposal, run_id="auto-001", implementation_request={"command": "python3 worker.py"})
+    _prepared_run(workspace, config, controller, hypothesis, runnable)
+    executor = RetryOnceExecutor()
+    loop = AutonomousLoop(
+        controller,
+        AutomaticProposer(ScriptedLlm([], []), ProposalBridge(workspace / ".proposals", ROOT / "prompts")),
+        executor,
+        config=config,
+        home=workspace,
+        sleep=lambda _: None,
+    )
+
+    outcome = loop.run("auto-001", LoopSettings(rounds=1, poll_seconds=0, timeout_seconds=5))[0]
+
+    state = controller.state("auto-001")
+    assert executor.attempts == [1, 2]
+    assert outcome.pending == []
+    assert len(outcome.observations) == 1
+    assert state.experiment_attempts["EXP-001"] == 2
+    assert state.experiment_retries[0].failure_excerpt == "worker was evicted"
+    assert state.observed_runtime()["retry_attempts"] == 1
+    assert state.usage.wall_hours == pytest.approx(0.02)
+
+
+def test_infrastructure_retries_stop_at_the_configured_limit(
+    workspace: Path,
+    config: AppConfig,
+    hypothesis: Hypothesis,
+    proposal: ExperimentProposal,
+    clone_proposal,
+) -> None:
+    limited = config.model_copy(
+        update={
+            "executor": config.executor.model_copy(update={"retry_infrastructure_failures": 1}),
+        }
+    )
+    controller = ResearchController(ResearchRepository(workspace / ".runs", workspace / "projection.db"))
+    runnable = clone_proposal(proposal, run_id="auto-001", implementation_request={"command": "python3 worker.py"})
+    _prepared_run(workspace, limited, controller, hypothesis, runnable)
+    executor = RetryOnceExecutor(success_attempt=None)
+    loop = AutonomousLoop(
+        controller,
+        AutomaticProposer(ScriptedLlm([], []), ProposalBridge(workspace / ".proposals", ROOT / "prompts")),
+        executor,
+        config=limited,
+        home=workspace,
+        sleep=lambda _: None,
+    )
+
+    outcome = loop.run("auto-001", LoopSettings(rounds=1, poll_seconds=0, timeout_seconds=5))[0]
+
+    state = controller.state("auto-001")
+    assert executor.attempts == [1, 2]
+    assert len(state.experiment_retries) == 1
+    assert state.experiment_statuses["EXP-001"].value == "failed"
+    assert outcome.replanned == "no completed observation was available for interpretation"
+    assert state.failed_experiments()[0]["failure_excerpt"] == "worker was evicted"
+    assert state.usage.wall_hours == pytest.approx(0.02)
 
 
 def test_a_result_that_never_arrives_leaves_the_experiment_pending_rather_than_hanging(

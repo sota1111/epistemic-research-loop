@@ -1,5 +1,55 @@
 {
   "$defs": {
+    "CandidateDescriptors": {
+      "additionalProperties": false,
+      "description": "Behavior descriptor used by the solution and epistemic QD archives.",
+      "properties": {
+        "data_scope": {
+          "default": "train_only",
+          "minLength": 1,
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "entity_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Entity Hypothesis",
+          "type": "string"
+        },
+        "error_profile": {
+          "default": "global",
+          "minLength": 1,
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "model_family": {
+          "default": "other",
+          "minLength": 1,
+          "title": "Model Family",
+          "type": "string"
+        },
+        "representation": {
+          "default": "raw",
+          "minLength": 1,
+          "title": "Representation",
+          "type": "string"
+        },
+        "shift_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Shift Hypothesis",
+          "type": "string"
+        },
+        "validation_type": {
+          "default": "random",
+          "minLength": 1,
+          "title": "Validation Type",
+          "type": "string"
+        }
+      },
+      "title": "CandidateDescriptors",
+      "type": "object"
+    },
     "CostEstimate": {
       "additionalProperties": false,
       "properties": {
@@ -53,6 +103,45 @@
       ],
       "title": "Direction",
       "type": "string"
+    },
+    "EVSIProxy": {
+      "additionalProperties": false,
+      "description": "Auditable value-of-sample-information approximation.\n\nThe proxy is deliberately factored into the probability that a downstream\ndecision changes and the utility difference between the competing actions.\nAn agent cannot provide a final EVSI number independently of these inputs.",
+      "properties": {
+        "decision_change_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Decision Change Probability",
+          "type": "number"
+        },
+        "decision_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "utility_difference": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Utility Difference",
+          "type": "number"
+        }
+      },
+      "required": [
+        "decision_change_probability",
+        "utility_difference",
+        "decision_ids",
+        "rationale"
+      ],
+      "title": "EVSIProxy",
+      "type": "object"
     },
     "EpistemicAssessment": {
       "additionalProperties": false,
@@ -119,10 +208,14 @@
     },
     "ExperimentType": {
       "enum": [
+        "exploit",
+        "solution_explore",
+        "epistemic",
         "diagnostic",
         "optimization",
         "falsification",
         "robustness",
+        "ensemble",
         "replication",
         "ablation"
       ],
@@ -215,6 +308,20 @@
           "minLength": 1,
           "title": "Condition",
           "type": "string"
+        },
+        "coverage_level": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Level"
         },
         "description": {
           "minLength": 1,
@@ -441,6 +548,70 @@
       ],
       "title": "SourceRef",
       "type": "object"
+    },
+    "ValidationOutcomeLikelihood": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "probability_by_world": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "minProperties": 2,
+          "title": "Probability By World",
+          "type": "object"
+        }
+      },
+      "required": [
+        "label",
+        "probability_by_world"
+      ],
+      "title": "ValidationOutcomeLikelihood",
+      "type": "object"
+    },
+    "ValidationWorldForecast": {
+      "additionalProperties": false,
+      "description": "Preregistered categorical result distribution under each validation world.",
+      "properties": {
+        "decisions_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decisions Affected",
+          "type": "array"
+        },
+        "measurement_notes": {
+          "minLength": 1,
+          "title": "Measurement Notes",
+          "type": "string"
+        },
+        "metric_name": {
+          "minLength": 1,
+          "title": "Metric Name",
+          "type": "string"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/ValidationOutcomeLikelihood"
+          },
+          "minItems": 2,
+          "title": "Outcomes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "outcomes",
+        "metric_name",
+        "decisions_affected",
+        "measurement_notes"
+      ],
+      "title": "ValidationWorldForecast",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -462,17 +633,51 @@
       "title": "Decision Rule",
       "type": "string"
     },
+    "descriptors": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CandidateDescriptors"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "epistemic_assessment": {
       "$ref": "#/$defs/EpistemicAssessment"
     },
     "estimated_cost": {
       "$ref": "#/$defs/CostEstimate"
     },
+    "evsi_proxy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EVSIProxy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "expected_score_gain": {
       "$ref": "#/$defs/ScoreEstimate"
     },
     "experiment_type": {
       "$ref": "#/$defs/ExperimentType"
+    },
+    "falsification_proposal_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Falsification Proposal Id"
     },
     "holdout_access": {
       "$ref": "#/$defs/HoldoutAccess",
@@ -535,6 +740,13 @@
       "title": "Outcome Forecasts",
       "type": "array"
     },
+    "parent_candidate_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Parent Candidate Ids",
+      "type": "array"
+    },
     "predicted_outcomes": {
       "items": {
         "$ref": "#/$defs/PredictedOutcome"
@@ -542,6 +754,12 @@
       "minItems": 1,
       "title": "Predicted Outcomes",
       "type": "array"
+    },
+    "proposer_agent": {
+      "default": "experiment-designer",
+      "minLength": 1,
+      "title": "Proposer Agent",
+      "type": "string"
     },
     "protocol": {
       "minLength": 1,
@@ -592,6 +810,27 @@
     "status": {
       "$ref": "#/$defs/ExperimentStatus",
       "default": "proposed"
+    },
+    "validation_world_forecast": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ValidationWorldForecast"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "variation_operator": {
+      "default": "seed",
+      "enum": [
+        "seed",
+        "mutation",
+        "crossover"
+      ],
+      "title": "Variation Operator",
+      "type": "string"
     },
     "version": {
       "default": 1,

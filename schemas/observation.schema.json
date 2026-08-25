@@ -7,6 +7,24 @@
           "title": "Code Commit Sha",
           "type": "string"
         },
+        "config_hash": {
+          "default": "unavailable",
+          "title": "Config Hash",
+          "type": "string"
+        },
+        "content_address_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-fA-F0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Address Sha256"
+        },
         "created_at": {
           "format": "date-time",
           "title": "Created At",
@@ -27,6 +45,13 @@
         "mime_type": {
           "title": "Mime Type",
           "type": "string"
+        },
+        "random_seeds": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Random Seeds",
+          "type": "array"
         },
         "sealed": {
           "default": false,
@@ -70,6 +95,91 @@
       ],
       "title": "FailureClass",
       "type": "string"
+    },
+    "ObservedResourceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Hours"
+        },
+        "gpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Hours"
+        },
+        "llm_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Tokens"
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monetary Cost"
+        },
+        "peak_ram_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Ram Gb"
+        },
+        "wall_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Hours"
+        }
+      },
+      "title": "ObservedResourceUsage",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -139,11 +249,30 @@
       "title": "Id",
       "type": "string"
     },
+    "manifest_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manifest Ref"
+    },
     "metrics": {
       "additionalProperties": {
         "type": "number"
       },
       "title": "Metrics",
+      "type": "object"
+    },
+    "observed_outcomes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Observed Outcomes",
       "type": "object"
     },
     "prediction_fingerprint": {
@@ -157,6 +286,9 @@
       ],
       "default": null,
       "title": "Prediction Fingerprint"
+    },
+    "resource_usage": {
+      "$ref": "#/$defs/ObservedResourceUsage"
     },
     "run_id": {
       "title": "Run Id",
