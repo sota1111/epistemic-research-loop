@@ -169,6 +169,13 @@
       "default": null,
       "title": "New Client Auc"
     },
+    "open_structure_validation_debt_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Structure Validation Debt Ids",
+      "type": "array"
+    },
     "primary_score": {
       "title": "Primary Score",
       "type": "number"
@@ -201,6 +208,13 @@
       "minLength": 1,
       "title": "Source Agent",
       "type": "string"
+    },
+    "structural_hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Structural Hypothesis Ids",
+      "type": "array"
     },
     "uncertainty": {
       "default": 0,

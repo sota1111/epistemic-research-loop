@@ -960,6 +960,20 @@
       ],
       "default": null
     },
+    "discrimination_value": {
+      "default": 0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Discrimination Value",
+      "type": "number"
+    },
+    "discrimination_values_by_prior": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Discrimination Values By Prior",
+      "type": "array"
+    },
     "epistemic_assessment": {
       "$ref": "#/$defs/EpistemicAssessment"
     },
@@ -1174,6 +1188,43 @@
     "status": {
       "$ref": "#/$defs/ExperimentStatus",
       "default": "proposed"
+    },
+    "structural_hypothesis_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Structural Hypothesis Id"
+    },
+    "structural_leverage": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Structural Leverage",
+      "type": "number"
+    },
+    "structure_test_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Structure Test Id"
+    },
+    "validation_debt_reduction": {
+      "default": 0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Validation Debt Reduction",
+      "type": "number"
     },
     "validation_world_forecast": {
       "anyOf": [

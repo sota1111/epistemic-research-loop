@@ -380,7 +380,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     selected = selector.select([*standalone, ensemble_record])
     locked = selector.lock_submission(selected, final_root / "locked")
     acceptance = IEEERunAcceptance(
-        validated_uid_candidates=0,
+        validated_behavioral_client_proxies=0,
         forward_horizons=3,
         fold_safe_uid_candidates=1,
         known_new_client_slice=True,

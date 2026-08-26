@@ -8,8 +8,21 @@
           "title": "Agent Id",
           "type": "string"
         },
+        "dynamic_structure_discovery": {
+          "default": true,
+          "title": "Dynamic Structure Discovery",
+          "type": "boolean"
+        },
         "primary_niche": {
-          "$ref": "#/$defs/EpistemicNiche"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpistemicNiche"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "secondary_niche": {
           "anyOf": [
@@ -24,8 +37,7 @@
         }
       },
       "required": [
-        "agent_id",
-        "primary_niche"
+        "agent_id"
       ],
       "title": "AgentNicheAssignment",
       "type": "object"
@@ -88,6 +100,13 @@
       "title": "Active Agents",
       "type": "array"
     },
+    "active_structure_forks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Active Structure Forks",
+      "type": "array"
+    },
     "archive_occupancy": {
       "additionalProperties": {
         "type": "integer"
@@ -112,6 +131,13 @@
         "type": "string"
       },
       "title": "Experiment Queue",
+      "type": "array"
+    },
+    "open_validation_debts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Validation Debts",
       "type": "array"
     },
     "remaining_budget": {

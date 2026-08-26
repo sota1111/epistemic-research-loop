@@ -1,0 +1,355 @@
+{
+  "$defs": {
+    "SemanticExperimentSignature": {
+      "additionalProperties": false,
+      "description": "Meaning-level identity used instead of command or experiment ID.",
+      "properties": {
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "data_slice": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Slice",
+          "type": "array"
+        },
+        "decision_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Affected",
+          "type": "array"
+        },
+        "observable": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable",
+          "type": "array"
+        },
+        "operation": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operation",
+          "type": "array"
+        },
+        "target_hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Hypotheses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_hypotheses",
+        "data_slice",
+        "operation",
+        "observable",
+        "decision_affected"
+      ],
+      "title": "SemanticExperimentSignature",
+      "type": "object"
+    },
+    "StructuralAlternative": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "falsification_conditions": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Falsification Conditions",
+          "type": "array"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "null_model": {
+          "default": false,
+          "title": "Null Model",
+          "type": "boolean"
+        },
+        "observable_predictions": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable Predictions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "claim",
+        "observable_predictions",
+        "falsification_conditions"
+      ],
+      "title": "StructuralAlternative",
+      "type": "object"
+    },
+    "StructuralDimension": {
+      "enum": [
+        "validation_split",
+        "observation_or_prediction_unit",
+        "row_independence",
+        "entity_grouping",
+        "temporal_order",
+        "feature_generation",
+        "candidate_routing",
+        "post_processing",
+        "target_or_metric_decomposition",
+        "train_test_generating_process"
+      ],
+      "title": "StructuralDimension",
+      "type": "string"
+    },
+    "StructureClassification": {
+      "enum": [
+        "validated_actionable_structure",
+        "validated_non_actionable_structure",
+        "useful_encoding_unvalidated_structure",
+        "rejected_structure"
+      ],
+      "title": "StructureClassification",
+      "type": "string"
+    },
+    "StructureLifecycleState": {
+      "enum": [
+        "observation",
+        "provisional_structure",
+        "alternatives_registered",
+        "discriminating_tests_preregistered",
+        "partially_validated",
+        "validated_structure",
+        "useful_encoding_unvalidated_structure",
+        "structurally_plausible_non_actionable",
+        "falsified",
+        "inconclusive"
+      ],
+      "title": "StructureLifecycleState",
+      "type": "string"
+    },
+    "StructureTestPreregistration": {
+      "additionalProperties": false,
+      "properties": {
+        "competing_hypothesis_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Competing Hypothesis Ids",
+          "type": "array"
+        },
+        "confounders_preserved": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Confounders Preserved",
+          "type": "array"
+        },
+        "decision_affected": {
+          "minLength": 1,
+          "title": "Decision Affected",
+          "type": "string"
+        },
+        "falsification_condition": {
+          "minLength": 1,
+          "title": "Falsification Condition",
+          "type": "string"
+        },
+        "fold_safe": {
+          "title": "Fold Safe",
+          "type": "boolean"
+        },
+        "null_repetitions": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Null Repetitions",
+          "type": "integer"
+        },
+        "power_plan": {
+          "minLength": 1,
+          "title": "Power Plan",
+          "type": "string"
+        },
+        "prediction_by_hypothesis": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "minProperties": 2,
+          "title": "Prediction By Hypothesis",
+          "type": "object"
+        },
+        "semantic_signature": {
+          "$ref": "#/$defs/SemanticExperimentSignature"
+        },
+        "target_hypothesis_id": {
+          "minLength": 1,
+          "title": "Target Hypothesis Id",
+          "type": "string"
+        },
+        "test_id": {
+          "minLength": 1,
+          "title": "Test Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "test_id",
+        "target_hypothesis_id",
+        "competing_hypothesis_ids",
+        "prediction_by_hypothesis",
+        "falsification_condition",
+        "confounders_preserved",
+        "decision_affected",
+        "power_plan",
+        "fold_safe",
+        "semantic_signature"
+      ],
+      "title": "StructureTestPreregistration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "affected_dimensions": {
+      "items": {
+        "$ref": "#/$defs/StructuralDimension"
+      },
+      "title": "Affected Dimensions",
+      "type": "array"
+    },
+    "alternatives": {
+      "items": {
+        "$ref": "#/$defs/StructuralAlternative"
+      },
+      "title": "Alternatives",
+      "type": "array"
+    },
+    "claim": {
+      "minLength": 1,
+      "title": "Claim",
+      "type": "string"
+    },
+    "classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StructureClassification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "decisions_affected": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Decisions Affected",
+      "type": "array"
+    },
+    "discrimination_plan": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Discrimination Plan",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "falsification_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Falsification Conditions",
+      "type": "array"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "leverage_weights": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Leverage Weights",
+      "type": "object"
+    },
+    "lifecycle_state": {
+      "$ref": "#/$defs/StructureLifecycleState",
+      "default": "observation"
+    },
+    "observable_predictions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Observable Predictions",
+      "type": "array"
+    },
+    "observation_refs": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Observation Refs",
+      "type": "array"
+    },
+    "owner_agent": {
+      "minLength": 1,
+      "title": "Owner Agent",
+      "type": "string"
+    },
+    "preregistered_tests": {
+      "items": {
+        "$ref": "#/$defs/StructureTestPreregistration"
+      },
+      "title": "Preregistered Tests",
+      "type": "array"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "structure_type": {
+      "minLength": 1,
+      "title": "Structure Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "owner_agent",
+    "claim",
+    "structure_type",
+    "observation_refs"
+  ],
+  "title": "StructuralHypothesis",
+  "type": "object"
+}

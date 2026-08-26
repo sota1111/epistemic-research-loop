@@ -128,6 +128,23 @@
       "title": "Producer Agent",
       "type": "string"
     },
+    "structural_hypothesis_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Structural Hypothesis Id"
+    },
+    "structure_validation_debt_open": {
+      "default": false,
+      "title": "Structure Validation Debt Open",
+      "type": "boolean"
+    },
     "verification": {
       "$ref": "#/$defs/EvidenceVerification"
     },

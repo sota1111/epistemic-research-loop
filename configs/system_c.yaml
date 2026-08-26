@@ -15,7 +15,9 @@ agents:
   belief_scope: local
   share_posteriors: false
   share_global_best: false
-  niches: [temporal, entity_client, validation, falsification]
+  dynamic_structure_discovery: true
+  fixed_structure_roles: false
+  niches: []
 communication:
   store_all_evidence_globally: true
   broadcast_raw_results: false
@@ -26,7 +28,7 @@ communication:
 diversity:
   semantic_duplicate_detection: true
   duplicate_similarity_threshold: 0.85
-  minimum_niche_budget_enabled: true
+  minimum_niche_budget_enabled: false
   global_best_visibility: controller_only
   collapse_detection: true
   niche_budget:
@@ -50,6 +52,27 @@ phase_gate:
   max_consecutive_diagnostic_experiments: 3
   require_candidate_after_diagnostics: true
   candidate_exception_requires_reason: true
+structure_discovery:
+  enabled: true
+  fixed_structure_roles: false
+  minimum_affected_dimensions: 2
+  maturation_leverage_threshold: 2.0
+  maturation_budget_fraction: 0.15
+  require_stateless_critic: true
+  require_competing_hypotheses: true
+  matched_null_repetitions: 20
+  forward_horizons: 3
+  replication_seeds: 3
+  bootstrap_confidence: 0.95
+  matched_null_quantile: 0.95
+  latent_entity_debt_requirements:
+    - uid_free_ablation
+    - frequency_only_control
+    - frequency_matched_null
+    - linkage_shuffle
+    - temporal_persistence
+    - known_new_interaction
+    - multi_seed_replication
 archive:
   portfolio_size: 24
   minimum_candidate_slots: 8

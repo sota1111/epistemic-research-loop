@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "StructureClassification": {
+      "enum": [
+        "validated_actionable_structure",
+        "validated_non_actionable_structure",
+        "useful_encoding_unvalidated_structure",
+        "rejected_structure"
+      ],
+      "title": "StructureClassification",
+      "type": "string"
+    },
+    "StructureLifecycleState": {
+      "enum": [
+        "observation",
+        "provisional_structure",
+        "alternatives_registered",
+        "discriminating_tests_preregistered",
+        "partially_validated",
+        "validated_structure",
+        "useful_encoding_unvalidated_structure",
+        "structurally_plausible_non_actionable",
+        "falsified",
+        "inconclusive"
+      ],
+      "title": "StructureLifecycleState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StructureClassification"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hypothesis_id": {
+      "minLength": 1,
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "lifecycle_state": {
+      "$ref": "#/$defs/StructureLifecycleState"
+    },
+    "predictive_improvement_passed": {
+      "title": "Predictive Improvement Passed",
+      "type": "boolean"
+    },
+    "structural_validity_passed": {
+      "title": "Structural Validity Passed",
+      "type": "boolean"
+    },
+    "validation_debt_resolved": {
+      "title": "Validation Debt Resolved",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "hypothesis_id",
+    "structural_validity_passed",
+    "predictive_improvement_passed",
+    "validation_debt_resolved",
+    "classification",
+    "lifecycle_state"
+  ],
+  "title": "StructurePromotionAssessment",
+  "type": "object"
+}

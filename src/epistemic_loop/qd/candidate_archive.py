@@ -81,15 +81,18 @@ class CandidateArchive:
         self._candidates[candidate.candidate_id] = candidate
 
     def agent_view(self, agent_id: str) -> dict[str, object]:
-        own = [
-            {
+        own = []
+        for item in self.candidates:
+            if item.source_agent != agent_id:
+                continue
+            view: dict[str, object] = {
                 "candidate_id": item.candidate_id,
                 "cell": candidate_cell(item),
                 "resource_cost": item.resource_cost,
             }
-            for item in self.candidates
-            if item.source_agent == agent_id
-        ]
+            if item.open_structure_validation_debt_ids:
+                view["structure_validation_debt_ids"] = list(item.open_structure_validation_debt_ids)
+            own.append(view)
         niches = {item.descriptor.epistemic_niche for item in self._candidates.values()}
         return {
             "occupied_cells": {key: True for key in self.occupancy},

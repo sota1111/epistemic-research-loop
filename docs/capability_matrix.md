@@ -117,6 +117,27 @@ See [benchmark protocol](benchmark_protocol.md).
 | 53 | IEEE-CIS can generate UID candidates, run 3+ gap folds, fold-safe target-independent aggregates and Known/New/Questionable slices | enforced | `plugins/ieee_cis.py` | `tests/unit/test_ieee_cis_v2.py` |
 | 54 | Multi-candidate archive hides other-agent score/code and Final Meta-selector uses OOF gates, nested weights and content locking | enforced | `qd/candidate_archive.py`, `qd/meta_selector.py`, `oof/ensemble.py` | `tests/unit/test_candidate_archive_v2.py` |
 
+## 10. C-lite v0.3 structural maturation
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 55 | Agents start generic; fixed client/temporal structure roles are not required | enforced | `config.AgentIslandConfig`, optional legacy niche in `AgentNicheAssignment`, `MultiIslandResearchLoop` | `tests/unit/test_structure_maturation_v3.py` |
+| 56 | A structural claim must affect 2+ decision dimensions and carry observable, falsifiable, executable implications | enforced | `StructuralHypothesis` lifecycle validators and leverage computation | `tests/unit/test_structure_maturation_v3.py` |
+| 57 | High-leverage discoveries dynamically create three temporary maturation children | enforced | `controller/structure_maturation.py`; implementation, null/skeptic and verification roles | `tests/unit/test_structure_maturation_v3.py` |
+| 58 | Candidate use automatically opens validation debt without blocking archive admission | enforced | `MultiIslandResearchLoop._complete_result`, `StructureValidationDebt` | `tests/unit/test_structure_maturation_v3.py` |
+| 59 | Open debt blocks Validated Structure and confirmed-fact promotion | enforced | `StructureMaturationController.assess_promotion`, `EvidenceVault.promote` | `tests/unit/test_structure_maturation_v3.py` |
+| 60 | Structure-test critic checks logical discrimination, confounders, novelty, leakage, power and decision binding without belief access | enforced | `controller/falsification_critic.py` | `tests/unit/test_structure_maturation_v3.py` |
+| 61 | Utility rewards structural leverage, robust discrimination and debt reduction | enforced | `scoring/selector.py`, prior-perturbed minimum discrimination | `tests/unit/test_structure_maturation_v3.py` |
+| 62 | IEEE-CIS client claims require M0--M5, 20+ matched nulls, linkage, construct/persistence, 3×3 replication and Known/New interaction | enforced | `plugins/ieee_cis.py` G1--G9 evaluator | `tests/unit/test_ieee_cis_structure_v3.py` |
+| 63 | Client-proxy validator passes a stable-client positive control and rejects a frequency/time-matched no-link control | measured | synthetic control generator and validator report in `plugins/ieee_cis.py` | `tests/unit/test_ieee_cis_structure_v3.py` |
+
+The complete v0.3 acceptance record, including the boundary between synthetic validation and claims
+about real IEEE-CIS entities, is in
+[the structure-maturation verification](verification/c_lite_v03_structure_maturation.md).
+The first real-data no-role run, including its dynamic fork, open debt, artifact retries and OOF
+error-diversity result, is recorded in
+[the v0.3 multi-island verification](verification/ieee_cis_multi_island_v03.md).
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
@@ -124,8 +145,11 @@ is the separate question of whether they hold on a real competition: 16 adaptive
 Linear tickets, one Kaggle submission, and an exploiter-only control arm at matched budget. It records
 five defects that only appeared under real data. A later
 [branch-agent verification](verification/ieee_cis_branch_agents.md) established CLI-backed unattended
-proposal, selection, execution and belief update on three isolated Runs. Native role-scoped agents
-inside one Run, the production worker fleet, and the Research-to-Exploitation transition remain open.
+proposal, selection, execution and belief update on three isolated Runs. The subsequent
+[v0.3 multi-island run](verification/ieee_cis_multi_island_v03.md) established three generic,
+no-role candidate branches and a dynamically triggered structure-maturation fork. A production
+worker fleet, full common first-level cross-fit, Hidden evaluation, and the
+Research-to-Exploitation transition remain open.
 
 ## What is *not* claimed
 

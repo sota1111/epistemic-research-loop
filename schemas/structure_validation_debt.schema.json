@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "ValidationDebtStatus": {
+      "enum": [
+        "open",
+        "resolved"
+      ],
+      "title": "ValidationDebtStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "affects_candidates": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Affects Candidates",
+      "type": "array"
+    },
+    "debt_id": {
+      "minLength": 1,
+      "title": "Debt Id",
+      "type": "string"
+    },
+    "hypothesis_id": {
+      "minLength": 1,
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "owner_agent": {
+      "minLength": 1,
+      "title": "Owner Agent",
+      "type": "string"
+    },
+    "resolution_artifacts": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Resolution Artifacts",
+      "type": "object"
+    },
+    "status": {
+      "$ref": "#/$defs/ValidationDebtStatus",
+      "default": "open"
+    },
+    "structure_type": {
+      "minLength": 1,
+      "title": "Structure Type",
+      "type": "string"
+    },
+    "unresolved_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Unresolved Requirements",
+      "type": "array"
+    }
+  },
+  "required": [
+    "debt_id",
+    "hypothesis_id",
+    "structure_type",
+    "unresolved_requirements",
+    "owner_agent"
+  ],
+  "title": "StructureValidationDebt",
+  "type": "object"
+}

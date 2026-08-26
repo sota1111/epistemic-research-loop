@@ -81,6 +81,63 @@ class EpistemicNiche(StrEnum):
     ENSEMBLE = "ensemble"
 
 
+class AgentResearchState(StrEnum):
+    """Dynamic v0.3 state; this is not a permanent agent role."""
+
+    GENERIC_RESEARCH = "generic_research"
+    STRUCTURE_DISCOVERY = "structure_discovery"
+    STRUCTURE_MATURATION = "structure_maturation"
+
+
+class StructuralDimension(StrEnum):
+    VALIDATION_SPLIT = "validation_split"
+    OBSERVATION_OR_PREDICTION_UNIT = "observation_or_prediction_unit"
+    ROW_INDEPENDENCE = "row_independence"
+    ENTITY_GROUPING = "entity_grouping"
+    TEMPORAL_ORDER = "temporal_order"
+    FEATURE_GENERATION = "feature_generation"
+    CANDIDATE_ROUTING = "candidate_routing"
+    POST_PROCESSING = "post_processing"
+    TARGET_OR_METRIC_DECOMPOSITION = "target_or_metric_decomposition"
+    TRAIN_TEST_GENERATING_PROCESS = "train_test_generating_process"
+
+
+class StructureLifecycleState(StrEnum):
+    OBSERVATION = "observation"
+    PROVISIONAL_STRUCTURE = "provisional_structure"
+    ALTERNATIVES_REGISTERED = "alternatives_registered"
+    DISCRIMINATING_TESTS_PREREGISTERED = "discriminating_tests_preregistered"
+    PARTIALLY_VALIDATED = "partially_validated"
+    VALIDATED_STRUCTURE = "validated_structure"
+    USEFUL_ENCODING_UNVALIDATED_STRUCTURE = "useful_encoding_unvalidated_structure"
+    STRUCTURALLY_PLAUSIBLE_NON_ACTIONABLE = "structurally_plausible_non_actionable"
+    FALSIFIED = "falsified"
+    INCONCLUSIVE = "inconclusive"
+
+
+class StructureClassification(StrEnum):
+    VALIDATED_ACTIONABLE_STRUCTURE = "validated_actionable_structure"
+    VALIDATED_NON_ACTIONABLE_STRUCTURE = "validated_non_actionable_structure"
+    USEFUL_ENCODING_UNVALIDATED_STRUCTURE = "useful_encoding_unvalidated_structure"
+    REJECTED_STRUCTURE = "rejected_structure"
+
+
+class ValidationDebtStatus(StrEnum):
+    OPEN = "open"
+    RESOLVED = "resolved"
+
+
+class MaturationChildRole(StrEnum):
+    IMPLEMENTATION = "implementation"
+    NULL_SKEPTIC = "null_skeptic"
+    VERIFICATION = "verification"
+
+
+class MaturationForkStatus(StrEnum):
+    ACTIVE = "active"
+    DISSOLVED = "dissolved"
+
+
 class ExperimentKind(StrEnum):
     DIAGNOSTIC = "diagnostic"
     CANDIDATE_PRODUCING = "candidate_producing"

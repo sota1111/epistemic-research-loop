@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "MaturationChild": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        },
+        "checkpoint_ref": {
+          "minLength": 1,
+          "title": "Checkpoint Ref",
+          "type": "string"
+        },
+        "child_id": {
+          "minLength": 1,
+          "title": "Child Id",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/MaturationChildRole"
+        }
+      },
+      "required": [
+        "child_id",
+        "role",
+        "checkpoint_ref"
+      ],
+      "title": "MaturationChild",
+      "type": "object"
+    },
+    "MaturationChildRole": {
+      "enum": [
+        "implementation",
+        "null_skeptic",
+        "verification"
+      ],
+      "title": "MaturationChildRole",
+      "type": "string"
+    },
+    "MaturationForkStatus": {
+      "enum": [
+        "active",
+        "dissolved"
+      ],
+      "title": "MaturationForkStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checkpoint_ref": {
+      "minLength": 1,
+      "title": "Checkpoint Ref",
+      "type": "string"
+    },
+    "children": {
+      "items": {
+        "$ref": "#/$defs/MaturationChild"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Children",
+      "type": "array"
+    },
+    "fork_id": {
+      "minLength": 1,
+      "title": "Fork Id",
+      "type": "string"
+    },
+    "hypothesis_id": {
+      "minLength": 1,
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "owner_agent": {
+      "minLength": 1,
+      "title": "Owner Agent",
+      "type": "string"
+    },
+    "reserved_budget_fraction": {
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Reserved Budget Fraction",
+      "type": "number"
+    },
+    "status": {
+      "$ref": "#/$defs/MaturationForkStatus",
+      "default": "active"
+    }
+  },
+  "required": [
+    "fork_id",
+    "hypothesis_id",
+    "owner_agent",
+    "checkpoint_ref",
+    "children",
+    "reserved_budget_fraction"
+  ],
+  "title": "StructureMaturationFork",
+  "type": "object"
+}

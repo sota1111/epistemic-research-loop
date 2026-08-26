@@ -55,6 +55,8 @@ class EvidenceVault:
             failed.append("no expected computation saving")
         if request.diversity_risk > 0.5:
             failed.append("promotion would materially reduce search diversity")
+        if evidence.structural_hypothesis_id and evidence.structure_validation_debt_open:
+            failed.append("structural validation debt is open")
         if failed:
             raise ValueError("evidence cannot be promoted: " + "; ".join(failed))
         promoted = evidence.model_copy(update={"visibility": EvidenceVisibility.SHAREABLE_FACT})
