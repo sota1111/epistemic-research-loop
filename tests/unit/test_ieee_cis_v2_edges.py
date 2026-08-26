@@ -65,7 +65,7 @@ def test_client_post_processing_calibration_and_rank_functions() -> None:
         model_rank_stability({"a": [0.1]})
 
 
-def test_auc_slice_errors_forward_errors_and_model_factory() -> None:
+def test_auc_slice_and_forward_errors() -> None:
     assert binary_auc([0, 1, 0, 1], [0.5, 0.5, 0.1, 0.9]) > 0.5
     slices = {"known": [0], "new": [1, 2]}
     values = client_slice_auc([0, 1, 0], [0.1, 0.9, 0.2], slices)
@@ -78,6 +78,10 @@ def test_auc_slice_errors_forward_errors_and_model_factory() -> None:
         multi_horizon_forward_folds(["1", "2"], [1, 2], horizons=2)
     with pytest.raises(ValueError):
         multi_horizon_forward_folds([str(i) for i in range(8)], list(range(8)), horizons=3, gap_rows=0)
-    assert make_model_family("logistic").__class__.__name__ == "LogisticRegression"
     with pytest.raises(ValueError, match="unsupported"):
         make_model_family("unknown")
+
+
+def test_optional_model_factory() -> None:
+    pytest.importorskip("sklearn.linear_model")
+    assert make_model_family("logistic").__class__.__name__ == "LogisticRegression"
