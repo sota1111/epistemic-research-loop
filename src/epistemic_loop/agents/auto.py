@@ -18,6 +18,7 @@ from epistemic_loop.domain.models import (
     ExperimentProposal,
     Hypothesis,
     Observation,
+    StructuralHypothesis,
 )
 
 
@@ -32,6 +33,7 @@ class AutomaticProposer:
     def __init__(self, llm: StructuredLlm, bridge: ProposalBridge):
         self.llm = llm
         self.bridge = bridge
+        self._structural_hypotheses: list[StructuralHypothesis] = []
 
     def hypotheses(
         self,
@@ -44,8 +46,16 @@ class AutomaticProposer:
         request = self.bridge.hypothesis_request(run_id, world_model, state)
         batch = self.llm.generate(request.prompt, HypothesisBatch, request.context)
         proposed = [item.model_copy(update={"run_id": run_id}) for item in batch.hypotheses]
+        self._structural_hypotheses = [
+            item.model_copy(update={"run_id": run_id}) for item in batch.structural_hypotheses
+        ]
         validate_generated_hypotheses(proposed, maximum=maximum)
         return proposed
+
+    def take_structural_hypotheses(self) -> list[StructuralHypothesis]:
+        structures = self._structural_hypotheses
+        self._structural_hypotheses = []
+        return structures
 
     def experiments(
         self,

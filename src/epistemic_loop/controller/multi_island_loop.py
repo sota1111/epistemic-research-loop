@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from epistemic_loop.adapters.executor.base import ExecutorAdapter
+from epistemic_loop.config import StructureDiscoveryConfig
 from epistemic_loop.controller.belief_islands import BeliefIslandStore, GlobalControlPlane
 from epistemic_loop.controller.diversity_control import (
     CollapseDecision,
@@ -11,9 +12,11 @@ from epistemic_loop.controller.diversity_control import (
     SemanticDuplicateDetector,
 )
 from epistemic_loop.controller.evidence_vault import EvidenceVault, SelectiveEvidenceRouter
+from epistemic_loop.controller.falsification_critic import FalsificationTestCritic
 from epistemic_loop.controller.phase_gate import DiagnosticToCandidateGate
 from epistemic_loop.controller.resource_scheduler import ResourceScheduler
-from epistemic_loop.domain.enums import TerminalStatus
+from epistemic_loop.controller.structure_maturation import StructureMaturationController
+from epistemic_loop.domain.enums import AgentResearchState, StructureLifecycleState, TerminalStatus
 from epistemic_loop.domain.models import (
     AgentBeliefState,
     AgentNicheAssignment,
@@ -25,9 +28,15 @@ from epistemic_loop.domain.models import (
     ExperimentProposal,
     ExperimentRequest,
     ExperimentResult,
+    FalsificationCriticResult,
     GlobalControlState,
     GlobalEvidence,
     RemainingBudget,
+    StructuralHypothesis,
+    StructureMaturationFork,
+    StructurePromotionAssessment,
+    StructureTestPreregistration,
+    StructureValidationDebt,
 )
 from epistemic_loop.qd.candidate_archive import CandidateArchive
 
@@ -44,6 +53,7 @@ class MultiIslandResearchLoop:
         remaining_budget: RemainingBudget | None = None,
         communication_policy: CommunicationPolicy | None = None,
         scheduler: ResourceScheduler | None = None,
+        structure_config: StructureDiscoveryConfig | None = None,
     ):
         if len({item.agent_id for item in agents}) != len(agents):
             raise ValueError("agent identifiers must be unique")
@@ -58,6 +68,17 @@ class MultiIslandResearchLoop:
         self.duplicates = SemanticDuplicateDetector()
         self.collapse = CollectiveCollapseDetector()
         self.phase_gate = DiagnosticToCandidateGate()
+        structure_settings = structure_config or StructureDiscoveryConfig()
+        self.structures = StructureMaturationController(
+            self.root / "structures",
+            minimum_affected_dimensions=structure_settings.minimum_affected_dimensions,
+            leverage_threshold=structure_settings.maturation_leverage_threshold,
+            default_fork_budget_fraction=structure_settings.maturation_budget_fraction,
+            critic=FalsificationTestCritic(
+                minimum_matched_null_repetitions=structure_settings.matched_null_repetitions
+            ),
+            debt_requirements_by_type={"latent_entity_proxy": structure_settings.latent_entity_debt_requirements},
+        )
         self._proposals: dict[str, ExperimentProposal] = {}
         self._reservations: dict[str, str] = {}
         state = GlobalControlState(
@@ -69,17 +90,32 @@ class MultiIslandResearchLoop:
 
     def create_belief_island(self, state: AgentBeliefState) -> None:
         assignment = self._assignment(state.agent_id)
-        if state.epistemic_niche != assignment.primary_niche:
+        if assignment.primary_niche is not None and state.epistemic_niche != assignment.primary_niche:
             raise ValueError("belief island niche must match its control-plane assignment")
+        if assignment.primary_niche is None and state.research_state != AgentResearchState.GENERIC_RESEARCH:
+            raise ValueError("a new generic agent must begin in generic_research state")
         self.beliefs.create(state)
 
     def propose(self, proposal: ExperimentProposal, *, requester: str) -> None:
         if proposal.proposer_agent != requester:
             raise PermissionError("an agent may submit only its own proposal")
         assignment = self._assignment(requester)
-        allowed_niches = {assignment.primary_niche, assignment.secondary_niche}
-        if proposal.epistemic_niche not in allowed_niches:
+        allowed_niches = {assignment.primary_niche, assignment.secondary_niche} - {None}
+        if allowed_niches and proposal.epistemic_niche not in allowed_niches:
             raise ValueError("proposal is outside the agent's assigned epistemic niches")
+        structure: StructuralHypothesis | None = None
+        if proposal.structural_hypothesis_id is not None:
+            structure = self.structures.get(proposal.structural_hypothesis_id, requester=requester)
+            if (
+                proposal.structural_leverage
+                and abs(proposal.structural_leverage - structure.structural_leverage) > 1e-9
+            ):
+                raise ValueError("proposal structural leverage must be derived from the registered hypothesis")
+        if proposal.structure_test_id is not None and (
+            structure is None
+            or proposal.structure_test_id not in {item.test_id for item in structure.preregistered_tests}
+        ):
+            raise ValueError("structure test must pass critic review and preregistration before proposal")
         gate = self.phase_gate.evaluate(proposal)
         if not gate.allowed:
             raise ValueError(gate.reason)
@@ -160,6 +196,14 @@ class MultiIslandResearchLoop:
             raise ValueError("cannot complete an experiment with a non-terminal result")
         if result.terminal_status is None:  # pragma: no cover - result validator assigns it
             raise ValueError("terminal status missing")
+        structure_debt_open = False
+        if proposal.structural_hypothesis_id:
+            try:
+                structure_debt_open = bool(
+                    self.structures.debt(proposal.structural_hypothesis_id, controller=True).remaining_requirements
+                )
+            except KeyError:
+                structure_debt_open = candidate is not None
         if evidence is None:
             metric, value = next(iter(result.metrics.items()), ("terminal_status", result.terminal_status.value))
             evidence = GlobalEvidence(
@@ -171,9 +215,18 @@ class MultiIslandResearchLoop:
                 verification=EvidenceVerification(
                     artifact_contract_valid=result.terminal_status == TerminalStatus.COMPLETED,
                 ),
+                structural_hypothesis_id=proposal.structural_hypothesis_id,
+                structure_validation_debt_open=structure_debt_open,
             )
         if evidence.experiment_id != result.experiment_id or evidence.producer_agent != proposal.proposer_agent:
             raise ValueError("evidence identity does not match its producer proposal")
+        if proposal.structural_hypothesis_id:
+            evidence = evidence.model_copy(
+                update={
+                    "structural_hypothesis_id": proposal.structural_hypothesis_id,
+                    "structure_validation_debt_open": structure_debt_open,
+                }
+            )
         self.evidence.store(evidence)
         self.phase_gate.record(proposal, result.terminal_status)
         if candidate is not None:
@@ -181,8 +234,124 @@ class MultiIslandResearchLoop:
                 raise ValueError("only a completed candidate-producing experiment can promote a candidate")
             if candidate.source_agent != proposal.proposer_agent:
                 raise ValueError("candidate source agent does not match the proposal")
+            if (
+                proposal.structural_hypothesis_id
+                and proposal.structural_hypothesis_id not in candidate.structural_hypothesis_ids
+            ):
+                raise ValueError("a structure-derived candidate must declare the structural hypothesis it uses")
+            for hypothesis_id in candidate.structural_hypothesis_ids:
+                structure = self.structures.get(hypothesis_id, requester=proposal.proposer_agent)
+                if structure.owner_agent != proposal.proposer_agent:
+                    raise PermissionError("candidate may use only its owner's agent-local structural hypothesis")
+            debt_ids = [f"DEBT-{item}" for item in candidate.structural_hypothesis_ids]
+            candidate = candidate.model_copy(update={"open_structure_validation_debt_ids": debt_ids})
             self.archive.promote(candidate)
+            for hypothesis_id in candidate.structural_hypothesis_ids:
+                self.structures.open_debt(
+                    hypothesis_id,
+                    candidate_id=candidate.candidate_id,
+                    requester=proposal.proposer_agent,
+                )
+            self._sync_structure_control_state()
         self._update_owner_history(proposal, candidate)
+
+    def register_structural_hypothesis(self, hypothesis: StructuralHypothesis, *, requester: str) -> None:
+        self._assignment(requester)
+        if hypothesis.owner_agent != requester:
+            raise PermissionError("an agent may register only its own structural hypothesis")
+        self.structures.register(hypothesis, requester=requester)
+        self._update_agent_structure_state(
+            requester,
+            AgentResearchState.STRUCTURE_DISCOVERY,
+            hypothesis_id=hypothesis.id,
+        )
+
+    def advance_structural_hypothesis(
+        self,
+        hypothesis: StructuralHypothesis,
+        *,
+        requester: str,
+    ) -> StructuralHypothesis:
+        return self.structures.advance(hypothesis, requester=requester)
+
+    def preregister_structure_test(
+        self,
+        hypothesis_id: str,
+        test: StructureTestPreregistration,
+        *,
+        requester: str,
+    ) -> FalsificationCriticResult:
+        return self.structures.preregister_test(hypothesis_id, test, requester=requester)
+
+    def create_structure_maturation_fork(
+        self,
+        hypothesis_id: str,
+        *,
+        checkpoint_ref: str,
+        requester: str,
+        reserved_budget_fraction: float | None = None,
+    ) -> StructureMaturationFork:
+        fork = self.structures.create_fork(
+            hypothesis_id,
+            checkpoint_ref=checkpoint_ref,
+            requester=requester,
+            reserved_budget_fraction=reserved_budget_fraction,
+        )
+        self._update_agent_structure_state(requester, AgentResearchState.STRUCTURE_MATURATION)
+        self._sync_structure_control_state()
+        return fork
+
+    def dissolve_structure_maturation_fork(self, fork_id: str, *, requester: str) -> StructureMaturationFork:
+        fork = self.structures.dissolve_fork(fork_id, requester=requester)
+        self._update_agent_structure_state(requester, AgentResearchState.GENERIC_RESEARCH)
+        self._sync_structure_control_state()
+        return fork
+
+    def resolve_structure_validation_requirement(
+        self,
+        hypothesis_id: str,
+        requirement: str,
+        *,
+        artifact_ref: str,
+        requester: str,
+    ) -> StructureValidationDebt:
+        debt = self.structures.resolve_requirement(
+            hypothesis_id,
+            requirement,
+            artifact_ref=artifact_ref,
+            requester=requester,
+        )
+        self._sync_structure_control_state()
+        return debt
+
+    def assess_structural_hypothesis(
+        self,
+        hypothesis_id: str,
+        *,
+        structural_validity_passed: bool,
+        predictive_improvement_passed: bool,
+        evidence_refs: Sequence[str],
+        requester: str,
+        conclusive: bool = True,
+    ) -> StructurePromotionAssessment:
+        assessment = self.structures.assess_promotion(
+            hypothesis_id,
+            structural_validity_passed=structural_validity_passed,
+            predictive_improvement_passed=predictive_improvement_passed,
+            evidence_refs=evidence_refs,
+            requester=requester,
+            conclusive=conclusive,
+        )
+        if assessment.lifecycle_state in {
+            StructureLifecycleState.VALIDATED_STRUCTURE,
+            StructureLifecycleState.USEFUL_ENCODING_UNVALIDATED_STRUCTURE,
+            StructureLifecycleState.STRUCTURALLY_PLAUSIBLE_NON_ACTIONABLE,
+            StructureLifecycleState.FALSIFIED,
+            StructureLifecycleState.INCONCLUSIVE,
+        }:
+            self._update_agent_structure_state(requester, AgentResearchState.GENERIC_RESEARCH)
+        self._sync_structure_control_state()
+        return assessment
 
     def routed_evidence(
         self,
@@ -237,6 +406,41 @@ class MultiIslandResearchLoop:
                     "running_experiments": [item for item in state.running_experiments if item != experiment_id],
                     "resource_pressure": self.scheduler.pressure(),
                     "archive_occupancy": self.archive.occupancy,
+                }
+            )
+        )
+
+    def _update_agent_structure_state(
+        self,
+        agent_id: str,
+        research_state: AgentResearchState,
+        *,
+        hypothesis_id: str | None = None,
+    ) -> None:
+        try:
+            belief = self.beliefs.read(agent_id, requester=agent_id)
+        except KeyError:
+            return
+        refs = list(belief.structural_hypothesis_refs)
+        if hypothesis_id is not None and hypothesis_id not in refs:
+            refs.append(hypothesis_id)
+        self.beliefs.update(
+            belief.model_copy(
+                update={
+                    "research_state": research_state,
+                    "structural_hypothesis_refs": refs,
+                }
+            ),
+            requester=agent_id,
+        )
+
+    def _sync_structure_control_state(self) -> None:
+        state = self.control.load()
+        self.control.save(
+            state.model_copy(
+                update={
+                    "active_structure_forks": list(self.structures.active_fork_ids()),
+                    "open_validation_debts": list(self.structures.open_debt_ids()),
                 }
             )
         )

@@ -165,7 +165,7 @@ comparability defect by deriving both overall and client-slice utility on the sa
 
 | Criterion | Result |
 | --- | --- |
-| at least one validated UID | **Fail** — UID proxies were explicit, but no UID-free ablation/frequency-artifact rejection proved all seven conditions |
+| at least one validated behavioral client proxy | **Fail** — UID proxies were explicit, but no nested UID-free ablation, matched-null, linkage, construct/persistence, or Known/New interaction passed the v0.3 G1--G9 contract. Agent 05 is `USEFUL_ENCODING_UNVALIDATED_STRUCTURE`, not a discovered Client Identity. |
 | at least 3 forward horizons | Pass |
 | at least one fold-safe UID aggregate candidate | Pass (Agent 05) |
 | Known/New client slice | Pass |

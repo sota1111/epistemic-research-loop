@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from epistemic_loop.belief.calibration import summarize_calibration
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.domain.enums import HypothesisStatus, HypothesisType
-from epistemic_loop.domain.models import ResearchStateSnapshot
+from epistemic_loop.domain.models import ResearchStateSnapshot, StructurePromotionAssessment
 from epistemic_loop.qd.archive import QDArchive
 from epistemic_loop.qd.descriptors import descriptor_names_for_mode
 from epistemic_loop.validation.worlds import posterior_entropy, validation_fidelity
@@ -19,6 +19,7 @@ DEFAULT_PREFERRED_TARGETS = {
     "representation_coverage": 0.35,
     "error_diversity": 0.50,
     "robustness": 0.80,
+    "dgp_understanding": 0.50,
 }
 
 
@@ -28,6 +29,7 @@ def derive_research_state(
     maximum_archive_size: int = 100,
     preferred_targets: Mapping[str, float] | None = None,
     preferred_weights: Mapping[str, float] | None = None,
+    structural_assessments: Sequence[StructurePromotionAssessment] = (),
 ) -> ResearchStateSnapshot:
     worlds = list(state.validation_worlds.values())
     fidelity_values = [
@@ -61,6 +63,11 @@ def derive_research_state(
     latest_oof = state.oof_analyses[-1] if state.oof_analyses else {}
     effective_rank = float(latest_oof.get("covariance_effective_rank", 0.0))
     calibration = summarize_calibration(state.forecast_calibrations) if state.forecast_calibrations else None
+    dgp_understanding = (
+        sum(item.structural_validity_passed for item in structural_assessments) / len(structural_assessments)
+        if structural_assessments
+        else 0.0
+    )
     resolution = sum(item.status in RESOLVED for item in hypotheses) / len(hypotheses) if hypotheses else 0.0
     falsification_coverage = len(attacked & {item.id for item in active}) / len(active) if active else 0.0
     current_dimensions = {
@@ -70,6 +77,7 @@ def derive_research_state(
         "representation_coverage": min(1.0, occupancy),
         "error_diversity": min(1.0, effective_rank / max(1, len(candidates))),
         "robustness": 1 / (1 + best.score_variance) if best is not None else 0.0,
+        "dgp_understanding": dgp_understanding,
     }
     targets = dict(preferred_targets or DEFAULT_PREFERRED_TARGETS)
     weights = {name: float((preferred_weights or {}).get(name, 1.0)) for name in targets}
@@ -101,6 +109,7 @@ def derive_research_state(
         hypothesis_calibration_brier=calibration.brier_score if calibration else None,
         preferred_state_gaps=gaps,
         preferred_state_total_gap=total_gap,
+        dgp_understanding=dgp_understanding,
         evidence_ids=evidence_ids,
     )
 

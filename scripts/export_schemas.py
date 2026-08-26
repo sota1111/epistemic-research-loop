@@ -34,6 +34,11 @@ from epistemic_loop.domain.models import (
     ResourceEstimate,
     ResourceReconciliation,
     SemanticExperimentSignature,
+    StructuralHypothesis,
+    StructureMaturationFork,
+    StructurePromotionAssessment,
+    StructureTestPreregistration,
+    StructureValidationDebt,
     ValidationWorld,
     ValidationWorldEvidence,
 )
@@ -71,6 +76,11 @@ SCHEMAS = {
     "collapse_metrics.schema.json": CollapseMetrics,
     "candidate_artifact_record.schema.json": CandidateArtifactRecord,
     "candidate_artifact_validation.schema.json": CandidateArtifactValidation,
+    "structural_hypothesis.schema.json": StructuralHypothesis,
+    "structure_test_preregistration.schema.json": StructureTestPreregistration,
+    "structure_validation_debt.schema.json": StructureValidationDebt,
+    "structure_maturation_fork.schema.json": StructureMaturationFork,
+    "structure_promotion_assessment.schema.json": StructurePromotionAssessment,
 }
 
 

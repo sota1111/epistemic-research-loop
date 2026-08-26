@@ -6,7 +6,7 @@ from typing import Literal
 
 from epistemic_loop.config import PhaseWeights
 from epistemic_loop.controller.mode_policy import capabilities
-from epistemic_loop.domain.enums import Risk, RunMode
+from epistemic_loop.domain.enums import Risk, RunMode, StructuralDimension
 from epistemic_loop.domain.models import ExperimentProposal
 from epistemic_loop.domain.validation import GateContext, GateResult, hard_gate
 from epistemic_loop.scoring.cost import normalized_cost
@@ -31,6 +31,9 @@ class UtilityBreakdown:
     evsi: float
     robustness: float
     diversity: float
+    structural_leverage: float
+    discrimination: float
+    validation_debt_reduction: float
     cost: float
     risk: float
     total: float
@@ -94,6 +97,9 @@ def score_experiment(
         else 0.0
     )
     diversity = diversity_value(proposal) if policy.solution_qd else 0.0
+    structural_leverage = min(1.0, proposal.structural_leverage / len(StructuralDimension))
+    discrimination = proposal.robust_discrimination_value
+    validation_debt_reduction = proposal.validation_debt_reduction
     cost = normalized_cost(proposal.estimated_cost)
     contamination = {Risk.LOW: 0.0, Risk.MEDIUM: 0.5, Risk.HIGH: 1.0}[proposal.contamination_risk]
     risk = min(1.0, proposal.estimated_cost.failure_probability + contamination)
@@ -105,6 +111,9 @@ def score_experiment(
             evsi=evsi,
             robustness=robustness,
             diversity=diversity,
+            structural_leverage=structural_leverage,
+            discrimination=discrimination,
+            validation_debt_reduction=validation_debt_reduction,
             cost=cost,
             risk=risk,
             total=0.0,
@@ -139,6 +148,9 @@ def _combine(
         + weights.epistemic * breakdown.epistemic
         + weights.robustness * breakdown.robustness
         + weights.diversity * breakdown.diversity
+        + weights.structural_leverage * breakdown.structural_leverage
+        + weights.discrimination * breakdown.discrimination
+        + weights.validation_debt_reduction * breakdown.validation_debt_reduction
         - cost_lambda * breakdown.cost
         - risk_lambda * breakdown.risk
     )

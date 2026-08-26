@@ -1,7 +1,7 @@
 # Epistemic Research Loop
 
 `epistemic-research-loop` is a hypothesis-centric experiment orchestrator for Kaggle research. It
-decides **what to try next and why**. Under the C-lite v0.2 code-development contract, isolated
+decides **what to try next and why**. Under the C-lite v0.3 code-development contract, isolated
 workers may also create solver code, features, UID candidates, validation, models, post-processing
 and ensembles; the central plane schedules resources and accepts only contracted artifacts.
 
@@ -17,6 +17,9 @@ Version: **0.1.0**
   claimed.
 - **[docs/c_lite_revision_v0.2.md](docs/c_lite_revision_v0.2.md)** — the IEEE-CIS scaling amendment;
   it supersedes conflicting v0.1 requirements.
+- **[docs/c_lite_revision_v0.3.md](docs/c_lite_revision_v0.3.md)** — dynamic structural-hypothesis
+  maturation, validation debt, confounder-preserving nulls and behavioral-client-proxy gates; it
+  supersedes conflicting v0.2 requirements.
 - **[docs/progress.md](docs/progress.md)** — milestones, how to verify them yourself, known
   limitations.
 - **[docs/research_state_selection.md](docs/research_state_selection.md)** — target design for

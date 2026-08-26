@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from epistemic_loop.controller.budget_manager import BudgetManager
@@ -10,6 +10,7 @@ from epistemic_loop.controller.research_state import derive_research_state
 from epistemic_loop.controller.run_state import load_run_state
 from epistemic_loop.domain.enums import ExperimentStatus, HypothesisStatus
 from epistemic_loop.domain.events import EventEnvelope, EventType
+from epistemic_loop.domain.models import StructurePromotionAssessment, StructureValidationDebt
 
 
 def build_run_report(
@@ -19,6 +20,8 @@ def build_run_report(
     qd_maximum_size: int = 100,
     preferred_targets: Mapping[str, float] | None = None,
     preferred_weights: Mapping[str, float] | None = None,
+    structural_assessments: Sequence[StructurePromotionAssessment] = (),
+    structure_validation_debts: Sequence[StructureValidationDebt] = (),
 ) -> str:
     counts = Counter(event.event_type.value for event in events)
     run = next((event.payload for event in events if event.event_type == EventType.RUN_CREATED), {})
@@ -48,6 +51,7 @@ def build_run_report(
         maximum_archive_size=qd_maximum_size,
         preferred_targets=preferred_targets,
         preferred_weights=preferred_weights,
+        structural_assessments=structural_assessments,
     ).model_dump(mode="json")
     best_candidate = max(
         state.qd_candidates.values(),
@@ -104,6 +108,10 @@ def build_run_report(
             if event.event_type == EventType.EXPERIMENT_SELECTED
         ],
         "observed_runtime": state.observed_runtime(),
+        "structure_validation_debts": [item.model_dump(mode="json") for item in structure_validation_debts],
+        "open_structure_validation_debt_count": sum(
+            item.remaining_requirements != () for item in structure_validation_debts
+        ),
     }
     return (
         "\n".join(
@@ -173,6 +181,8 @@ def write_run_report(
     qd_maximum_size: int = 100,
     preferred_targets: Mapping[str, float] | None = None,
     preferred_weights: Mapping[str, float] | None = None,
+    structural_assessments: Sequence[StructurePromotionAssessment] = (),
+    structure_validation_debts: Sequence[StructureValidationDebt] = (),
 ) -> Path:
     path = Path(destination)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -183,6 +193,8 @@ def write_run_report(
             qd_maximum_size=qd_maximum_size,
             preferred_targets=preferred_targets,
             preferred_weights=preferred_weights,
+            structural_assessments=structural_assessments,
+            structure_validation_debts=structure_validation_debts,
         ),
         encoding="utf-8",
     )

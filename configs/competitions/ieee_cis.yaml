@@ -34,12 +34,25 @@ selection:
   minimum_utility: 0.0
   eig_method: monte_carlo
   eig_monte_carlo_samples: 2000
-  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
-  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
-  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15, structural_leverage: 0.20, discrimination: 0.25, validation_debt_reduction: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10, structural_leverage: 0.15, discrimination: 0.25, validation_debt_reduction: 0.25}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05, structural_leverage: 0.10, discrimination: 0.15, validation_debt_reduction: 0.30}
   discovery_allocation: {exploit: 0.30, qd_explore: 0.30, epistemic: 0.40}
   consolidation_allocation: {exploit: 0.45, qd_explore: 0.30, epistemic: 0.25}
   exploitation_allocation: {exploit: 0.65, qd_explore: 0.25, epistemic: 0.10}
+structure_discovery:
+  enabled: true
+  fixed_structure_roles: false
+  minimum_affected_dimensions: 2
+  maturation_leverage_threshold: 2.0
+  maturation_budget_fraction: 0.15
+  require_stateless_critic: true
+  require_competing_hypotheses: true
+  matched_null_repetitions: 20
+  forward_horizons: 3
+  replication_seeds: 3
+  bootstrap_confidence: 0.95
+  matched_null_quantile: 0.95
 validation:
   worlds: [random, time, group, time_group]
   entropy_priority_threshold: 0.65

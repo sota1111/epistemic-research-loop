@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "SemanticExperimentSignature": {
+      "additionalProperties": false,
+      "description": "Meaning-level identity used instead of command or experiment ID.",
+      "properties": {
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "data_slice": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Slice",
+          "type": "array"
+        },
+        "decision_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Affected",
+          "type": "array"
+        },
+        "observable": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable",
+          "type": "array"
+        },
+        "operation": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operation",
+          "type": "array"
+        },
+        "target_hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Hypotheses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_hypotheses",
+        "data_slice",
+        "operation",
+        "observable",
+        "decision_affected"
+      ],
+      "title": "SemanticExperimentSignature",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "competing_hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Competing Hypothesis Ids",
+      "type": "array"
+    },
+    "confounders_preserved": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Confounders Preserved",
+      "type": "array"
+    },
+    "decision_affected": {
+      "minLength": 1,
+      "title": "Decision Affected",
+      "type": "string"
+    },
+    "falsification_condition": {
+      "minLength": 1,
+      "title": "Falsification Condition",
+      "type": "string"
+    },
+    "fold_safe": {
+      "title": "Fold Safe",
+      "type": "boolean"
+    },
+    "null_repetitions": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Null Repetitions",
+      "type": "integer"
+    },
+    "power_plan": {
+      "minLength": 1,
+      "title": "Power Plan",
+      "type": "string"
+    },
+    "prediction_by_hypothesis": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "minProperties": 2,
+      "title": "Prediction By Hypothesis",
+      "type": "object"
+    },
+    "semantic_signature": {
+      "$ref": "#/$defs/SemanticExperimentSignature"
+    },
+    "target_hypothesis_id": {
+      "minLength": 1,
+      "title": "Target Hypothesis Id",
+      "type": "string"
+    },
+    "test_id": {
+      "minLength": 1,
+      "title": "Test Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "test_id",
+    "target_hypothesis_id",
+    "competing_hypothesis_ids",
+    "prediction_by_hypothesis",
+    "falsification_condition",
+    "confounders_preserved",
+    "decision_affected",
+    "power_plan",
+    "fold_safe",
+    "semantic_signature"
+  ],
+  "title": "StructureTestPreregistration",
+  "type": "object"
+}

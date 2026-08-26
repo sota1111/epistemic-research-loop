@@ -61,15 +61,9 @@ class AgentIslandConfig(StrictModel):
     belief_scope: Literal["local"] = "local"
     share_posteriors: Literal[False] = False
     share_global_best: Literal[False] = False
-    niches: list[EpistemicNiche] = Field(
-        default_factory=lambda: [
-            EpistemicNiche.TEMPORAL,
-            EpistemicNiche.ENTITY_CLIENT,
-            EpistemicNiche.VALIDATION,
-            EpistemicNiche.FALSIFICATION,
-        ],
-        min_length=1,
-    )
+    dynamic_structure_discovery: Literal[True] = True
+    fixed_structure_roles: Literal[False] = False
+    niches: list[EpistemicNiche] = Field(default_factory=list)
 
 
 class CommunicationConfig(StrictModel):
@@ -84,7 +78,7 @@ class CommunicationConfig(StrictModel):
 class DiversityConfig(StrictModel):
     semantic_duplicate_detection: bool = True
     duplicate_similarity_threshold: float = Field(default=0.85, ge=0, le=1)
-    minimum_niche_budget_enabled: bool = True
+    minimum_niche_budget_enabled: bool = False
     global_best_visibility: Literal["controller_only"] = "controller_only"
     collapse_detection: bool = True
     collapse_consecutive_cycles: int = Field(default=2, ge=1)
@@ -201,6 +195,36 @@ class PhaseWeights(StrictModel):
     epistemic: float = Field(ge=0)
     robustness: float = Field(ge=0)
     diversity: float = Field(ge=0)
+    structural_leverage: float = Field(default=0, ge=0)
+    discrimination: float = Field(default=0, ge=0)
+    validation_debt_reduction: float = Field(default=0, ge=0)
+
+
+class StructureDiscoveryConfig(StrictModel):
+    enabled: Literal[True] = True
+    fixed_structure_roles: Literal[False] = False
+    minimum_affected_dimensions: int = Field(default=2, ge=2)
+    maturation_leverage_threshold: float = Field(default=2.0, ge=0)
+    maturation_budget_fraction: float = Field(default=0.15, gt=0, le=1)
+    require_stateless_critic: Literal[True] = True
+    require_competing_hypotheses: Literal[True] = True
+    matched_null_repetitions: int = Field(default=20, ge=20)
+    forward_horizons: int = Field(default=3, ge=3)
+    replication_seeds: int = Field(default=3, ge=3)
+    bootstrap_confidence: float = Field(default=0.95, gt=0.5, lt=1)
+    matched_null_quantile: float = Field(default=0.95, gt=0.5, lt=1)
+    latent_entity_debt_requirements: list[str] = Field(
+        default_factory=lambda: [
+            "uid_free_ablation",
+            "frequency_only_control",
+            "frequency_matched_null",
+            "linkage_shuffle",
+            "temporal_persistence",
+            "known_new_interaction",
+            "multi_seed_replication",
+        ],
+        min_length=1,
+    )
 
 
 class PortfolioAllocation(StrictModel):
@@ -219,9 +243,33 @@ class SelectionConfig(StrictModel):
     minimum_utility: float = 0.0
     eig_method: Literal["exact", "monte_carlo"] = "monte_carlo"
     eig_monte_carlo_samples: int = Field(default=4000, ge=100)
-    discovery: PhaseWeights = PhaseWeights(pragmatic=0.20, epistemic=0.45, robustness=0.20, diversity=0.15)
-    consolidation: PhaseWeights = PhaseWeights(pragmatic=0.35, epistemic=0.30, robustness=0.25, diversity=0.10)
-    exploitation: PhaseWeights = PhaseWeights(pragmatic=0.55, epistemic=0.15, robustness=0.25, diversity=0.05)
+    discovery: PhaseWeights = PhaseWeights(
+        pragmatic=0.20,
+        epistemic=0.45,
+        robustness=0.20,
+        diversity=0.15,
+        structural_leverage=0.20,
+        discrimination=0.25,
+        validation_debt_reduction=0.15,
+    )
+    consolidation: PhaseWeights = PhaseWeights(
+        pragmatic=0.35,
+        epistemic=0.30,
+        robustness=0.25,
+        diversity=0.10,
+        structural_leverage=0.15,
+        discrimination=0.25,
+        validation_debt_reduction=0.25,
+    )
+    exploitation: PhaseWeights = PhaseWeights(
+        pragmatic=0.55,
+        epistemic=0.15,
+        robustness=0.25,
+        diversity=0.05,
+        structural_leverage=0.10,
+        discrimination=0.15,
+        validation_debt_reduction=0.30,
+    )
     discovery_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.30, qd_explore=0.30, epistemic=0.40)
     consolidation_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.45, qd_explore=0.30, epistemic=0.25)
     exploitation_allocation: PortfolioAllocation = PortfolioAllocation(exploit=0.65, qd_explore=0.25, epistemic=0.10)
@@ -285,6 +333,7 @@ class PreferredStateConfig(StrictModel):
             "representation_coverage": 0.35,
             "error_diversity": 0.50,
             "robustness": 0.80,
+            "dgp_understanding": 0.50,
         }
     )
     weights: dict[str, float] = Field(default_factory=dict)
@@ -391,6 +440,7 @@ class AppConfig(StrictModel):
     diversity: DiversityConfig = Field(default_factory=DiversityConfig)
     action_space: ActionSpaceConfig = Field(default_factory=ActionSpaceConfig)
     phase_gate: PhaseGateConfig = Field(default_factory=PhaseGateConfig)
+    structure_discovery: StructureDiscoveryConfig = Field(default_factory=StructureDiscoveryConfig)
     archive: CandidateArchiveConfig = Field(default_factory=CandidateArchiveConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)

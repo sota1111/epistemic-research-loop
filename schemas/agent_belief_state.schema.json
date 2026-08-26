@@ -1,5 +1,15 @@
 {
   "$defs": {
+    "AgentResearchState": {
+      "description": "Dynamic v0.3 state; this is not a permanent agent role.",
+      "enum": [
+        "generic_research",
+        "structure_discovery",
+        "structure_maturation"
+      ],
+      "title": "AgentResearchState",
+      "type": "string"
+    },
     "EpistemicNiche": {
       "enum": [
         "temporal",
@@ -74,7 +84,15 @@
       "type": "array"
     },
     "epistemic_niche": {
-      "$ref": "#/$defs/EpistemicNiche"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EpistemicNiche"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "experiment_history": {
       "items": {
@@ -104,6 +122,17 @@
       "title": "Rejected Hypotheses",
       "type": "array"
     },
+    "research_state": {
+      "$ref": "#/$defs/AgentResearchState",
+      "default": "generic_research"
+    },
+    "structural_hypothesis_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Structural Hypothesis Refs",
+      "type": "array"
+    },
     "validation_world_beliefs": {
       "additionalProperties": {
         "type": "number"
@@ -113,8 +142,7 @@
     }
   },
   "required": [
-    "agent_id",
-    "epistemic_niche"
+    "agent_id"
   ],
   "title": "AgentBeliefState",
   "type": "object"

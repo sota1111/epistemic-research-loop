@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from epistemic_loop.domain.enums import (
+    AgentResearchState,
     CommunicationMode,
     Consequence,
     DecisionOutcome,
@@ -22,11 +23,17 @@ from epistemic_loop.domain.enums import (
     HoldoutPolicyName,
     HypothesisStatus,
     HypothesisType,
+    MaturationChildRole,
+    MaturationForkStatus,
     Phase,
     Risk,
     RunMode,
     RunStatus,
+    StructuralDimension,
+    StructureClassification,
+    StructureLifecycleState,
     TerminalStatus,
+    ValidationDebtStatus,
     ValidationSplitType,
     ValidationWorldStatus,
     VerifierResult,
@@ -447,6 +454,193 @@ class DecisionBinding(DomainModel):
         return self
 
 
+# ---------------------------------------------------------------------------
+# C-lite v0.3: dynamically discovered structural hypotheses
+
+
+class StructuralAlternative(DomainModel):
+    id: str = Field(min_length=1)
+    claim: str = Field(min_length=1)
+    observable_predictions: list[str] = Field(min_length=1)
+    falsification_conditions: list[str] = Field(min_length=1)
+    null_model: bool = False
+
+
+class StructureTestPreregistration(DomainModel):
+    test_id: str = Field(min_length=1)
+    target_hypothesis_id: str = Field(min_length=1)
+    competing_hypothesis_ids: list[str] = Field(min_length=1)
+    prediction_by_hypothesis: dict[str, str] = Field(min_length=2)
+    falsification_condition: str = Field(min_length=1)
+    confounders_preserved: list[str] = Field(min_length=1)
+    decision_affected: str = Field(min_length=1)
+    power_plan: str = Field(min_length=1)
+    fold_safe: bool
+    semantic_signature: SemanticExperimentSignature
+    null_repetitions: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def predictions_cover_rivals(self) -> StructureTestPreregistration:
+        expected = {self.target_hypothesis_id, *self.competing_hypothesis_ids}
+        if not expected.issubset(self.prediction_by_hypothesis):
+            raise ValueError("test predictions must cover the target and every competing hypothesis")
+        return self
+
+
+class StructuralHypothesis(DomainModel):
+    id: str = Field(min_length=1)
+    run_id: str = Field(min_length=1)
+    owner_agent: str = Field(min_length=1)
+    claim: str = Field(min_length=1)
+    structure_type: str = Field(min_length=1)
+    observation_refs: list[str] = Field(min_length=1)
+    affected_dimensions: list[StructuralDimension] = Field(default_factory=list)
+    leverage_weights: dict[str, float] = Field(default_factory=dict)
+    observable_predictions: list[str] = Field(default_factory=list)
+    falsification_conditions: list[str] = Field(default_factory=list)
+    discrimination_plan: list[str] = Field(default_factory=list)
+    decisions_affected: list[str] = Field(default_factory=list)
+    alternatives: list[StructuralAlternative] = Field(default_factory=list)
+    preregistered_tests: list[StructureTestPreregistration] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    lifecycle_state: StructureLifecycleState = StructureLifecycleState.OBSERVATION
+    classification: StructureClassification | None = None
+
+    @field_validator("affected_dimensions")
+    @classmethod
+    def dimensions_are_unique(cls, value: list[StructuralDimension]) -> list[StructuralDimension]:
+        if len(value) != len(set(value)):
+            raise ValueError("affected structural dimensions must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def lifecycle_contract_is_complete(self) -> StructuralHypothesis:
+        state = self.lifecycle_state
+        if state != StructureLifecycleState.OBSERVATION:
+            if len(self.affected_dimensions) < 2:
+                raise ValueError("a structural hypothesis must affect at least two decision dimensions")
+            required = {
+                "observable_predictions": self.observable_predictions,
+                "falsification_conditions": self.falsification_conditions,
+                "discrimination_plan": self.discrimination_plan,
+                "decisions_affected": self.decisions_affected,
+            }
+            missing = [name for name, values in required.items() if not values]
+            if missing:
+                raise ValueError("structural hypothesis contract is incomplete: " + ", ".join(missing))
+        states_requiring_alternatives = {
+            StructureLifecycleState.ALTERNATIVES_REGISTERED,
+            StructureLifecycleState.DISCRIMINATING_TESTS_PREREGISTERED,
+            StructureLifecycleState.PARTIALLY_VALIDATED,
+            StructureLifecycleState.VALIDATED_STRUCTURE,
+            StructureLifecycleState.USEFUL_ENCODING_UNVALIDATED_STRUCTURE,
+            StructureLifecycleState.STRUCTURALLY_PLAUSIBLE_NON_ACTIONABLE,
+            StructureLifecycleState.FALSIFIED,
+            StructureLifecycleState.INCONCLUSIVE,
+        }
+        if state in states_requiring_alternatives and not self.alternatives:
+            raise ValueError("competing structural alternatives must be registered")
+        states_requiring_tests = states_requiring_alternatives - {StructureLifecycleState.ALTERNATIVES_REGISTERED}
+        if state in states_requiring_tests and not self.preregistered_tests:
+            raise ValueError("discriminating tests must be preregistered")
+        terminal_or_partial = states_requiring_tests - {StructureLifecycleState.DISCRIMINATING_TESTS_PREREGISTERED}
+        if state in terminal_or_partial and not self.evidence_refs:
+            raise ValueError("partial or terminal structure states require evidence")
+        return self
+
+    @property
+    def structural_leverage(self) -> float:
+        if self.lifecycle_state in {StructureLifecycleState.OBSERVATION, StructureLifecycleState.PROVISIONAL_STRUCTURE}:
+            return 0.0
+        return sum(self.leverage_weights.get(dimension.value, 1.0) for dimension in self.affected_dimensions)
+
+
+class StructureValidationDebt(DomainModel):
+    debt_id: str = Field(min_length=1)
+    hypothesis_id: str = Field(min_length=1)
+    structure_type: str = Field(min_length=1)
+    unresolved_requirements: list[str] = Field(min_length=1)
+    resolution_artifacts: dict[str, str] = Field(default_factory=dict)
+    status: ValidationDebtStatus = ValidationDebtStatus.OPEN
+    owner_agent: str = Field(min_length=1)
+    affects_candidates: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def debt_state_is_consistent(self) -> StructureValidationDebt:
+        if len(self.unresolved_requirements) != len(set(self.unresolved_requirements)):
+            raise ValueError("validation debt requirements must be unique")
+        unknown = set(self.resolution_artifacts) - set(self.unresolved_requirements)
+        if unknown:
+            raise ValueError(f"resolution artifacts refer to unknown requirements: {sorted(unknown)}")
+        complete = set(self.resolution_artifacts) == set(self.unresolved_requirements)
+        if complete != (self.status == ValidationDebtStatus.RESOLVED):
+            raise ValueError("validation debt status must match requirement completion")
+        return self
+
+    @property
+    def remaining_requirements(self) -> tuple[str, ...]:
+        return tuple(item for item in self.unresolved_requirements if item not in self.resolution_artifacts)
+
+
+class MaturationChild(DomainModel):
+    child_id: str = Field(min_length=1)
+    role: MaturationChildRole
+    checkpoint_ref: str = Field(min_length=1)
+    active: bool = True
+
+
+class StructureMaturationFork(DomainModel):
+    fork_id: str = Field(min_length=1)
+    hypothesis_id: str = Field(min_length=1)
+    owner_agent: str = Field(min_length=1)
+    checkpoint_ref: str = Field(min_length=1)
+    children: list[MaturationChild] = Field(min_length=3, max_length=3)
+    reserved_budget_fraction: float = Field(gt=0, le=1)
+    status: MaturationForkStatus = MaturationForkStatus.ACTIVE
+
+    @model_validator(mode="after")
+    def fork_has_three_distinct_functions(self) -> StructureMaturationFork:
+        expected = set(MaturationChildRole)
+        roles = {item.role for item in self.children}
+        if roles != expected or len({item.child_id for item in self.children}) != 3:
+            raise ValueError("maturation fork requires distinct implementation, null/skeptic and verification children")
+        return self
+
+
+class FalsificationCriticResult(DomainModel):
+    test_id: str = Field(min_length=1)
+    passed: bool
+    checks: dict[str, bool] = Field(min_length=7)
+    reasons: list[str] = Field(default_factory=list)
+
+
+class StructurePromotionAssessment(DomainModel):
+    hypothesis_id: str = Field(min_length=1)
+    structural_validity_passed: bool
+    predictive_improvement_passed: bool
+    validation_debt_resolved: bool
+    classification: StructureClassification | None
+    lifecycle_state: StructureLifecycleState
+
+    @model_validator(mode="after")
+    def classification_matches_axes(self) -> StructurePromotionAssessment:
+        if self.lifecycle_state == StructureLifecycleState.INCONCLUSIVE:
+            if self.classification is not None:
+                raise ValueError("an inconclusive assessment cannot assign a two-axis classification")
+            return self
+        expected = {
+            (True, True): StructureClassification.VALIDATED_ACTIONABLE_STRUCTURE,
+            (True, False): StructureClassification.VALIDATED_NON_ACTIONABLE_STRUCTURE,
+            (False, True): StructureClassification.USEFUL_ENCODING_UNVALIDATED_STRUCTURE,
+            (False, False): StructureClassification.REJECTED_STRUCTURE,
+        }[(self.structural_validity_passed, self.predictive_improvement_passed)]
+        if self.classification != expected:
+            raise ValueError("structure classification does not match validity/performance axes")
+        if self.structural_validity_passed and not self.validation_debt_resolved:
+            raise ValueError("open validation debt prevents structural validity promotion")
+        return self
+
+
 class ResourceEstimate(DomainModel):
     cpu_cores: int = Field(default=1, ge=1)
     memory_gb: float = Field(default=4, gt=0)
@@ -511,6 +705,12 @@ class ExperimentProposal(DomainModel):
     parent_candidate_ids: list[str] = Field(default_factory=list)
     variation_operator: Literal["seed", "mutation", "crossover"] = "seed"
     falsification_proposal_id: str | None = None
+    structural_hypothesis_id: str | None = None
+    structure_test_id: str | None = None
+    structural_leverage: float = Field(default=0, ge=0)
+    discrimination_value: float = Field(default=0, ge=0, le=1)
+    discrimination_values_by_prior: list[float] = Field(default_factory=list)
+    validation_debt_reduction: float = Field(default=0, ge=0, le=1)
     estimated_cost: CostEstimate
     holdout_access: HoldoutAccess = HoldoutAccess.NONE
     contamination_risk: Risk = Risk.LOW
@@ -551,6 +751,13 @@ class ExperimentProposal(DomainModel):
             raise ValueError("seeds must be unique")
         return value
 
+    @field_validator("discrimination_values_by_prior")
+    @classmethod
+    def discrimination_values_are_probabilities(cls, value: list[float]) -> list[float]:
+        if any(item < 0 or item > 1 for item in value):
+            raise ValueError("prior-perturbed discrimination values must be between zero and one")
+        return value
+
     @model_validator(mode="after")
     def validate_variation_lineage(self) -> ExperimentProposal:
         if self.variation_operator == "seed" and self.parent_candidate_ids:
@@ -574,7 +781,26 @@ class ExperimentProposal(DomainModel):
             and self.replication.original_experiment_id != self.is_replication_of
         ):
             raise ValueError("replication identifiers must agree")
+        if self.structure_test_id and not self.structural_hypothesis_id:
+            raise ValueError("a structure test must identify its structural hypothesis")
+        structural_utility_claimed = bool(
+            self.structural_leverage
+            or self.discrimination_value
+            or self.discrimination_values_by_prior
+            or self.validation_debt_reduction
+        )
+        if structural_utility_claimed and not self.structural_hypothesis_id:
+            raise ValueError("structural utility requires a registered structural hypothesis")
+        if (
+            self.discrimination_value or self.discrimination_values_by_prior or self.validation_debt_reduction
+        ) and not self.structure_test_id:
+            raise ValueError("discrimination and debt-reduction utility require a preregistered structure test")
         return self
+
+    @property
+    def robust_discrimination_value(self) -> float:
+        values = [self.discrimination_value, *self.discrimination_values_by_prior]
+        return min(values)
 
 
 class ArtifactRef(DomainModel):
@@ -791,6 +1017,7 @@ class ResearchStateSnapshot(DomainModel):
     hypothesis_calibration_brier: float | None = Field(default=None, ge=0)
     preferred_state_gaps: dict[str, float] = Field(default_factory=dict)
     preferred_state_total_gap: float = Field(default=0, ge=0, le=1)
+    dgp_understanding: float = Field(default=0, ge=0, le=1)
     evidence_ids: list[str] = Field(default_factory=list)
     generated_at: datetime = Field(default_factory=utc_now)
 
@@ -1075,12 +1302,15 @@ class RemainingBudget(DomainModel):
 
 class AgentNicheAssignment(DomainModel):
     agent_id: str = Field(min_length=1)
-    primary_niche: EpistemicNiche
+    primary_niche: EpistemicNiche | None = None
     secondary_niche: EpistemicNiche | None = None
+    dynamic_structure_discovery: bool = True
 
     @model_validator(mode="after")
     def niches_are_distinct(self) -> AgentNicheAssignment:
-        if self.secondary_niche == self.primary_niche:
+        if self.primary_niche is None and self.secondary_niche is not None:
+            raise ValueError("a secondary niche requires a primary niche")
+        if self.primary_niche is not None and self.secondary_niche == self.primary_niche:
             raise ValueError("primary and secondary niches must differ")
         return self
 
@@ -1094,6 +1324,8 @@ class GlobalControlState(DomainModel):
     archive_occupancy: dict[str, int] = Field(default_factory=dict)
     resource_pressure: dict[str, float] = Field(default_factory=dict)
     collapse_metrics: dict[str, float] = Field(default_factory=dict)
+    active_structure_forks: list[str] = Field(default_factory=list)
+    open_validation_debts: list[str] = Field(default_factory=list)
 
 
 class LocalHypothesisBelief(DomainModel):
@@ -1106,13 +1338,15 @@ class LocalHypothesisBelief(DomainModel):
 
 class AgentBeliefState(DomainModel):
     agent_id: str = Field(min_length=1)
-    epistemic_niche: EpistemicNiche
+    epistemic_niche: EpistemicNiche | None = None
+    research_state: AgentResearchState = AgentResearchState.GENERIC_RESEARCH
     hypotheses: list[LocalHypothesisBelief] = Field(default_factory=list)
     validation_world_beliefs: dict[str, float] = Field(default_factory=dict)
     private_working_notes: list[str] = Field(default_factory=list)
     experiment_history: list[str] = Field(default_factory=list)
     rejected_hypotheses: list[str] = Field(default_factory=list)
     candidate_refs: list[str] = Field(default_factory=list)
+    structural_hypothesis_refs: list[str] = Field(default_factory=list)
 
     @field_validator("validation_world_beliefs")
     @classmethod
@@ -1144,6 +1378,8 @@ class GlobalEvidence(DomainModel):
     visibility: EvidenceVisibility = EvidenceVisibility.PRIVATE
     challenge_target_agent: str | None = None
     created_cycle: int = Field(default=0, ge=0)
+    structural_hypothesis_id: str | None = None
+    structure_validation_debt_open: bool = False
     interpretation: Literal[None] = None
 
     @model_validator(mode="after")
@@ -1203,6 +1439,8 @@ class CandidateArtifactRecord(DomainModel):
     leakage_check_passed: bool = False
     reproducibility_passed: bool = False
     locked: bool = False
+    structural_hypothesis_ids: list[str] = Field(default_factory=list)
+    open_structure_validation_debt_ids: list[str] = Field(default_factory=list)
 
 
 class CandidateArtifactValidation(DomainModel):
