@@ -34,6 +34,7 @@ from epistemic_loop.domain.enums import (
     StructureLifecycleState,
     TerminalStatus,
     ValidationDebtStatus,
+    ValidationRequirementOutcome,
     ValidationSplitType,
     ValidationWorldStatus,
     VerifierResult,
@@ -561,17 +562,33 @@ class StructureValidationDebt(DomainModel):
     structure_type: str = Field(min_length=1)
     unresolved_requirements: list[str] = Field(min_length=1)
     resolution_artifacts: dict[str, str] = Field(default_factory=dict)
+    resolution_outcomes: dict[str, ValidationRequirementOutcome] = Field(default_factory=dict)
     status: ValidationDebtStatus = ValidationDebtStatus.OPEN
     owner_agent: str = Field(min_length=1)
     affects_candidates: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def backfill_legacy_resolution_outcomes(cls, value: Any) -> Any:
+        if not isinstance(value, dict) or "resolution_outcomes" in value:
+            return value
+        artifacts = value.get("resolution_artifacts")
+        if not isinstance(artifacts, dict) or not artifacts:
+            return value
+        return {
+            **value,
+            "resolution_outcomes": {requirement: ValidationRequirementOutcome.PASSED for requirement in artifacts},
+        }
 
     @model_validator(mode="after")
     def debt_state_is_consistent(self) -> StructureValidationDebt:
         if len(self.unresolved_requirements) != len(set(self.unresolved_requirements)):
             raise ValueError("validation debt requirements must be unique")
-        unknown = set(self.resolution_artifacts) - set(self.unresolved_requirements)
+        unknown = (set(self.resolution_artifacts) | set(self.resolution_outcomes)) - set(self.unresolved_requirements)
         if unknown:
             raise ValueError(f"resolution artifacts refer to unknown requirements: {sorted(unknown)}")
+        if set(self.resolution_artifacts) != set(self.resolution_outcomes):
+            raise ValueError("every resolution artifact requires an explicit outcome")
         complete = set(self.resolution_artifacts) == set(self.unresolved_requirements)
         if complete != (self.status == ValidationDebtStatus.RESOLVED):
             raise ValueError("validation debt status must match requirement completion")

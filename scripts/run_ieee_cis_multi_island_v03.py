@@ -9,7 +9,6 @@ Structural hypotheses are registered only when an agent proposed one itself.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import re
@@ -21,10 +20,8 @@ from statistics import fmean
 from typing import Any, cast
 
 import yaml
-from pyarrow import parquet as pq  # type: ignore[import-untyped]
 
 from epistemic_loop.controller.candidate_artifacts import (
-    CandidateArtifactValidator,
     candidate_required_outputs,
 )
 from epistemic_loop.controller.diversity_control import effective_count, semantic_similarity
@@ -59,10 +56,14 @@ from epistemic_loop.domain.models import (
     StructuralAlternative,
     StructuralHypothesis,
 )
+from epistemic_loop.plugins.ieee_cis_artifacts import (
+    IEEEArtifactPreflight,
+    canonical_ieee_cis_dataset_hash,
+)
 
 BASE_REF = "initial/ieee-cis-state"
 BASE_SHA = "ac3b46975e5da64570fb79d6e1141bc5c7525d0f"
-RUN_ID = "ieee-cis-v03-multi-island-20260826"
+RUN_ID_BASE = "ieee-cis-v03-multi-island-20260826"
 PYTHON = "/workspaces/kaggle-ieee-cis-fraud-detection/.venv/bin/python"
 
 
@@ -74,13 +75,17 @@ class Island:
     proposal_path: Path
 
 
-def islands(worktree_root: Path) -> tuple[Island, ...]:
+def islands(worktree_root: Path, *, cycle: int) -> tuple[Island, ...]:
     return tuple(
         Island(
             agent_id=f"island-{index:02d}",
             branch=f"agents/v03-island-{index:02d}",
             worktree=worktree_root / f"island-{index:02d}",
-            proposal_path=Path(f"proposals/island-{index:02d}.yaml"),
+            proposal_path=Path(
+                f"proposals/island-{index:02d}.yaml"
+                if cycle == 1
+                else f"proposals/island-{index:02d}-cycle-{cycle:02d}.yaml"
+            ),
         )
         for index in range(1, 4)
     )
@@ -204,6 +209,7 @@ def structural_hypothesis(
     payload: dict[str, Any],
     *,
     island: Island,
+    run_id: str,
 ) -> tuple[StructuralHypothesis | None, list[StructuralAlternative]]:
     raw = payload.get("structural_hypothesis")
     if raw is None:
@@ -236,7 +242,7 @@ def structural_hypothesis(
     hypothesis_id = str(raw.get("id", f"{island.agent_id}-STRUCT-001"))
     hypothesis = StructuralHypothesis(
         id=hypothesis_id,
-        run_id=RUN_ID,
+        run_id=run_id,
         owner_agent=island.agent_id,
         claim=str(raw.get("claim", "")),
         structure_type=str(raw.get("structure_type", "agent_discovered")),
@@ -260,11 +266,13 @@ def build_proposal(
     estimate: ResourceEstimate,
     signature: SemanticExperimentSignature,
     structure: StructuralHypothesis | None,
+    *,
+    run_id: str,
 ) -> ExperimentProposal:
     seed = int(argv[argv.index("--seed") + 1]) if "--seed" in argv else 42
     return ExperimentProposal(
         id=str(payload.get("proposal_id", f"{island.agent_id}-candidate")),
-        run_id=RUN_ID,
+        run_id=run_id,
         proposer_agent=island.agent_id,
         experiment_type=ExperimentType.EPISTEMIC,
         experiment_kind=ExperimentKind.CANDIDATE_PRODUCING,
@@ -351,24 +359,6 @@ def verify_branch(island: Island) -> dict[str, str]:
     return {"branch": branch, "head": head, "merge_base": merge_base}
 
 
-def snapshot_hash(data_root: Path) -> str:
-    digest = hashlib.sha256()
-    for path in sorted(
-        (data_root / "train.parquet", data_root / "test.parquet", data_root / "manifest.json"),
-        key=lambda item: item.name,
-    ):
-        if not path.is_file():
-            raise FileNotFoundError(path)
-        digest.update(path.name.encode())
-        digest.update(b"\0")
-        digest.update(str(path.stat().st_size).encode())
-        digest.update(b"\0")
-        with path.open("rb") as stream:
-            for block in iter(lambda: stream.read(1024 * 1024), b""):
-                digest.update(block)
-    return f"sha256:{digest.hexdigest()}"
-
-
 def primary_metrics(path: Path) -> dict[str, float]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
@@ -438,7 +428,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     run_root = args.run_root.resolve()
     if run_root.exists():
         raise FileExistsError(f"refusing to overwrite existing run root: {run_root}")
-    campaign = islands(args.worktree_root.resolve())
+    run_id = f"{RUN_ID_BASE}-cycle-{args.cycle:02d}"
+    campaign = islands(args.worktree_root.resolve(), cycle=args.cycle)
     if args.agents:
         requested = set(args.agents.split(","))
         campaign = tuple(item for item in campaign if item.agent_id in requested)
@@ -467,7 +458,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             output_name=args.output_name,
         )
         estimate = resource_estimate(payload)
-        structure, rivals = structural_hypothesis(payload, island=island)
+        structure, rivals = structural_hypothesis(payload, island=island, run_id=run_id)
         structures[island.agent_id] = structure
         alternatives[island.agent_id] = rivals
         commands[island.agent_id] = command
@@ -481,10 +472,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 estimate,
                 signatures[island.agent_id],
                 structure,
+                run_id=run_id,
             )
         )
 
-    dataset_hash = snapshot_hash(args.data_root.resolve())
+    dataset_hash = canonical_ieee_cis_dataset_hash(args.data_root.resolve())
     dataset_manifest = mapping(args.data_root.resolve() / "manifest.json")
     expected_test_rows = int(dataset_manifest["splits"]["test"]["rows"])
     scheduler = ResourceScheduler(
@@ -542,7 +534,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         loop.propose(proposal, requester=proposal.proposer_agent)
 
     report: dict[str, Any] = {
-        "run_id": RUN_ID,
+        "run_id": run_id,
+        "cycle": args.cycle,
         "base_ref": BASE_REF,
         "base_sha": BASE_SHA,
         "dataset_hash": dataset_hash,
@@ -555,7 +548,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "experiments": {},
     }
     write_json(run_root / "report.json", report)
-    validator = CandidateArtifactValidator()
+    preflight = IEEEArtifactPreflight(expected_test_rows=expected_test_rows)
     for index, (island, proposal) in enumerate(zip(campaign, proposals, strict=True)):
         started = time.monotonic()
         loop.start(proposal.id)
@@ -573,12 +566,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
         (log_root / "stdout.log").write_text(process.stdout, encoding="utf-8")
         (log_root / "stderr.log").write_text(process.stderr, encoding="utf-8")
-        artifact_validation = validator.validate(outputs[island.agent_id])
-        test_prediction_path = outputs[island.agent_id] / "test_predictions.parquet"
-        test_prediction_rows = pq.read_metadata(test_prediction_path).num_rows if test_prediction_path.is_file() else 0
+        artifact_validation = preflight.validate(outputs[island.agent_id], expected_dataset_hash=dataset_hash)
+        test_prediction_rows = artifact_validation.test_prediction_row_count
         full_test_rows_match = test_prediction_rows == expected_test_rows
         record = None
-        hash_matches = False
+        hash_matches = artifact_validation.dataset_hash_matches
         if process.returncode == 0 and artifact_validation.valid:
             record = candidate_record(
                 island,
@@ -586,8 +578,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 signatures[island.agent_id],
                 structures[island.agent_id],
             )
-            hash_matches = record.dataset_hash == dataset_hash
-        completed = process.returncode == 0 and artifact_validation.valid and hash_matches and full_test_rows_match
+        completed = process.returncode == 0 and artifact_validation.valid
         if completed:
             terminal_status = TerminalStatus.COMPLETED
         elif process.returncode in {137, -9} or "memoryerror" in process.stderr.lower():
@@ -601,7 +592,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             record = None
         result = ExperimentResult(
             experiment_id=proposal.id,
-            run_id=RUN_ID,
+            run_id=run_id,
             attempt=1,
             status="completed" if completed else "failed",
             terminal_status=terminal_status,
@@ -633,12 +624,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "exit_code": process.returncode,
             "wall_seconds": result.runtime["wall_seconds"],
             "artifact_valid": artifact_validation.valid,
-            "artifact_missing": artifact_validation.missing,
-            "artifact_invalid": artifact_validation.invalid,
+            "artifact_errors": artifact_validation.errors,
             "dataset_hash_matches": hash_matches,
             "test_prediction_rows": test_prediction_rows,
             "expected_test_rows": expected_test_rows,
             "full_test_rows_match": full_test_rows_match,
+            "oof_honesty_passed": artifact_validation.oof_honesty_passed,
             "output": str(outputs[island.agent_id]),
             "parallel_probe_for_next": (
                 {"accepted": parallel_probe.accepted, "reason": parallel_probe.reason}
@@ -666,7 +657,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             qd_niche_occupancy=len(loop.archive.occupancy),
             hypothesis_family_budget_fraction=1 / len(proposals),
             mean_agent_proposal_similarity=mean_similarity,
-            cycle=1,
+            cycle=args.cycle,
         )
     )
     report.update(
@@ -689,7 +680,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "evidence": {
                 "global_count": len(loop.evidence.all()),
                 "routed_counts": {
-                    item.agent_id: len(loop.routed_evidence(recipient_agent=item.agent_id, current_cycle=1))
+                    item.agent_id: len(loop.routed_evidence(recipient_agent=item.agent_id, current_cycle=args.cycle))
                     for item in campaign
                 },
             },
@@ -715,6 +706,7 @@ def parse_args() -> argparse.Namespace:
         default=Path(".runs/ieee-cis-v03-multi-island-20260826"),
     )
     parser.add_argument("--sample", type=int, default=40_000)
+    parser.add_argument("--cycle", type=int, choices=(1, 2, 3, 4), default=1)
     parser.add_argument("--estimators", type=int, default=80)
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--output-name", default="v03-validation")

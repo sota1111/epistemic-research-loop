@@ -138,6 +138,17 @@ The first real-data no-role run, including its dynamic fork, open debt, artifact
 error-diversity result, is recorded in
 [the v0.3 multi-island verification](verification/ieee_cis_multi_island_v03.md).
 
+## 11. C-lite v0.3.1 measurement and debt closure
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 64 | Hidden endpoint candidates are content-hash frozen as one non-adaptive batch before score access | enforced | `evaluation/primary_endpoint.py`, `scripts/evaluate_ieee_cis_v031_primary_endpoint.py` | `tests/unit/test_v031_evaluation.py`, `docs/verification/ieee_cis_v031_measurement.md` |
+| 65 | Full-row common first-level forward folds measure seed/fold rank stability, residual/prediction correlation, effective rank and nested gain | measured | `scripts/run_ieee_cis_v031_common_crossfit.py` | `docs/verification/ieee_cis_v031_measurement.md` |
+| 66 | Exploration Stagnation and Predictive Collapse are distinct from Semantic Collapse and create mechanism-neutral debt | enforced | `controller/stagnation.py` | `tests/unit/test_v031_evaluation.py` |
+| 67 | Structure requirements terminate with explicit passed/failed/waived/inconclusive outcomes; Null failure cannot become validated structure | enforced | `controller/structure_validation.py`, `StructureValidationDebt.resolution_outcomes` | `tests/unit/test_v031_structure_validation.py` |
+| 68 | IEEE artifacts use one dataset hash, schema SDK, exact full-test sentinel, OOF/fold honesty preflight and first-attempt reliability gate | enforced | `plugins/ieee_cis_artifacts.py`, `scripts/run_ieee_cis_multi_island_v03.py` | `tests/unit/test_v031_evaluation.py`, clean replay in `docs/verification/ieee_cis_v031_measurement.md` |
+| 69 | System acceptance is reported separately for control plane, dynamic structure, competition capability and primary endpoint | enforced | `evaluation/acceptance.py`, `scripts/finalize_ieee_cis_v031.py` | `tests/unit/test_v031_evaluation.py` |
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
@@ -147,8 +158,10 @@ five defects that only appeared under real data. A later
 [branch-agent verification](verification/ieee_cis_branch_agents.md) established CLI-backed unattended
 proposal, selection, execution and belief update on three isolated Runs. The subsequent
 [v0.3 multi-island run](verification/ieee_cis_multi_island_v03.md) established three generic,
-no-role candidate branches and a dynamically triggered structure-maturation fork. A production
-worker fleet, full common first-level cross-fit, Hidden evaluation, and the
+no-role candidate branches and a dynamically triggered structure-maturation fork. The subsequent
+[v0.3.1 measurement](verification/ieee_cis_v031_measurement.md) completed the frozen Hidden endpoint,
+full common first-level cross-fit, terminal Payment-process debt and clean replay. A production
+worker fleet, matched-budget system comparison, second competition, and the
 Research-to-Exploitation transition remain open.
 
 ## What is *not* claimed
