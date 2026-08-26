@@ -34,6 +34,8 @@ names its Linear issue.
 | 2026-08-26 | C-lite v0.2 scaling correction: private belief islands, selective evidence, semantic collapse control, resource/artifact gates, IEEE-CIS forward/UID plugin, multi-candidate archive and final meta-selector | [v0.2 specification](c_lite_revision_v0.2.md), `tests/unit/test_c_lite_v2.py`, `tests/unit/test_ieee_cis_v2.py`, `tests/unit/test_candidate_archive_v2.py` |
 | 2026-08-26 | IEEE-CIS v0.2 multi-island real-data verification: three generic branches produced three semantic candidate families, sequential resource admission, valid OOF artifacts and a locked nested ensemble | [multi-island verification](verification/ieee_cis_multi_island_v02.md), `scripts/run_ieee_cis_multi_island_validation.py`, `scripts/finalize_ieee_cis_multi_island_validation.py` |
 | 2026-08-26 | IEEE-CIS v0.3 dynamic-structure verification: three no-role islands selected distinct solutions, the controller generated a maturation fork only after a high-leverage hypothesis appeared, and sequential execution produced three OOF candidates plus a locked blend | [v0.3 multi-island verification](verification/ieee_cis_multi_island_v03.md), `scripts/run_ieee_cis_multi_island_v03.py`, `scripts/finalize_ieee_cis_multi_island_v03.py` |
+| 2026-08-26 | IEEE-CIS v0.3 adaptive Cycle 2--4 verification: agent-local evidence drove nine sequential candidate/ablation runs with zero semantic duplicates and zero resource failures; prediction errors nevertheless remained near one effective direction | [adaptive-cycle verification](verification/ieee_cis_adaptive_cycles_v03.md), `scripts/finalize_ieee_cis_adaptive_cycles_v03.py` |
+| 2026-08-26 | IEEE-CIS v0.3.1 measurement closure: frozen four-submission Hidden endpoint, 354,324-row common OOF × 3 seeds, terminal Payment-process debt, Predictive Collapse/Stagnation split, and a 3/3 clean replay | [v0.3.1 verification](verification/ieee_cis_v031_measurement.md), [v0.3.1 specification](c_lite_revision_v0.3.1.md) |
 
 ## What the last milestone changed
 
@@ -70,10 +72,10 @@ what it did **not** establish.
 
 These are deliberate and unfinished, not oversights:
 
-- **The native multi-island control plane has completed a real-data candidate run, but not a primary-endpoint run.**
-  Three IEEE-CIS belief islands produced valid OOF candidates and a locked ensemble. The common
-  comparison covered only the intersection of independently generated OOF rows, not a full common
-  first-level cross-fit; matched Comm-0/S/F, multi-seed reproduction and Hidden performance remain open.
+- **The IEEE-CIS primary endpoint and common first-level cross-fit are now measured, but they failed their research gates.**
+  The frozen v0.3 candidate did not beat the canonical Private AUC; 354,324 common OOF rows across
+  three seeds confirmed Predictive Collapse. Matched-budget v0.2/v0.3, Comm-0/S/F and a second
+  competition remain open, so the result is not a general system comparison.
 - **The Research-to-Exploitation transition has not been observed in a real run.** It is implemented
   and unit-tested; the IEEE-CIS run stayed in discovery because its findings kept failing
   replication, which is the policy working rather than failing. The arithmetic is in the record.

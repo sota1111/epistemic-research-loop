@@ -1,0 +1,72 @@
+version: "0.3.1"
+mode: measurement_and_debt_closure
+freeze_v03: true
+allow_additional_agent_cycles: false
+
+primary_endpoint:
+  competition: ieee-fraud-detection
+  late_submission_endpoint_only: true
+  freeze_before_score_access: true
+  prohibit_adaptive_candidate_addition: true
+  expected_submission_rows: 506691
+  batch:
+    - canonical_baseline
+    - v02_corrected_locked_ensemble
+    - v03_cycle1_locked_0102_blend
+    - v03_cycle4_locked_island01
+
+common_crossfit:
+  train_rows: 590540
+  horizons: 3
+  gap_days: 7
+  seeds: [17, 42, 20260826]
+  fold_local_feature_fit: true
+  common_oof_rows: true
+  representations:
+    - canonical_base
+    - island_01_cycle_4
+    - island_02_cycle_2
+    - island_03_cycle_2
+
+learner_transfer:
+  learners: [lightgbm, catboost, logistic_sgd]
+  diagnostic_purpose_only: true
+
+structure_debt:
+  hypothesis_id: ISLAND-01-H-AMOUNT-RAIL-001
+  minimum_matched_null_repetitions: 20
+  sequential_futility:
+    target_null_tail_probability: 0.05
+    posterior_probability_threshold: 0.05
+    minimum_repetitions: 5
+  require_independent_implication_after_null_pass: true
+  require_horizons: 3
+  require_seeds: 3
+  require_decision_adoption_after_null_pass: true
+
+stagnation:
+  consecutive_cycles: 2
+  require_all:
+    - qd_occupancy_not_increased
+    - no_new_validated_structure
+    - accepted_primary_metric_not_improved
+    - validation_debt_not_reduced
+
+predictive_collapse:
+  minimum_candidates: 3
+  residual_effective_rank_below: 1.2
+  mean_residual_correlation_above: 0.95
+  nested_ensemble_auc_gain_at_most: 0.0
+
+reliability:
+  first_attempt_valid_artifact_rate_min: 0.95
+  resource_failure_rate_max: 0.05
+  final_test_rows: 506691
+  require_oof_honesty: true
+
+matched_comparison:
+  blocked_until_prerequisites_pass: true
+  arms:
+    A: v02_fixed_epistemic_niche
+    B: v03_generic_dynamic_structure
+    C: v03_with_stagnation_and_predictive_diversity_debt

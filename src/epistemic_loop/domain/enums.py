@@ -127,6 +127,14 @@ class ValidationDebtStatus(StrEnum):
     RESOLVED = "resolved"
 
 
+class ValidationRequirementOutcome(StrEnum):
+    PASSED = "passed"
+    FAILED = "failed"
+    WAIVED_BY_FUTILITY = "waived_by_futility"
+    WAIVED_BY_FAILED_PREREQUISITE = "waived_by_failed_prerequisite"
+    INCONCLUSIVE = "inconclusive"
+
+
 class MaturationChildRole(StrEnum):
     IMPLEMENTATION = "implementation"
     NULL_SKEPTIC = "null_skeptic"

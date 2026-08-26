@@ -10,6 +10,7 @@ from epistemic_loop.domain.enums import (
     StructureClassification,
     StructureLifecycleState,
     ValidationDebtStatus,
+    ValidationRequirementOutcome,
 )
 from epistemic_loop.domain.models import (
     DomainModel,
@@ -302,17 +303,21 @@ class StructureMaturationController:
         *,
         artifact_ref: str,
         requester: str,
+        outcome: ValidationRequirementOutcome = ValidationRequirementOutcome.PASSED,
     ) -> StructureValidationDebt:
         debt = self.debt(hypothesis_id, requester=requester)
         if requirement not in debt.unresolved_requirements:
             raise ValueError(f"unknown validation debt requirement: {requirement}")
         artifacts = {**debt.resolution_artifacts, requirement: artifact_ref}
+        outcomes = {**debt.resolution_outcomes, requirement: outcome}
         status = (
             ValidationDebtStatus.RESOLVED
             if set(artifacts) == set(debt.unresolved_requirements)
             else ValidationDebtStatus.OPEN
         )
-        updated = debt.model_copy(update={"resolution_artifacts": artifacts, "status": status})
+        updated = debt.model_copy(
+            update={"resolution_artifacts": artifacts, "resolution_outcomes": outcomes, "status": status}
+        )
         self._write(self.debt_root / f"{self._safe(debt.debt_id)}.json", updated)
         return updated
 

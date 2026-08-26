@@ -7,6 +7,17 @@
       ],
       "title": "ValidationDebtStatus",
       "type": "string"
+    },
+    "ValidationRequirementOutcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "waived_by_futility",
+        "waived_by_failed_prerequisite",
+        "inconclusive"
+      ],
+      "title": "ValidationRequirementOutcome",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -38,6 +49,13 @@
         "type": "string"
       },
       "title": "Resolution Artifacts",
+      "type": "object"
+    },
+    "resolution_outcomes": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ValidationRequirementOutcome"
+      },
+      "title": "Resolution Outcomes",
       "type": "object"
     },
     "status": {

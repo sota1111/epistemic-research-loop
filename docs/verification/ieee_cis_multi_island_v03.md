@@ -153,3 +153,6 @@ the external competition worktrees' `results/` directories.
 | island 01 retry report | `dd077a836899f2a71f499216831bc48762787fb7f5226f71edfd1ff3c52fb41a` |
 | final report | `67a9b2e5b06b4238e5bff3e71f10d2994550f871cd4c95af7049efbb8a93d4b11` |
 | locked submission | `86634793e066bc42f788397d145fe5812e3372d71a6abe8d8c32fadf9f34f741` |
+
+The adaptive continuation through Cycles 2--4 is recorded separately in
+[the adaptive-cycle verification](ieee_cis_adaptive_cycles_v03.md).

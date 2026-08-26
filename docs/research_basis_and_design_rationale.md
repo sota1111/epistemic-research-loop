@@ -2038,3 +2038,15 @@ EpistemicなDescriptorをQDへ追加する価値がある。
 > どの実験がそれらを最も区別するのか。
 > その情報によって、次の研究判断は本当に変わるのか。
 > その結果、Hidden Test性能は改善したのか。
+
+---
+
+## 26. 実証後の差分仕様
+
+本設計をIEEE-CISへ適用して得た差分仕様は、次を優先して適用する。
+
+1. [C-lite v0.2 scaling correction](c_lite_revision_v0.2.md)
+2. [C-lite v0.3 dynamic structure maturation](c_lite_revision_v0.3.md)
+3. [C-lite v0.3.1 measurement and debt closure](c_lite_revision_v0.3.1.md)
+
+v0.3.1は、追加Agent/CycleではなくFrozen Hidden Endpoint、Full Common First-level Cross-fit、Structure Debt終端、Predictive Collapse/Stagnation分離を要求する。実測結果は[IEEE-CIS v0.3.1 verification](verification/ieee_cis_v031_measurement.md)に記録する。
