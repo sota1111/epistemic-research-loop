@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "EvidenceObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "minLength": 1,
+          "title": "Metric",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "metric",
+        "value",
+        "protocol"
+      ],
+      "title": "EvidenceObservation",
+      "type": "object"
+    },
+    "EvidenceVerification": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_contract_valid": {
+          "default": false,
+          "title": "Artifact Contract Valid",
+          "type": "boolean"
+        },
+        "independently_replicated": {
+          "default": false,
+          "title": "Independently Replicated",
+          "type": "boolean"
+        },
+        "observation_interpretation_separated": {
+          "default": true,
+          "title": "Observation Interpretation Separated",
+          "type": "boolean"
+        }
+      },
+      "title": "EvidenceVerification",
+      "type": "object"
+    },
+    "EvidenceVisibility": {
+      "enum": [
+        "private",
+        "controller_only",
+        "shareable_fact",
+        "shared_challenge",
+        "global_safety"
+      ],
+      "title": "EvidenceVisibility",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "title": "Artifacts",
+      "type": "object"
+    },
+    "challenge_target_agent": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Challenge Target Agent"
+    },
+    "created_cycle": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Created Cycle",
+      "type": "integer"
+    },
+    "evidence_id": {
+      "minLength": 1,
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "interpretation": {
+      "const": null,
+      "default": null,
+      "title": "Interpretation",
+      "type": "null"
+    },
+    "observation": {
+      "$ref": "#/$defs/EvidenceObservation"
+    },
+    "producer_agent": {
+      "minLength": 1,
+      "title": "Producer Agent",
+      "type": "string"
+    },
+    "verification": {
+      "$ref": "#/$defs/EvidenceVerification"
+    },
+    "visibility": {
+      "$ref": "#/$defs/EvidenceVisibility",
+      "default": "private"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "experiment_id",
+    "producer_agent",
+    "observation"
+  ],
+  "title": "GlobalEvidence",
+  "type": "object"
+}

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from typing import Literal
 
 from epistemic_loop.config import PhaseWeights
+from epistemic_loop.controller.mode_policy import capabilities
+from epistemic_loop.domain.enums import Risk, RunMode
 from epistemic_loop.domain.models import ExperimentProposal
 from epistemic_loop.domain.validation import GateContext, GateResult, hard_gate
 from epistemic_loop.scoring.cost import normalized_cost
 from epistemic_loop.scoring.diversity import diversity_value, experiment_similarity
-from epistemic_loop.scoring.epistemic import epistemic_value_v1, epistemic_value_v2
+from epistemic_loop.scoring.epistemic import epistemic_value_v1, epistemic_value_v2, evsi_proxy_value
 from epistemic_loop.scoring.pragmatic import robust_score_gain
 from epistemic_loop.scoring.robustness import robustness_value
 
@@ -24,9 +27,12 @@ class UtilityBreakdown:
     #: phase a discovery phase -- moved the total by less than one part in five thousand.
     pragmatic: float
     epistemic: float
+    eig: float
+    evsi: float
     robustness: float
     diversity: float
     cost: float
+    risk: float
     total: float
     epistemic_method: str = "rubric_v1"
     #: The gain before rescaling, kept because the rescaled figure is only meaningful next to the
@@ -47,31 +53,67 @@ def score_experiment(
     cost_lambda: float = 0.15,
     *,
     beliefs: Mapping[str, float] | None = None,
+    mode: RunMode = RunMode.EPISTEMIC,
+    risk_lambda: float = 0.5,
+    eig_method: Literal["exact", "monte_carlo"] = "exact",
+    eig_monte_carlo_samples: int = 4000,
+    random_seed: int = 101,
+    information_value_enabled: bool = True,
 ) -> UtilityBreakdown:
+    policy = capabilities(mode)
     pragmatic = robust_score_gain(proposal.expected_score_gain)
-    measured_epistemic = epistemic_value_v2(proposal.outcome_forecasts, beliefs or {})
-    if measured_epistemic is None:
-        epistemic = epistemic_value_v1(proposal.epistemic_assessment)
-        epistemic_method = "rubric_v1"
+    measured_epistemic = epistemic_value_v2(
+        proposal.outcome_forecasts,
+        beliefs or {},
+        method=eig_method,
+        monte_carlo_samples=eig_monte_carlo_samples,
+        seed=random_seed,
+    )
+    if not policy.information_value or not information_value_enabled:
+        eig = 0.0
+        evsi = 0.0
+        epistemic = 0.0
+        epistemic_method = "disabled_by_system_mode" if not policy.information_value else "disabled_by_ablation"
     else:
-        epistemic = measured_epistemic
-        epistemic_method = "expected_information_gain_v2"
-    robustness = robustness_value(proposal.robustness_assessment)
-    diversity = diversity_value(proposal)
+        if measured_epistemic is None:
+            eig = epistemic_value_v1(proposal.epistemic_assessment)
+            epistemic_method = "rubric_v1"
+        else:
+            eig = measured_epistemic
+            epistemic_method = (
+                "expected_information_gain_v2" if eig_method == "exact" else "expected_information_gain_v2_monte_carlo"
+            )
+        measured_evsi = evsi_proxy_value(proposal.evsi_proxy)
+        evsi = measured_evsi or 0.0
+        if measured_evsi is not None:
+            epistemic_method = "evsi_proxy"
+        epistemic = evsi if measured_evsi is not None else eig
+    robustness = (
+        robustness_value(proposal.robustness_assessment)
+        if mode not in {RunMode.SYSTEM_A, RunMode.EXPLOITER_ONLY}
+        else 0.0
+    )
+    diversity = diversity_value(proposal) if policy.solution_qd else 0.0
     cost = normalized_cost(proposal.estimated_cost)
+    contamination = {Risk.LOW: 0.0, Risk.MEDIUM: 0.5, Risk.HIGH: 1.0}[proposal.contamination_risk]
+    risk = min(1.0, proposal.estimated_cost.failure_probability + contamination)
     return _combine(
         UtilityBreakdown(
             pragmatic=pragmatic,
             epistemic=epistemic,
+            eig=eig,
+            evsi=evsi,
             robustness=robustness,
             diversity=diversity,
             cost=cost,
+            risk=risk,
             total=0.0,
             epistemic_method=epistemic_method,
             pragmatic_raw=pragmatic,
         ),
         weights,
         cost_lambda,
+        risk_lambda,
     )
 
 
@@ -89,13 +131,16 @@ def _relative_gain(values: list[float]) -> list[float]:
     return [0.0 for _ in values] if largest == 0 else [value / largest for value in values]
 
 
-def _combine(breakdown: UtilityBreakdown, weights: PhaseWeights, cost_lambda: float) -> UtilityBreakdown:
+def _combine(
+    breakdown: UtilityBreakdown, weights: PhaseWeights, cost_lambda: float, risk_lambda: float
+) -> UtilityBreakdown:
     total = (
         weights.pragmatic * breakdown.pragmatic
         + weights.epistemic * breakdown.epistemic
         + weights.robustness * breakdown.robustness
         + weights.diversity * breakdown.diversity
         - cost_lambda * breakdown.cost
+        - risk_lambda * breakdown.risk
     )
     return replace(breakdown, total=total)
 
@@ -107,11 +152,32 @@ def evaluate_candidates(
     cost_lambda: float = 0.15,
     *,
     beliefs: Mapping[str, float] | None = None,
+    mode: RunMode = RunMode.EPISTEMIC,
+    risk_lambda: float = 0.5,
+    eig_method: Literal["exact", "monte_carlo"] = "exact",
+    eig_monte_carlo_samples: int = 4000,
+    random_seed: int = 101,
+    information_value_enabled: bool = True,
 ) -> list[ScoredCandidate]:
     result = []
     for proposal in proposals:
         gate = hard_gate(proposal, context)
-        utility = score_experiment(proposal, weights, cost_lambda, beliefs=beliefs) if gate.passed else None
+        utility = (
+            score_experiment(
+                proposal,
+                weights,
+                cost_lambda,
+                beliefs=beliefs,
+                mode=mode,
+                risk_lambda=risk_lambda,
+                eig_method=eig_method,
+                eig_monte_carlo_samples=eig_monte_carlo_samples,
+                random_seed=random_seed,
+                information_value_enabled=information_value_enabled,
+            )
+            if gate.passed
+            else None
+        )
         result.append(ScoredCandidate(proposal, gate, utility))
 
     # Rescale the expected gain across the candidates actually being compared. Selection is a
@@ -125,7 +191,7 @@ def evaluate_candidates(
         return result
     rescaled = _relative_gain([utility.pragmatic_raw for _, utility in scored])
     replacements = {
-        id(item): _combine(replace(utility, pragmatic=value), weights, cost_lambda)
+        id(item): _combine(replace(utility, pragmatic=value), weights, cost_lambda, risk_lambda)
         for (item, utility), value in zip(scored, rescaled, strict=True)
     }
     return [ScoredCandidate(item.proposal, item.gate, replacements.get(id(item), item.utility)) for item in result]
@@ -137,6 +203,7 @@ def select_portfolio(
     *,
     similarity_penalty: float = 0.25,
     minimum_utility: float = float("-inf"),
+    allocation: Mapping[str, float] | None = None,
 ) -> list[ScoredCandidate]:
     """Greedy maximum-marginal-utility portfolio, not a naive top-K list."""
     eligible = [item for item in candidates if item.gate.passed and item.utility is not None]
@@ -152,9 +219,36 @@ def select_portfolio(
             )
             return item.utility.total - similarity_penalty * similarity, item.proposal.id
 
-        best = max(remaining, key=marginal)
+        pool = remaining
+        if allocation:
+            counts = {name: 0 for name in allocation}
+            for chosen in selected:
+                bucket = experiment_bucket(chosen.proposal)
+                counts[bucket] = counts.get(bucket, 0) + 1
+            bucket = max(
+                allocation,
+                key=lambda name: (allocation[name] * (len(selected) + 1) - counts.get(name, 0), name),
+            )
+            matching = [item for item in remaining if experiment_bucket(item.proposal) == bucket]
+            if matching:
+                pool = matching
+        best = max(pool, key=marginal)
         if marginal(best)[0] < minimum_utility:
             break
         selected.append(best)
         remaining.remove(best)
     return selected
+
+
+def experiment_bucket(proposal: ExperimentProposal) -> str:
+    from epistemic_loop.domain.enums import ExperimentType
+
+    if proposal.experiment_type in {ExperimentType.EXPLOIT, ExperimentType.OPTIMIZATION}:
+        return "exploit"
+    if proposal.experiment_type in {
+        ExperimentType.SOLUTION_EXPLORE,
+        ExperimentType.ENSEMBLE,
+        ExperimentType.ABLATION,
+    }:
+        return "qd_explore"
+    return "epistemic"

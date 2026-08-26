@@ -1,10 +1,15 @@
-from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName
+from epistemic_loop.controller.candidate_artifacts import candidate_required_outputs
+from epistemic_loop.domain.enums import ExperimentKind, ExperimentType, HoldoutAccess, HoldoutPolicyName
 from epistemic_loop.domain.models import (
     Budget,
     BudgetUsage,
+    CandidateDescriptors,
+    DecisionBinding,
     ExperimentProposal,
     HypothesisOutcomeForecast,
     OutcomeLikelihood,
+    ResourceEstimate,
+    SemanticExperimentSignature,
 )
 from epistemic_loop.domain.validation import GateContext, experiment_fingerprint, hard_gate
 
@@ -78,6 +83,51 @@ def test_the_consecutive_optimization_limit_is_configurable(proposal: Experiment
     stricter = hard_gate(optimization, context(recent_experiment_types=recent, max_consecutive_optimization=2))
     assert not stricter.passed
     assert any("2 consecutive" in reason for reason in stricter.reasons)
+
+
+def test_v2_candidate_contract_and_diagnostic_phase_gate(proposal: ExperimentProposal) -> None:
+    semantic = SemanticExperimentSignature(
+        target_hypotheses=["temporal_shift"],
+        data_slice=["forward"],
+        operation=["model_training"],
+        observable=["fraud_auc"],
+        decision_affected=["candidate_selection"],
+        candidate_producing=True,
+    )
+    candidate = proposal.model_copy(
+        update={
+            "experiment_kind": ExperimentKind.CANDIDATE_PRODUCING,
+            "candidate_producing": True,
+            "semantic_signature": semantic,
+            "resource_estimate": ResourceEstimate(),
+            "descriptors": CandidateDescriptors(),
+            "required_artifacts": candidate_required_outputs(),
+        }
+    )
+    assert hard_gate(candidate, context()).passed
+    partial = candidate.model_copy(update={"required_artifacts": ["metrics.json"]})
+    assert any("artifact contract" in reason for reason in hard_gate(partial, context()).reasons)
+
+    diagnostic = proposal.model_copy(
+        update={
+            "semantic_signature": semantic.model_copy(update={"candidate_producing": False}),
+            "resource_estimate": ResourceEstimate(),
+            "decision_binding": DecisionBinding(
+                decision_id="DEC-1",
+                possible_actions=["keep", "change"],
+                result_to_action={"positive": "change", "negative": "keep"},
+            ),
+        }
+    )
+    gated = hard_gate(
+        diagnostic,
+        context(
+            enforce_v2_contract=True,
+            require_candidate_after_diagnostics=True,
+            recent_candidate_producing=(False, False, False),
+        ),
+    )
+    assert any("require a candidate-producing" in reason for reason in gated.reasons)
 
 
 def test_an_unusable_implementation_request_is_refused_before_selection(proposal: ExperimentProposal) -> None:

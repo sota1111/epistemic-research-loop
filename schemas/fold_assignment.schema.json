@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "fold_id": {
+      "minLength": 1,
+      "title": "Fold Id",
+      "type": "string"
+    },
+    "purged_row_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Purged Row Ids",
+      "type": "array"
+    },
+    "train_row_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Train Row Ids",
+      "type": "array"
+    },
+    "validation_row_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Validation Row Ids",
+      "type": "array"
+    },
+    "world_id": {
+      "minLength": 1,
+      "title": "World Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "world_id",
+    "fold_id",
+    "train_row_ids",
+    "validation_row_ids"
+  ],
+  "title": "FoldAssignment",
+  "type": "object"
+}

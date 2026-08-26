@@ -28,6 +28,11 @@ names its Linear issue.
 | 2026-08-24 | Capability closure: derived phase evidence, exploiter hand-off, validation adaptivity, discovery-scored benchmark, local-scoring cadence | `tests/unit/test_phase_evidence.py`, `tests/integration/test_exploiter_handoff.py`, `tests/unit/test_validation_adaptivity.py`, `tests/e2e/test_local_scoring_loop.py` |
 | 2026-08-24 | Live verification on IEEE-CIS Fraud Detection: 16 adaptive rounds, 21 auto-filed Linear tickets, 1 Kaggle submission, against an exploiter-only control | [ieee_cis_autonomous_loop](verification/ieee_cis_autonomous_loop.md) |
 | 2026-08-25 | Selection v2 started: research-state design fixed, preregistered likelihood forecasts and belief-conditioned mechanical EIG wired through the controller | `tests/unit/test_scoring.py`, `tests/integration/test_research_loop.py` |
+| 2026-08-25 | C-lite minimum implemented: four system modes, validation-world posterior, EVSI/risk, QD/evolution, independent counter-experiments, OOF diversity, locked final artifacts, four-arm benchmark | `tests/unit/test_validation_worlds.py`, `tests/unit/test_qd_archive.py`, `tests/unit/test_oof_diversity.py`, `tests/integration/test_c_lite_components.py` |
+| 2026-08-25 | Specification closure: executable validation splits, lineage-enforced evolution, Monte Carlo EIG, online calibration, preferred-state allocation, cross-fitted OOF ensembles, measured resource/retry reconciliation, replay manifests, contamination variants, and strict terminal final lock | `tests/unit/test_validation_splits.py`, `tests/unit/test_oof_ensemble.py`, `tests/unit/test_calibration_and_monte_carlo.py`, `tests/e2e/test_autonomous_loop.py`, `tests/integration/test_local_executor.py`, `tests/integration/test_c_lite_components.py` |
+| 2026-08-25 | IEEE-CIS branch-isolated agents: three CLI-backed System C processes selected and completed three distinct semantic experiment designs from one clean initial commit | [ieee_cis_branch_agents](verification/ieee_cis_branch_agents.md), `scripts/verify_branch_agent_diversity.py` |
+| 2026-08-26 | C-lite v0.2 scaling correction: private belief islands, selective evidence, semantic collapse control, resource/artifact gates, IEEE-CIS forward/UID plugin, multi-candidate archive and final meta-selector | [v0.2 specification](c_lite_revision_v0.2.md), `tests/unit/test_c_lite_v2.py`, `tests/unit/test_ieee_cis_v2.py`, `tests/unit/test_candidate_archive_v2.py` |
+| 2026-08-26 | IEEE-CIS v0.2 multi-island real-data verification: three generic branches produced three semantic candidate families, sequential resource admission, valid OOF artifacts and a locked nested ensemble | [multi-island verification](verification/ieee_cis_multi_island_v02.md), `scripts/run_ieee_cis_multi_island_validation.py`, `scripts/finalize_ieee_cis_multi_island_validation.py` |
 
 ## What the last milestone changed
 
@@ -64,11 +69,10 @@ what it did **not** establish.
 
 These are deliberate and unfinished, not oversights:
 
-- **The fully unattended loop (`erlctl run loop`) has still never been run.** There is no
-  `ANTHROPIC_API_KEY` in this environment, so both verifications filled the proposal slot by hand
-  through the file bridge. Gates, selection, dispositions, belief updates, phase decisions and
-  ticket filing were deterministic in both, but "autonomous" remains an untested claim about the
-  proposal stage specifically.
+- **The native multi-island control plane has completed a real-data candidate run, but not a primary-endpoint run.**
+  Three IEEE-CIS belief islands produced valid OOF candidates and a locked ensemble. The common
+  comparison covered only the intersection of independently generated OOF rows, not a full common
+  first-level cross-fit; matched Comm-0/S/F, multi-seed reproduction and Hidden performance remain open.
 - **The Research-to-Exploitation transition has not been observed in a real run.** It is implemented
   and unit-tested; the IEEE-CIS run stayed in discovery because its findings kept failing
   replication, which is the policy working rather than failing. The arithmetic is in the record.
@@ -80,17 +84,17 @@ These are deliberate and unfinished, not oversights:
   have not been run.
 - **The adaptivity guard bounds queries, it does not de-bias the estimates already taken.**
 - **`normalized_cost` scales are stipulated defaults**, not fitted to a real worker fleet.
-- **`BudgetManager.reconcile` does not yet replace estimates with observed cost.** Usage is
-  reservation-based, so a cheap experiment keeps its estimated charge.
-- **Calibration is scored after the fact only** (`belief/calibration.brier_score`); nothing calibrates
-  confidence during a run, and the ontology says so.
-- **Research-state selection v2 is only at its first vertical slice.** New proposals can replace
-  the subjective epistemic rubric with belief-conditioned EIG, while old proposals retain an
-  auditable fallback. Validation-world projection, preferred-state gap estimation, calibration,
-  information-redundancy penalties, and role-scoped proposal agents are not implemented yet; see
+- **Preferred-state targets are configured, not learned across competitions.** System C now derives
+  the current gap and uses it in allocation, but leave-one-competition/domain-out learning of a
+  target distribution remains outside C-lite.
+- **Forecast calibration is online but data-hungry.** It records categorical and interval metrics
+  and shrinks future priors for poorly calibrated agents/categories; it does not fit a non-parametric
+  calibration map from a handful of early-run observations.
+- **Portfolio-level information redundancy and broader role-scoped proposal agents remain open**; see
   [research-state-aware experiment selection](research_state_selection.md).
-- **The local executor is a development sandbox**, not the production isolation described in
-  [security](security.md).
+- **The local executor is a bounded Linux development sandbox**, with CPU affinity/time, RAM and
+  Python-network enforcement. Read-only mounts and language-agnostic network namespaces remain the
+  production control plane's responsibility; see [security](security.md).
 
 ## Where to read next
 

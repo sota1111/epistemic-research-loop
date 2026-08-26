@@ -6,8 +6,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk
-from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
+from epistemic_loop.controller.candidate_artifacts import CANDIDATE_ARTIFACT_CONTRACT
+from epistemic_loop.controller.diversity_control import semantic_similarity
+from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk, RunMode
+from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal, SemanticExperimentSignature
 from epistemic_loop.holdout.adaptivity import exhausted as validation_budget_exhausted
 from epistemic_loop.holdout.adaptivity import validation_fingerprint
 
@@ -23,12 +25,17 @@ class GateContext:
     holdout_policy: HoldoutPolicyName
     prior_fingerprints: frozenset[str] = frozenset()
     recent_experiment_types: tuple[ExperimentType, ...] = ()
+    recent_candidate_producing: tuple[bool, ...] = ()
+    prior_semantic_signatures: tuple[SemanticExperimentSignature, ...] = ()
     source_policy_strict: bool = True
     validation_reuse: Mapping[str, int] = field(default_factory=dict)
     max_validation_reuse: int = 0
     #: Consecutive optimization experiments allowed before a non-optimization run is required.
     #: 0 disables the rule, which is what an exploiter-only control arm needs.
     max_consecutive_optimization: int = 3
+    max_consecutive_diagnostics: int = 3
+    require_candidate_after_diagnostics: bool = False
+    enforce_v2_contract: bool = False
     #: Lineages the research brief approved. Empty means no brief has been published, and the
     #: restriction does not apply -- exploitation cannot be entered without one anyway.
     approved_lineages: frozenset[str] = frozenset()
@@ -41,6 +48,12 @@ class GateContext:
     required_brief_fields: tuple[str, ...] = ()
     #: Shortcuts the brief prohibited, matched against the experiment's holdout access.
     prohibited_shortcuts: tuple[str, ...] = ()
+    run_mode: RunMode = RunMode.EPISTEMIC
+    hypotheses_with_alternatives: frozenset[str] = frozenset()
+    validation_hypothesis_ids: frozenset[str] = frozenset()
+    validation_world_ids: frozenset[str] = frozenset()
+    qd_candidate_ids: frozenset[str] = frozenset()
+    falsification_targets: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -51,7 +64,7 @@ class GateResult:
 
 
 def experiment_fingerprint(experiment: ExperimentProposal) -> str:
-    identity = {
+    identity: dict[str, object] = {
         "hypothesis_ids": sorted(experiment.hypothesis_ids),
         "protocol": experiment.protocol.strip(),
         "split_strategy": experiment.split_strategy.strip(),
@@ -59,6 +72,11 @@ def experiment_fingerprint(experiment: ExperimentProposal) -> str:
         "metrics": sorted(experiment.metrics),
         "implementation_request": experiment.implementation_request,
     }
+    if experiment.semantic_signature is not None:
+        identity = {
+            "semantic_signature": experiment.semantic_signature.model_dump(mode="json"),
+            "replication": experiment.replication.model_dump(mode="json") if experiment.replication else None,
+        }
     value = json.dumps(identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -66,6 +84,57 @@ def experiment_fingerprint(experiment: ExperimentProposal) -> str:
 def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResult:
     reasons: list[str] = []
     fingerprint = experiment_fingerprint(experiment)
+
+    if context.run_mode == RunMode.SYSTEM_A and experiment.experiment_type not in {
+        ExperimentType.EXPLOIT,
+        ExperimentType.OPTIMIZATION,
+    }:
+        reasons.append("System A permits only exploit/optimization experiments")
+    if context.run_mode == RunMode.SYSTEM_B and experiment.experiment_type not in {
+        ExperimentType.EXPLOIT,
+        ExperimentType.OPTIMIZATION,
+        ExperimentType.SOLUTION_EXPLORE,
+        ExperimentType.ENSEMBLE,
+        ExperimentType.ROBUSTNESS,
+        ExperimentType.ABLATION,
+    }:
+        reasons.append("System B excludes epistemic and falsification experiments")
+    if context.run_mode == RunMode.SYSTEM_B_PLUS and experiment.experiment_type == ExperimentType.FALSIFICATION:
+        reasons.append("System B+ excludes independent falsification experiments")
+    if (
+        context.run_mode in {RunMode.SYSTEM_B, RunMode.SYSTEM_B_PLUS, RunMode.SYSTEM_C}
+        and experiment.experiment_type
+        in {
+            ExperimentType.EXPLOIT,
+            ExperimentType.OPTIMIZATION,
+            ExperimentType.SOLUTION_EXPLORE,
+            ExperimentType.ENSEMBLE,
+        }
+        and experiment.descriptors is None
+    ):
+        reasons.append(f"{context.run_mode.value} candidate-producing experiments require QD descriptors")
+    unknown_parents = sorted(set(experiment.parent_candidate_ids) - set(context.qd_candidate_ids))
+    if unknown_parents:
+        reasons.append(f"unknown QD parent candidates: {', '.join(unknown_parents)}")
+    if (
+        context.run_mode in {RunMode.SYSTEM_B, RunMode.SYSTEM_B_PLUS, RunMode.SYSTEM_C}
+        and context.qd_candidate_ids
+        and experiment.experiment_type
+        in {
+            ExperimentType.EXPLOIT,
+            ExperimentType.OPTIMIZATION,
+            ExperimentType.SOLUTION_EXPLORE,
+            ExperimentType.ENSEMBLE,
+        }
+        and experiment.variation_operator == "seed"
+    ):
+        reasons.append("an established QD population requires mutation or crossover lineage")
+    if context.run_mode == RunMode.SYSTEM_C and experiment.experiment_type == ExperimentType.FALSIFICATION:
+        target = context.falsification_targets.get(experiment.falsification_proposal_id or "")
+        if target is None:
+            reasons.append("System C falsification experiments must consume an independent falsifier proposal")
+        elif target not in experiment.hypothesis_ids:
+            reasons.append("falsification experiment does not target its independent proposal hypothesis")
 
     unknown = sorted(set(experiment.hypothesis_ids) - context.hypothesis_ids)
     if unknown:
@@ -77,6 +146,30 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         reasons.append(f"outcome forecasts target unlinked hypotheses: {', '.join(unlinked_forecasts)}")
     if not experiment.predicted_outcomes:
         reasons.append("predicted outcomes are required")
+    if (
+        context.run_mode == RunMode.SYSTEM_C
+        and experiment.experiment_type
+        in {ExperimentType.DIAGNOSTIC, ExperimentType.EPISTEMIC, ExperimentType.FALSIFICATION}
+        and not experiment.outcome_forecasts
+    ):
+        reasons.append("System C epistemic experiments require preregistered likelihood forecasts")
+    if context.run_mode == RunMode.SYSTEM_C:
+        no_alternative = sorted(
+            {
+                item.hypothesis_id
+                for item in experiment.outcome_forecasts
+                if item.hypothesis_id not in context.hypotheses_with_alternatives
+            }
+        )
+        if no_alternative:
+            reasons.append(f"EIG hypotheses require an explicit alternative: {', '.join(no_alternative)}")
+        targets_validation = bool(set(experiment.hypothesis_ids) & context.validation_hypothesis_ids)
+        if targets_validation and experiment.validation_world_forecast is None:
+            reasons.append("System C validation experiments require a validation-world outcome forecast")
+        if experiment.validation_world_forecast is not None:
+            forecast_worlds = set(experiment.validation_world_forecast.outcomes[0].probability_by_world)
+            if forecast_worlds != set(context.validation_world_ids):
+                reasons.append("validation-world forecast must cover every active validation world exactly")
     if not experiment.decision_rule.strip():
         reasons.append("decision rule is required")
     request = experiment.implementation_request
@@ -122,8 +215,45 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
     for artifact in experiment.required_artifacts:
         # Checked for existence after the run, so a sentence describing a file is a guaranteed
         # failure -- and one discovered only after the experiment has already been executed.
-        if not artifact or " " in artifact or artifact.startswith("/") or ".." in artifact:
+        if not artifact or " " in artifact or artifact.startswith("/") or ".." in Path(artifact).parts:
             reasons.append(f"required_artifacts must be plain relative file names, not {artifact!r}")
+    if experiment.candidate_producing:
+        missing_candidate_artifacts = sorted(set(CANDIDATE_ARTIFACT_CONTRACT) - set(experiment.required_artifacts))
+        if missing_candidate_artifacts:
+            reasons.append(
+                f"candidate-producing experiment is missing artifact contract: {missing_candidate_artifacts}"
+            )
+        if experiment.descriptors is None:
+            reasons.append("candidate-producing experiment requires candidate descriptors")
+        if experiment.semantic_signature is None:
+            reasons.append("candidate-producing experiment requires a semantic signature")
+        if experiment.resource_estimate is None:
+            reasons.append("candidate-producing experiment requires a resource estimate")
+        if experiment.semantic_signature is not None:
+            operations = set(experiment.semantic_signature.operation)
+            observables = set(experiment.semantic_signature.observable)
+            if "adversarial_classifier" in operations and not any(
+                "fraud" in observable and "auc" in observable for observable in observables
+            ):
+                reasons.append(
+                    "adversarial AUC is diagnostic only; candidate adoption requires forward fraud-label AUC"
+                )
+    if context.enforce_v2_contract:
+        if experiment.semantic_signature is None:
+            reasons.append("C-lite v0.2 experiments require a semantic signature")
+        if experiment.resource_estimate is None:
+            reasons.append("C-lite v0.2 experiments require a resource estimate")
+        if not experiment.candidate_producing and experiment.decision_binding is None:
+            reasons.append("diagnostic experiments require a preregistered decision binding")
+    if (
+        experiment.semantic_signature is not None
+        and experiment.replication is None
+        and any(
+            semantic_similarity(experiment.semantic_signature, item) >= 0.85
+            for item in context.prior_semantic_signatures
+        )
+    ):
+        reasons.append("semantic duplicate (only a preregistered replication may repeat it)")
     if experiment.contamination_risk == Risk.HIGH:
         reasons.append("high contamination risk")
     if context.source_policy_strict and any(not source.allowed for source in experiment.source_refs):
@@ -177,5 +307,17 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         and experiment.experiment_type == ExperimentType.OPTIMIZATION
     ):
         reasons.append(f"{limit} consecutive optimization runs require a diagnostic, replication, or falsification run")
+
+    diagnostic_limit = context.max_consecutive_diagnostics
+    diagnostic_tail = context.recent_candidate_producing[-diagnostic_limit:] if diagnostic_limit else ()
+    if (
+        context.require_candidate_after_diagnostics
+        and diagnostic_limit
+        and len(diagnostic_tail) == diagnostic_limit
+        and not any(diagnostic_tail)
+        and not experiment.candidate_producing
+        and experiment.candidate_exception_reason is None
+    ):
+        reasons.append(f"{diagnostic_limit} consecutive diagnostics require a candidate-producing experiment")
 
     return GateResult(passed=not reasons, reasons=tuple(reasons), fingerprint=fingerprint)

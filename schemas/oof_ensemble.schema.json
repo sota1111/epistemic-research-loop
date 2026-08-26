@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Ids",
+      "type": "array"
+    },
+    "best_single_loss": {
+      "minimum": 0,
+      "title": "Best Single Loss",
+      "type": "number"
+    },
+    "candidate_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "title": "Candidate Ids",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "cross_fitted_loss": {
+      "minimum": 0,
+      "title": "Cross Fitted Loss",
+      "type": "number"
+    },
+    "fold_weights": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "type": "number"
+        },
+        "type": "object"
+      },
+      "minProperties": 2,
+      "title": "Fold Weights",
+      "type": "object"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "marginal_gain": {
+      "title": "Marginal Gain",
+      "type": "number"
+    },
+    "method": {
+      "const": "cross_fitted_simplex_mse",
+      "default": "cross_fitted_simplex_mse",
+      "title": "Method",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "validation_world": {
+      "minLength": 1,
+      "title": "Validation World",
+      "type": "string"
+    },
+    "weights": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "minProperties": 2,
+      "title": "Weights",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "candidate_ids",
+    "validation_world",
+    "weights",
+    "fold_weights",
+    "cross_fitted_loss",
+    "best_single_loss",
+    "marginal_gain"
+  ],
+  "title": "OOFEnsemble",
+  "type": "object"
+}

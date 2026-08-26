@@ -1,0 +1,210 @@
+{
+  "$defs": {
+    "CostEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cpu Hours",
+          "type": "number"
+        },
+        "failure_probability": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "gpu_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Hours",
+          "type": "number"
+        },
+        "llm_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Llm Tokens",
+          "type": "integer"
+        },
+        "monetary_cost": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Monetary Cost",
+          "type": "number"
+        },
+        "wall_hours": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Wall Hours",
+          "type": "number"
+        }
+      },
+      "title": "CostEstimate",
+      "type": "object"
+    },
+    "FailureClass": {
+      "enum": [
+        "infrastructure",
+        "implementation",
+        "model",
+        "invalid_design"
+      ],
+      "title": "FailureClass",
+      "type": "string"
+    },
+    "ObservedResourceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Hours"
+        },
+        "gpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Hours"
+        },
+        "llm_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Tokens"
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monetary Cost"
+        },
+        "peak_ram_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Ram Gb"
+        },
+        "wall_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Hours"
+        }
+      },
+      "title": "ObservedResourceUsage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Auditable cost and cause of one discarded infrastructure-failure attempt.",
+  "properties": {
+    "charged_cost": {
+      "$ref": "#/$defs/CostEstimate"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "failed_attempt": {
+      "minimum": 1,
+      "title": "Failed Attempt",
+      "type": "integer"
+    },
+    "failure_class": {
+      "$ref": "#/$defs/FailureClass"
+    },
+    "failure_excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Excerpt"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "next_attempt": {
+      "minimum": 2,
+      "title": "Next Attempt",
+      "type": "integer"
+    },
+    "resource_usage": {
+      "$ref": "#/$defs/ObservedResourceUsage"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "experiment_id",
+    "failed_attempt",
+    "next_attempt",
+    "failure_class",
+    "charged_cost"
+  ],
+  "title": "ExperimentRetryRecord",
+  "type": "object"
+}

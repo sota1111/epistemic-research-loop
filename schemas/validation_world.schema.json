@@ -1,0 +1,180 @@
+{
+  "$defs": {
+    "ValidationDiagnostics": {
+      "additionalProperties": false,
+      "properties": {
+        "leakage_risk": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Leakage Risk"
+        },
+        "model_rank_stability": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": -1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Rank Stability"
+        },
+        "pseudo_future_accuracy": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pseudo Future Accuracy"
+        },
+        "rank_reversal_rate": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rank Reversal Rate"
+        },
+        "score_variance": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score Variance"
+        },
+        "train_valid_shift": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Train Valid Shift"
+        }
+      },
+      "title": "ValidationDiagnostics",
+      "type": "object"
+    },
+    "ValidationSplitType": {
+      "enum": [
+        "random",
+        "stratified",
+        "group",
+        "time",
+        "rolling_time",
+        "time_group",
+        "entity_seen",
+        "entity_unseen",
+        "adversarial_weighted"
+      ],
+      "title": "ValidationSplitType",
+      "type": "string"
+    },
+    "ValidationWorldStatus": {
+      "enum": [
+        "active",
+        "disabled"
+      ],
+      "title": "ValidationWorldStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "diagnostics": {
+      "$ref": "#/$defs/ValidationDiagnostics"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "posterior_probability": {
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Posterior Probability",
+      "type": "number"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "split_type": {
+      "$ref": "#/$defs/ValidationSplitType"
+    },
+    "status": {
+      "$ref": "#/$defs/ValidationWorldStatus",
+      "default": "active"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "split_type",
+    "assumptions",
+    "posterior_probability"
+  ],
+  "title": "ValidationWorld",
+  "type": "object"
+}

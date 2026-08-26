@@ -1,5 +1,85 @@
 {
   "$defs": {
+    "CandidateDescriptors": {
+      "additionalProperties": false,
+      "description": "Behavior descriptor used by the solution and epistemic QD archives.",
+      "properties": {
+        "data_scope": {
+          "default": "train_only",
+          "minLength": 1,
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "entity_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Entity Hypothesis",
+          "type": "string"
+        },
+        "epistemic_niche": {
+          "default": "unassigned",
+          "minLength": 1,
+          "title": "Epistemic Niche",
+          "type": "string"
+        },
+        "error_profile": {
+          "default": "global",
+          "minLength": 1,
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "model_family": {
+          "default": "other",
+          "minLength": 1,
+          "title": "Model Family",
+          "type": "string"
+        },
+        "post_processing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Post Processing",
+          "type": "string"
+        },
+        "representation": {
+          "default": "raw",
+          "minLength": 1,
+          "title": "Representation",
+          "type": "string"
+        },
+        "routing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Routing",
+          "type": "string"
+        },
+        "shift_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Shift Hypothesis",
+          "type": "string"
+        },
+        "source_agent": {
+          "default": "unknown",
+          "minLength": 1,
+          "title": "Source Agent",
+          "type": "string"
+        },
+        "validation_type": {
+          "default": "random",
+          "minLength": 1,
+          "title": "Validation Type",
+          "type": "string"
+        },
+        "validation_world": {
+          "default": "unspecified",
+          "minLength": 1,
+          "title": "Validation World",
+          "type": "string"
+        }
+      },
+      "title": "CandidateDescriptors",
+      "type": "object"
+    },
     "CostEstimate": {
       "additionalProperties": false,
       "properties": {
@@ -44,6 +124,84 @@
       "title": "CostEstimate",
       "type": "object"
     },
+    "DecisionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "action_changed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Changed"
+        },
+        "action_neutral_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Neutral Reason"
+        },
+        "decision_id": {
+          "minLength": 1,
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "possible_actions": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Possible Actions",
+          "type": "array"
+        },
+        "result_to_action": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "minProperties": 1,
+          "title": "Result To Action",
+          "type": "object"
+        }
+      },
+      "required": [
+        "decision_id",
+        "possible_actions",
+        "result_to_action"
+      ],
+      "title": "DecisionBinding",
+      "type": "object"
+    },
+    "DecisionOutcome": {
+      "enum": [
+        "informative_action_changing",
+        "informative_action_neutral",
+        "inconclusive",
+        "invalid"
+      ],
+      "title": "DecisionOutcome",
+      "type": "string"
+    },
     "Direction": {
       "enum": [
         "increase",
@@ -53,6 +211,45 @@
       ],
       "title": "Direction",
       "type": "string"
+    },
+    "EVSIProxy": {
+      "additionalProperties": false,
+      "description": "Auditable value-of-sample-information approximation.\n\nThe proxy is deliberately factored into the probability that a downstream\ndecision changes and the utility difference between the competing actions.\nAn agent cannot provide a final EVSI number independently of these inputs.",
+      "properties": {
+        "decision_change_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Decision Change Probability",
+          "type": "number"
+        },
+        "decision_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "utility_difference": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Utility Difference",
+          "type": "number"
+        }
+      },
+      "required": [
+        "decision_change_probability",
+        "utility_difference",
+        "decision_ids",
+        "rationale"
+      ],
+      "title": "EVSIProxy",
+      "type": "object"
     },
     "EpistemicAssessment": {
       "additionalProperties": false,
@@ -104,6 +301,31 @@
       "title": "EpistemicAssessment",
       "type": "object"
     },
+    "EpistemicNiche": {
+      "enum": [
+        "temporal",
+        "entity_client",
+        "validation",
+        "distribution_shift",
+        "label_quality",
+        "feature_representation",
+        "model_family",
+        "error_analysis",
+        "falsification",
+        "post_processing",
+        "ensemble"
+      ],
+      "title": "EpistemicNiche",
+      "type": "string"
+    },
+    "ExperimentKind": {
+      "enum": [
+        "diagnostic",
+        "candidate_producing"
+      ],
+      "title": "ExperimentKind",
+      "type": "string"
+    },
     "ExperimentStatus": {
       "enum": [
         "proposed",
@@ -119,10 +341,14 @@
     },
     "ExperimentType": {
       "enum": [
+        "exploit",
+        "solution_explore",
+        "epistemic",
         "diagnostic",
         "optimization",
         "falsification",
         "robustness",
+        "ensemble",
         "replication",
         "ablation"
       ],
@@ -216,6 +442,20 @@
           "title": "Condition",
           "type": "string"
         },
+        "coverage_level": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Level"
+        },
         "description": {
           "minLength": 1,
           "title": "Description",
@@ -259,6 +499,95 @@
         "condition"
       ],
       "title": "PredictedOutcome",
+      "type": "object"
+    },
+    "ReplicationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_condition": {
+          "items": {
+            "enum": [
+              "seed",
+              "time_window",
+              "entity_slice"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Changed Condition",
+          "type": "array"
+        },
+        "original_experiment_id": {
+          "minLength": 1,
+          "title": "Original Experiment Id",
+          "type": "string"
+        },
+        "replication_hypothesis": {
+          "minLength": 1,
+          "title": "Replication Hypothesis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "original_experiment_id",
+        "changed_condition",
+        "replication_hypothesis"
+      ],
+      "title": "ReplicationSpec",
+      "type": "object"
+    },
+    "ResourceEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_cores": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Cpu Cores",
+          "type": "integer"
+        },
+        "expected_minutes": {
+          "default": 60,
+          "exclusiveMinimum": 0,
+          "title": "Expected Minutes",
+          "type": "number"
+        },
+        "full_table_materialization": {
+          "default": false,
+          "title": "Full Table Materialization",
+          "type": "boolean"
+        },
+        "gpu_memory_gb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Memory Gb",
+          "type": "number"
+        },
+        "heavy": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heavy"
+        },
+        "memory_gb": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "parquet_scan_columns": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Parquet Scan Columns",
+          "type": "integer"
+        }
+      },
+      "title": "ResourceEstimate",
       "type": "object"
     },
     "Risk": {
@@ -362,6 +691,66 @@
       "title": "ScoreEstimate",
       "type": "object"
     },
+    "SemanticExperimentSignature": {
+      "additionalProperties": false,
+      "description": "Meaning-level identity used instead of command or experiment ID.",
+      "properties": {
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "data_slice": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Slice",
+          "type": "array"
+        },
+        "decision_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Affected",
+          "type": "array"
+        },
+        "observable": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable",
+          "type": "array"
+        },
+        "operation": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operation",
+          "type": "array"
+        },
+        "target_hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Hypotheses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_hypotheses",
+        "data_slice",
+        "operation",
+        "observable",
+        "decision_affected"
+      ],
+      "title": "SemanticExperimentSignature",
+      "type": "object"
+    },
     "SourceRef": {
       "additionalProperties": false,
       "properties": {
@@ -441,10 +830,97 @@
       ],
       "title": "SourceRef",
       "type": "object"
+    },
+    "ValidationOutcomeLikelihood": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "probability_by_world": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "minProperties": 2,
+          "title": "Probability By World",
+          "type": "object"
+        }
+      },
+      "required": [
+        "label",
+        "probability_by_world"
+      ],
+      "title": "ValidationOutcomeLikelihood",
+      "type": "object"
+    },
+    "ValidationWorldForecast": {
+      "additionalProperties": false,
+      "description": "Preregistered categorical result distribution under each validation world.",
+      "properties": {
+        "decisions_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decisions Affected",
+          "type": "array"
+        },
+        "measurement_notes": {
+          "minLength": 1,
+          "title": "Measurement Notes",
+          "type": "string"
+        },
+        "metric_name": {
+          "minLength": 1,
+          "title": "Metric Name",
+          "type": "string"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/ValidationOutcomeLikelihood"
+          },
+          "minItems": 2,
+          "title": "Outcomes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "outcomes",
+        "metric_name",
+        "decisions_affected",
+        "measurement_notes"
+      ],
+      "title": "ValidationWorldForecast",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
+    "candidate_exception_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "validation_leakage_unresolved",
+            "dataset_corruption_unresolved",
+            "required_observation_missing",
+            "insufficient_resources"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Candidate Exception Reason"
+    },
+    "candidate_producing": {
+      "default": false,
+      "title": "Candidate Producing",
+      "type": "boolean"
+    },
     "contamination_risk": {
       "$ref": "#/$defs/Risk",
       "default": "low"
@@ -457,22 +933,82 @@
       "title": "Controls",
       "type": "array"
     },
+    "decision_binding": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DecisionBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "decision_rule": {
       "minLength": 1,
       "title": "Decision Rule",
       "type": "string"
     },
+    "descriptors": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CandidateDescriptors"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "epistemic_assessment": {
       "$ref": "#/$defs/EpistemicAssessment"
+    },
+    "epistemic_niche": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EpistemicNiche"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "estimated_cost": {
       "$ref": "#/$defs/CostEstimate"
     },
+    "evsi_proxy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EVSIProxy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "expected_score_gain": {
       "$ref": "#/$defs/ScoreEstimate"
     },
+    "experiment_kind": {
+      "$ref": "#/$defs/ExperimentKind",
+      "default": "diagnostic"
+    },
     "experiment_type": {
       "$ref": "#/$defs/ExperimentType"
+    },
+    "falsification_proposal_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Falsification Proposal Id"
     },
     "holdout_access": {
       "$ref": "#/$defs/HoldoutAccess",
@@ -535,6 +1071,13 @@
       "title": "Outcome Forecasts",
       "type": "array"
     },
+    "parent_candidate_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Parent Candidate Ids",
+      "type": "array"
+    },
     "predicted_outcomes": {
       "items": {
         "$ref": "#/$defs/PredictedOutcome"
@@ -543,10 +1086,27 @@
       "title": "Predicted Outcomes",
       "type": "array"
     },
+    "proposer_agent": {
+      "default": "experiment-designer",
+      "minLength": 1,
+      "title": "Proposer Agent",
+      "type": "string"
+    },
     "protocol": {
       "minLength": 1,
       "title": "Protocol",
       "type": "string"
+    },
+    "replication": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReplicationSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "required_artifacts": {
       "description": "File names the experiment must leave in its output directory, relative and without directories -- for example `metrics.json`. These are checked for existence after the run, so a description of what a file should contain is not one of these; it belongs in the protocol. `metrics.json` is expected by every executor.",
@@ -561,6 +1121,17 @@
       "minLength": 1,
       "title": "Research Question",
       "type": "string"
+    },
+    "resource_estimate": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResourceEstimate"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "robustness_assessment": {
       "$ref": "#/$defs/RobustnessAssessment"
@@ -577,6 +1148,17 @@
       "title": "Seeds",
       "type": "array"
     },
+    "semantic_signature": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SemanticExperimentSignature"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "source_refs": {
       "items": {
         "$ref": "#/$defs/SourceRef"
@@ -592,6 +1174,27 @@
     "status": {
       "$ref": "#/$defs/ExperimentStatus",
       "default": "proposed"
+    },
+    "validation_world_forecast": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ValidationWorldForecast"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "variation_operator": {
+      "default": "seed",
+      "enum": [
+        "seed",
+        "mutation",
+        "crossover"
+      ],
+      "title": "Variation Operator",
+      "type": "string"
     },
     "version": {
       "default": 1,

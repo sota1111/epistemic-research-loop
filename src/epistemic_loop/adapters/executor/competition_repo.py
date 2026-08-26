@@ -8,8 +8,9 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from epistemic_loop.adapters.executor.base import BRIEF_CONTRACT, ExecutorAdapter
-from epistemic_loop.domain.enums import FailureClass
+from epistemic_loop.adapters.executor.base import CODE_DEVELOPMENT_CONTRACT, ExecutorAdapter
+from epistemic_loop.controller.candidate_artifacts import CandidateArtifactValidator
+from epistemic_loop.domain.enums import FailureClass, TerminalStatus
 from epistemic_loop.domain.models import ExperimentRequest, ExperimentResult
 
 #: Ordinary-looking tracking id. It is how a retry finds the ticket it already filed, and it reads
@@ -38,7 +39,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
     does not ask the worker to fill in a schema it would otherwise never see.
     """
 
-    contract = BRIEF_CONTRACT
+    contract = CODE_DEVELOPMENT_CONTRACT
 
     def __init__(
         self,
@@ -52,6 +53,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
         state_id: str | None = None,
         api_key_env: str = "LINEAR_API_KEY",
         api_url: str = "https://api.linear.app/graphql",
+        artifact_validator: CandidateArtifactValidator | None = None,
     ):
         self.team_id = team_id
         self.project_id = project_id
@@ -62,6 +64,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
         self.state_id = state_id
         self.api_key_env = api_key_env
         self.api_url = api_url
+        self.artifact_validator = artifact_validator or CandidateArtifactValidator()
 
     # ------------------------------------------------------------------ linear
 
@@ -234,6 +237,7 @@ class CompetitionRepoAdapter(ExecutorAdapter):
                 run_id=request.run_id,
                 attempt=1,
                 status="failed",
+                terminal_status=TerminalStatus.FAILED_EXECUTION,
                 exit_code=1,
                 failure_class=FailureClass.INFRASTRUCTURE,
                 commit_sha=_head_commit(self.repo_path) or request.base_commit_sha,
@@ -253,27 +257,44 @@ class CompetitionRepoAdapter(ExecutorAdapter):
             raise ValueError(f"{path} must contain a flat object of metric name to number")
         metrics = {str(key): float(value) for key, value in raw.items() if isinstance(value, (int, float))}
         directory = path.parent
+        missing = [name for name in request.required_outputs if not (directory / name).exists()]
+        validation = self.artifact_validator.validate(directory) if request.candidate_producing else None
+        valid = bool(metrics) and not missing and (validation is None or validation.valid)
+        terminal_status = (
+            TerminalStatus.COMPLETED
+            if valid
+            else validation.terminal_status
+            if validation is not None and not validation.valid
+            else TerminalStatus.INVALID_ARTIFACT
+        )
+        details = []
+        if missing:
+            details.append(f"missing required outputs: {missing}")
+        if validation is not None:
+            details.extend(validation.invalid)
+            details.extend(f"missing candidate artifact: {item}" for item in validation.missing)
         return ExperimentResult(
             experiment_id=request.experiment_id,
             run_id=request.run_id,
             attempt=1,
-            status="completed" if metrics else "failed",
-            exit_code=0 if metrics else 1,
-            failure_class=None if metrics else FailureClass.IMPLEMENTATION,
+            status="completed" if valid else "failed",
+            terminal_status=terminal_status,
+            exit_code=0 if valid else 1,
+            failure_class=None if valid else FailureClass.IMPLEMENTATION,
             failure_excerpt=(
                 None
-                if metrics
+                if valid
                 else (
                     f"{path.relative_to(self.repo_path)} exists but holds no numeric value; its keys are "
-                    f"{sorted(raw)[:12]}. A run that produced no numbers did not answer the question it "
-                    "was filed to answer."
+                    f"{sorted(raw)[:12]}. {'; '.join(details)}. A run without its required artifacts "
+                    "did not produce a valid measurement or candidate."
                 )[:2000]
             ),
             commit_sha=_head_commit(self.repo_path) or request.base_commit_sha,
             environment_hash="competition-repo",
             dataset_fingerprint="competition-repo",
             metrics=metrics,
-            artifact_refs=sorted(str(item) for item in directory.iterdir() if item.is_file()),
+            artifact_refs=sorted(str(item) for item in directory.rglob("*") if item.is_file()),
             runtime={},
             external_ref=(ticket or {}).get("identifier") or (ticket or {}).get("id"),
         )

@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "minLength": 1,
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "format": {
+      "enum": [
+        "jsonl",
+        "parquet"
+      ],
+      "title": "Format",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "row_count": {
+      "minimum": 1,
+      "title": "Row Count",
+      "type": "integer"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[a-fA-F0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "uri": {
+      "minLength": 1,
+      "title": "Uri",
+      "type": "string"
+    },
+    "validation_world": {
+      "minLength": 1,
+      "title": "Validation World",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "candidate_id",
+    "validation_world",
+    "uri",
+    "sha256",
+    "row_count",
+    "format"
+  ],
+  "title": "OOFArtifact",
+  "type": "object"
+}

@@ -1,24 +1,29 @@
 from __future__ import annotations
 
 import time
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from epistemic_loop.adapters.executor.base import ExecutorAdapter, result_path
 from epistemic_loop.agents.auto import AutomaticProposer
 from epistemic_loop.agents.belief_interpreter import DISPOSITION_STATUS, interpret_evidence
 from epistemic_loop.agents.falsifier import Falsifier
+from epistemic_loop.agents.proposal_bridge import FalsificationAssessment
 from epistemic_loop.agents.research_synthesizer import derive_brief
-from epistemic_loop.belief.updater import belief_update
+from epistemic_loop.belief.updater import bayesian_belief_update, belief_update
 from epistemic_loop.config import AppConfig
 from epistemic_loop.controller.execution_contract import build_experiment_request
+from epistemic_loop.controller.mode_policy import capabilities
 from epistemic_loop.controller.phase_evidence import derive_phase_evidence
 from epistemic_loop.controller.research_graph import ResearchController
 from epistemic_loop.controller.stop_policy import should_stop
-from epistemic_loop.domain.enums import ExperimentStatus, LoopState, Phase
+from epistemic_loop.domain.enums import ExperimentStatus, FailureClass, LoopState, Phase, RunMode, VerifierResult
 from epistemic_loop.domain.events import EventType
 from epistemic_loop.domain.models import (
+    AgentResourceRecord,
     CompetitionWorldModel,
     ExperimentRequest,
     ExperimentResult,
@@ -40,6 +45,7 @@ class RoundOutcome:
     round: int
     hypotheses: list[str] = field(default_factory=list)
     experiments: list[str] = field(default_factory=list)
+    falsification_proposals: list[str] = field(default_factory=list)
     selected: list[str] = field(default_factory=list)
     observations: list[str] = field(default_factory=list)
     beliefs: list[str] = field(default_factory=list)
@@ -90,6 +96,30 @@ class AutonomousLoop:
         if payload is None:
             raise ValueError(f"run {run_id} has no world model; start the run first")
         return CompetitionWorldModel.model_validate(payload)
+
+    def _record_llm_usage(
+        self,
+        run_id: str,
+        *,
+        agent: str,
+        stage: Literal["hypothesis_generation", "experiment_design", "falsification_assessment"],
+    ) -> None:
+        usage = self.proposer.take_usage()
+        if usage is None:
+            return
+        self.controller.record_agent_resource(
+            run_id,
+            AgentResourceRecord(
+                id=f"AR-{uuid.uuid4().hex[:12]}",
+                run_id=run_id,
+                agent=agent,
+                stage=stage,
+                model=usage.model,
+                input_tokens=usage.input_tokens,
+                output_tokens=usage.output_tokens,
+                cache_tokens=usage.cache_tokens,
+            ),
+        )
 
     def _request_for(self, run_id: str, experiment_id: str) -> ExperimentRequest:
         """Rebuild the worker request for an experiment already in flight.
@@ -150,7 +180,45 @@ class AutonomousLoop:
 
         assessments = []
         for hypothesis, linked, proposal in pairs:
-            assessment = self.proposer.assess(run_id, hypothesis, linked, proposal, state)
+            forecast = next(
+                (item for item in proposal.outcome_forecasts if item.hypothesis_id == hypothesis.id),
+                None,
+            )
+            observed_label = linked[0].observed_outcomes.get(hypothesis.id)
+            likelihood = (
+                next((item for item in forecast.outcomes if item.label == observed_label), None)
+                if forecast is not None and observed_label
+                else None
+            )
+            if likelihood is not None:
+                supports = likelihood.probability_if_true > likelihood.probability_if_false
+                contradicts = likelihood.probability_if_false > likelihood.probability_if_true
+                assessment = FalsificationAssessment(
+                    hypothesis_id=hypothesis.id,
+                    supporting_predictions=[likelihood.label] if supports else [],
+                    contradicting_predictions=[likelihood.label] if contradicts else [],
+                    alternative_explanation=(
+                        hypothesis.alternative_hypothesis_ids[0]
+                        if hypothesis.alternative_hypothesis_ids
+                        else "registered complement hypothesis"
+                    ),
+                    confounders_checked=["preregistered categorical outcome"],
+                    verifier_result=VerifierResult.PASS,
+                    evidence_summary=(
+                        f"observed preregistered outcome {likelihood.label}: "
+                        f"p(y|H)={likelihood.probability_if_true:g}, "
+                        f"p(y|not H)={likelihood.probability_if_false:g}"
+                    ),
+                )
+            else:
+                try:
+                    assessment = self.proposer.assess(run_id, hypothesis, linked, proposal, state)
+                finally:
+                    self._record_llm_usage(
+                        run_id,
+                        agent="independent-falsifier",
+                        stage="falsification_assessment",
+                    )
             record: FalsificationRecord = Falsifier().record(
                 hypothesis,
                 linked,
@@ -162,18 +230,28 @@ class AutonomousLoop:
                 alternative_claims=assessment.alternative_claims,
             )
             self.controller.record_falsification(run_id, record)
-            assessments.append((hypothesis, record, assessment, [item.id for item in linked]))
+            assessments.append((hypothesis, record, assessment, [item.id for item in linked], likelihood))
 
-        for hypothesis, record, assessment, observation_ids in assessments:
+        for hypothesis, record, assessment, observation_ids, likelihood in assessments:
             current = self.controller.state(run_id).hypotheses[hypothesis.id]
-            update = belief_update(
-                hypothesis.id,
-                current.current_confidence,
-                interpret_evidence(record),
-                assessment.evidence_summary,
-                observation_ids,
-                assessment.verifier_result,
-            )
+            if likelihood is not None:
+                update = bayesian_belief_update(
+                    hypothesis.id,
+                    current.current_confidence,
+                    likelihood,
+                    assessment.evidence_summary,
+                    observation_ids,
+                    assessment.verifier_result,
+                )
+            else:
+                update = belief_update(
+                    hypothesis.id,
+                    current.current_confidence,
+                    interpret_evidence(record),
+                    assessment.evidence_summary,
+                    observation_ids,
+                    assessment.verifier_result,
+                )
             self.controller.record_belief_update(run_id, update, status=DISPOSITION_STATUS[record.disposition])
             outcome.beliefs.append(hypothesis.id)
 
@@ -196,10 +274,45 @@ class AutonomousLoop:
             if result is None:
                 outcome.pending.append(experiment_id)
                 continue
+            while (
+                result.status == "failed"
+                and result.failure_class == FailureClass.INFRASTRUCTURE
+                and len(
+                    [
+                        item
+                        for item in self.controller.state(run_id).experiment_retries
+                        if item.experiment_id == experiment_id
+                    ]
+                )
+                < self.config.executor.retry_infrastructure_failures
+            ):
+                try:
+                    retry = self.controller.schedule_infrastructure_retry(run_id, result)
+                except ValueError:
+                    # A failed attempt is still imported below. Budget exhaustion prevents only the
+                    # additional attempt; it must not erase the failure that caused the decision.
+                    break
+                request, _ = self.controller.dispatch(
+                    run_id,
+                    experiment_id,
+                    self.executor,
+                    container_image=self.config.executor.container_image,
+                    dataset_mounts=self.config.executor.dataset_mounts,
+                    network_policy=self.config.contamination.worker_network,
+                    attempt=retry.next_attempt,
+                )
+                result = self._await_result(request, settings)
+                if result is None:
+                    outcome.pending.append(experiment_id)
+                    break
+            if result is None:
+                continue
             observation = self.controller.import_result(
                 run_id,
                 result,
                 artifact_root=result_path(self.home / self.config.executor.result_root, run_id, experiment_id).parent,
+                qd_maximum_size=self.config.qd.maximum_archive_size,
+                qd_quality_floor_relative_to_best=self.config.qd.quality_floor_relative_to_best,
             )
             if observation is not None:
                 outcome.observations.append(observation.id)
@@ -213,30 +326,69 @@ class AutonomousLoop:
         """
         outcome = RoundOutcome(round=index)
         state = self.controller.state(run_id)
+        if state.loop_state == LoopState.COMPLETED:
+            outcome.stop_reasons = ["run finalized"]
+            return outcome
+        preflight = self._finish(run_id, outcome, [])
+        if preflight.stop_reasons:
+            return preflight
 
         if state.loop_state == LoopState.HYPOTHESIZING:
-            proposed = self.proposer.hypotheses(
-                run_id,
-                self._world_model(run_id),
-                state,
-                maximum=self.config.loop.max_active_hypotheses,
-            )
+            try:
+                proposed = self.proposer.hypotheses(
+                    run_id,
+                    self._world_model(run_id),
+                    state,
+                    maximum=self.config.loop.max_active_hypotheses,
+                )
+            finally:
+                self._record_llm_usage(run_id, agent="hypothesis-generator", stage="hypothesis_generation")
             outcome.hypotheses = self.controller.record_hypotheses(
-                run_id, proposed, max_active=self.config.loop.max_active_hypotheses
+                run_id,
+                proposed,
+                max_active=self.config.loop.max_active_hypotheses,
+                calibration_minimum_records=self.config.calibration.minimum_records,
+                poor_brier_threshold=self.config.calibration.poor_brier_threshold,
+                prior_shrinkage=(self.config.calibration.prior_shrinkage if self.config.calibration.enabled else 0.0),
             )
             state = self.controller.state(run_id)
+            checkpoint = self._finish(run_id, outcome, [])
+            if checkpoint.stop_reasons:
+                return checkpoint
 
         if state.loop_state == LoopState.PLANNING:
-            outcome.experiments = self.controller.record_proposals(
-                run_id,
-                self.proposer.experiments(
+            if state.run.mode == RunMode.SYSTEM_C and "falsifier" not in self.config.ablation.remove:
+                consumed = {
+                    item.falsification_proposal_id
+                    for item in state.proposals.values()
+                    if item.falsification_proposal_id is not None
+                }
+                outstanding = set(state.falsification_proposals) - consumed
+                if not outstanding:
+                    try:
+                        counter = self.controller.propose_falsification(
+                            run_id,
+                            available_data=tuple(self._world_model(run_id).environment),
+                        )
+                        outcome.falsification_proposals.append(counter.id)
+                        state = self.controller.state(run_id)
+                    except ValueError:
+                        # No supported falsifiable belief is ordinary early in a run.
+                        pass
+            try:
+                proposed_experiments = self.proposer.experiments(
                     run_id,
                     state,
                     tuple(self.config.executor.command_allowlist),
                     self.executor.contract,
-                ),
-            )
+                )
+            finally:
+                self._record_llm_usage(run_id, agent="experiment-designer", stage="experiment_design")
+            outcome.experiments = self.controller.record_proposals(run_id, proposed_experiments)
             state = self.controller.state(run_id)
+            checkpoint = self._finish(run_id, outcome, [])
+            if checkpoint.stop_reasons:
+                return checkpoint
 
         utilities: list[float] = []
         if state.loop_state == LoopState.SCORING:
@@ -244,13 +396,27 @@ class AutonomousLoop:
                 run_id,
                 weights=self.config.selection.for_phase(state.phase),
                 cost_lambda=self.config.selection.cost_lambda,
+                risk_lambda=self.config.selection.risk_lambda,
                 size=settings.portfolio_size,
                 minimum_utility=self.config.selection.minimum_utility,
+                allocation=self.config.selection.allocation_for_phase(state.phase).model_dump(),
                 source_policy_strict=self.config.contamination.require_source_provenance,
                 max_validation_reuse=self.config.loop.max_validation_reuse,
                 max_consecutive_optimization=self.config.loop.max_consecutive_optimization_experiments,
+                max_consecutive_diagnostics=self.config.phase_gate.max_consecutive_diagnostic_experiments,
+                require_candidate_after_diagnostics=(
+                    self.config.phase_gate.require_candidate_after_diagnostics and state.run.mode.value == "system_c"
+                ),
                 command_allowlist=tuple(self.config.executor.command_allowlist),
                 execution_contract=self.executor.contract,
+                eig_method=self.config.selection.eig_method,
+                eig_monte_carlo_samples=self.config.selection.eig_monte_carlo_samples,
+                preferred_state_targets=self.config.preferred_state.targets,
+                preferred_state_weights=self.config.preferred_state.weights,
+                qd_maximum_size=self.config.qd.maximum_archive_size,
+                qd_quality_floor_relative_to_best=self.config.qd.quality_floor_relative_to_best,
+                information_value_enabled="eig" not in self.config.ablation.remove,
+                preferred_state_enabled="preferred-state" not in self.config.ablation.remove,
             )
             outcome.selected = list(decision.selected_experiment_ids)
             utilities = [
@@ -271,9 +437,20 @@ class AutonomousLoop:
             state = self.controller.state(run_id)
 
         if state.loop_state in {LoopState.PARSING, LoopState.FALSIFYING}:
-            pending = state.unjudged_observations()
+            unjudged = state.unjudged_observations()
+            pending = [item for item in unjudged if item.exit_status == "completed" and item.failure_class is None]
             if pending:
-                self._interpret(run_id, pending, outcome)
+                if capabilities(state.run.mode).belief_posterior:
+                    self._interpret(run_id, pending, outcome)
+                else:
+                    self.controller.replan(run_id, f"{state.run.mode.value} does not update epistemic beliefs")
+                state = self.controller.state(run_id)
+            elif state.loop_state == LoopState.PARSING and unjudged:
+                # Execution failure is operational evidence, not evidence for or against a scientific
+                # hypothesis. Preserve it for the next designer, then continue the run without asking
+                # the falsifier to manufacture a belief update from a process exit.
+                outcome.replanned = "no completed observation was available for interpretation"
+                self.controller.replan(run_id, outcome.replanned)
                 state = self.controller.state(run_id)
 
         if state.loop_state == LoopState.UPDATING:

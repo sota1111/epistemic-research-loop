@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "EpistemicNiche": {
+      "enum": [
+        "temporal",
+        "entity_client",
+        "validation",
+        "distribution_shift",
+        "label_quality",
+        "feature_representation",
+        "model_family",
+        "error_analysis",
+        "falsification",
+        "post_processing",
+        "ensemble"
+      ],
+      "title": "EpistemicNiche",
+      "type": "string"
+    },
+    "LocalHypothesisBelief": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "posterior_probability": {
+          "maximum": 0.95,
+          "minimum": 0.05,
+          "title": "Posterior Probability",
+          "type": "number"
+        },
+        "prior_probability": {
+          "maximum": 0.95,
+          "minimum": 0.05,
+          "title": "Prior Probability",
+          "type": "number"
+        },
+        "visibility": {
+          "const": "private",
+          "default": "private",
+          "title": "Visibility",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "claim",
+        "prior_probability",
+        "posterior_probability"
+      ],
+      "title": "LocalHypothesisBelief",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agent_id": {
+      "minLength": 1,
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "candidate_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Candidate Refs",
+      "type": "array"
+    },
+    "epistemic_niche": {
+      "$ref": "#/$defs/EpistemicNiche"
+    },
+    "experiment_history": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Experiment History",
+      "type": "array"
+    },
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/LocalHypothesisBelief"
+      },
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "private_working_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Private Working Notes",
+      "type": "array"
+    },
+    "rejected_hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Rejected Hypotheses",
+      "type": "array"
+    },
+    "validation_world_beliefs": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Validation World Beliefs",
+      "type": "object"
+    }
+  },
+  "required": [
+    "agent_id",
+    "epistemic_niche"
+  ],
+  "title": "AgentBeliefState",
+  "type": "object"
+}

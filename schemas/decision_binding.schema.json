@@ -1,0 +1,80 @@
+{
+  "$defs": {
+    "DecisionOutcome": {
+      "enum": [
+        "informative_action_changing",
+        "informative_action_neutral",
+        "inconclusive",
+        "invalid"
+      ],
+      "title": "DecisionOutcome",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_changed": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Action Changed"
+    },
+    "action_neutral_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Action Neutral Reason"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DecisionOutcome"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "possible_actions": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "title": "Possible Actions",
+      "type": "array"
+    },
+    "result_to_action": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "minProperties": 1,
+      "title": "Result To Action",
+      "type": "object"
+    }
+  },
+  "required": [
+    "decision_id",
+    "possible_actions",
+    "result_to_action"
+  ],
+  "title": "DecisionBinding",
+  "type": "object"
+}

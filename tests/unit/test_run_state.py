@@ -164,6 +164,8 @@ def test_phase_and_status_track_recorded_events(
     finalized = _state(repository)
     assert finalized.phase == Phase.FINALIZED
     assert finalized.run.status == RunStatus.COMPLETED
+    with pytest.raises(ValueError, match="immutable"):
+        repository.append("run-001", EventType.STATE_CHANGED, {"state": "planning"})
 
 
 def test_belief_updates_move_confidence_without_a_revision_event(
@@ -203,7 +205,13 @@ def test_observed_runtime_exposes_the_gap_between_estimate_and_actual(
     run can consume several times its nominal compute unnoticed -- and two runs compared "at the
     same budget" can differ by a large factor in what they actually used.
     """
-    from epistemic_loop.domain.models import CostEstimate, DecisionRecord, Observation
+    from epistemic_loop.domain.models import (
+        CostEstimate,
+        DecisionRecord,
+        Observation,
+        ObservedResourceUsage,
+        ResourceReconciliation,
+    )
 
     repository.append("run-001", EventType.RUN_CREATED, run)
     cheap_looking = clone_proposal(proposal, estimated_cost=CostEstimate(cpu_hours=1.0, wall_hours=0.05).model_dump())
@@ -235,15 +243,60 @@ def test_observed_runtime_exposes_the_gap_between_estimate_and_actual(
             dataset_fingerprint="f" * 64,
             exit_status="completed",
             runtime={"wall_seconds": 540.0},  # 0.15 h against a declared 0.05 h
+            resource_usage=ObservedResourceUsage(cpu_hours=2.0, wall_hours=0.15),
+        ),
+    )
+    repository.append(
+        "run-001",
+        EventType.RESOURCE_RECONCILED,
+        ResourceReconciliation(
+            run_id="run-001",
+            experiment_id="EXP-001",
+            estimated=cheap_looking.estimated_cost,
+            observed=ObservedResourceUsage(cpu_hours=2.0, wall_hours=0.15),
+            charged=CostEstimate(cpu_hours=2.0, wall_hours=0.15),
         ),
     )
 
-    observed = _state(repository).observed_runtime()
+    state = _state(repository)
+    observed = state.observed_runtime()
 
     assert observed["estimated_wall_hours"] == 0.05
+    assert observed["charged_wall_hours"] == 0.15
     assert observed["wall_hours"] == 0.15
+    assert observed["cpu_hours"] == 2.0
     assert observed["estimate_ratio"] == 3.0, "the run spent three times what its gate charged it"
     assert observed["experiments_observed"] == 1
+    assert state.usage.cpu_hours == 2.0
+    assert state.usage.wall_hours == 0.15
+
+
+def test_agent_llm_usage_is_charged_without_counting_as_an_experiment(
+    repository: ResearchRepository,
+    run: ResearchRun,
+) -> None:
+    from epistemic_loop.domain.models import AgentResourceRecord
+
+    repository.append("run-001", EventType.RUN_CREATED, run)
+    repository.append(
+        "run-001",
+        EventType.AGENT_RESOURCE_RECORDED,
+        AgentResourceRecord(
+            id="AR-1",
+            run_id="run-001",
+            agent="experiment-designer",
+            stage="experiment_design",
+            model="model",
+            input_tokens=120,
+            output_tokens=30,
+            cache_tokens=10,
+        ),
+    )
+
+    state = _state(repository)
+    assert state.usage.llm_tokens == 160
+    assert state.usage.experiments == 0
+    assert state.agent_resource_records[0].agent == "experiment-designer"
 
 
 def test_the_brief_binds_only_once_exploitation_has_begun(

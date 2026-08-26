@@ -1,0 +1,54 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "cpu_cores": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Cpu Cores",
+      "type": "integer"
+    },
+    "expected_minutes": {
+      "default": 60,
+      "exclusiveMinimum": 0,
+      "title": "Expected Minutes",
+      "type": "number"
+    },
+    "full_table_materialization": {
+      "default": false,
+      "title": "Full Table Materialization",
+      "type": "boolean"
+    },
+    "gpu_memory_gb": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Gpu Memory Gb",
+      "type": "number"
+    },
+    "heavy": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Heavy"
+    },
+    "memory_gb": {
+      "default": 4,
+      "exclusiveMinimum": 0,
+      "title": "Memory Gb",
+      "type": "number"
+    },
+    "parquet_scan_columns": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Parquet Scan Columns",
+      "type": "integer"
+    }
+  },
+  "title": "ResourceEstimate",
+  "type": "object"
+}

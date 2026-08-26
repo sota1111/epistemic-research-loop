@@ -1,0 +1,19 @@
+benchmark_id: synthetic-a-b-bplus-c-001
+systems:
+  - system_a
+  - system_b
+  - system_b_plus
+  - system_c
+synthetic_scenarios:
+  - temporal_shift
+  - spurious_leakage
+  - candidate_generation_bottleneck
+  - iid_easy
+budgets:
+  max_experiments: 40
+  max_cpu_hours: 120
+  max_gpu_hours: 24
+  max_wall_hours: 72
+  max_llm_tokens: 2000000
+  max_final_submissions: 1
+

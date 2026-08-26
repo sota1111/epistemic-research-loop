@@ -27,11 +27,23 @@ class SyntheticRunResult:
 
 
 def _choose(scenario: SyntheticScenario, system: str) -> SyntheticAction:
-    if system == "exploiter_only":
+    if system in {"exploiter_only", "system_a"}:
         return max(scenario.actions, key=lambda item: item.expected_gain / item.cost)
     if scenario.negative_control:
         # Cheap structural check then early exploitation; the final action remains ordinary HPO.
         return max(scenario.actions, key=lambda item: item.expected_gain / item.cost)
+    if system == "system_b":
+        return max(
+            scenario.actions,
+            key=lambda item: 0.65 * item.expected_gain + 0.35 * item.diversity - 0.15 * item.cost,
+        )
+    if system == "system_b_plus":
+        return max(
+            scenario.actions,
+            key=lambda item: (
+                0.50 * item.expected_gain + 0.30 * item.diversity + 0.20 * item.robustness - 0.15 * item.cost
+            ),
+        )
     return max(
         scenario.actions,
         key=lambda item: (
@@ -61,7 +73,7 @@ def run_synthetic_plan(
             for system in plan.systems:
                 action = _choose(scenario, system)
                 noise = random.Random(seed).uniform(-0.005, 0.005)
-                overhead = 1.2 if system == "epistemic" and scenario.negative_control else 1.0
+                overhead = 1.2 if system in {"epistemic", "system_c"} and scenario.negative_control else 1.0
                 result = SyntheticRunResult(
                     benchmark_id=plan.benchmark_id,
                     scenario=scenario_name,

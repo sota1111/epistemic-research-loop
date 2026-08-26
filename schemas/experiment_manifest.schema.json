@@ -1,0 +1,665 @@
+{
+  "$defs": {
+    "DatasetMount": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "read_only": {
+          "const": true,
+          "default": true,
+          "title": "Read Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "DatasetMount",
+      "type": "object"
+    },
+    "EpistemicNiche": {
+      "enum": [
+        "temporal",
+        "entity_client",
+        "validation",
+        "distribution_shift",
+        "label_quality",
+        "feature_representation",
+        "model_family",
+        "error_analysis",
+        "falsification",
+        "post_processing",
+        "ensemble"
+      ],
+      "title": "EpistemicNiche",
+      "type": "string"
+    },
+    "ExperimentRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "base_commit_sha": {
+          "minLength": 1,
+          "title": "Base Commit Sha",
+          "type": "string"
+        },
+        "brief": {
+          "additionalProperties": true,
+          "title": "Brief",
+          "type": "object"
+        },
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "command": {
+          "default": "",
+          "title": "Command",
+          "type": "string"
+        },
+        "config_hash": {
+          "default": "unavailable",
+          "title": "Config Hash",
+          "type": "string"
+        },
+        "container_image": {
+          "minLength": 1,
+          "title": "Container Image",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "default": "unavailable",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "dataset_mounts": {
+          "items": {
+            "$ref": "#/$defs/DatasetMount"
+          },
+          "title": "Dataset Mounts",
+          "type": "array"
+        },
+        "epistemic_niche": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpistemicNiche"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "experiment_id": {
+          "minLength": 1,
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "implementation_mode": {
+          "minLength": 1,
+          "title": "Implementation Mode",
+          "type": "string"
+        },
+        "network_policy": {
+          "default": "disabled",
+          "enum": [
+            "disabled",
+            "source_policy_proxy",
+            "enabled"
+          ],
+          "title": "Network Policy",
+          "type": "string"
+        },
+        "objective": {
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "request_id": {
+          "minLength": 1,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "required_outputs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Outputs",
+          "type": "array"
+        },
+        "resources": {
+          "$ref": "#/$defs/ResourceRequest"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "seeds": {
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Seeds",
+          "type": "array"
+        },
+        "semantic_signature": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemanticExperimentSignature"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "system_mode": {
+          "$ref": "#/$defs/RunMode",
+          "default": "epistemic"
+        }
+      },
+      "required": [
+        "request_id",
+        "experiment_id",
+        "run_id",
+        "idempotency_key",
+        "base_commit_sha",
+        "implementation_mode",
+        "objective",
+        "container_image",
+        "dataset_mounts",
+        "resources",
+        "seeds",
+        "required_outputs"
+      ],
+      "title": "ExperimentRequest",
+      "type": "object"
+    },
+    "ExperimentResult": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "commit_sha": {
+          "title": "Commit Sha",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "environment_hash": {
+          "title": "Environment Hash",
+          "type": "string"
+        },
+        "environment_lock_hash": {
+          "default": "unavailable",
+          "title": "Environment Lock Hash",
+          "type": "string"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "external_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "External Ref"
+        },
+        "failure_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FailureClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_excerpt": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the run failed, in the words of whatever failed. A failure class alone tells the next proposal that a design did not run; it does not tell it what to change.",
+          "title": "Failure Excerpt"
+        },
+        "manifest_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manifest Ref"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "observed_outcomes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Observed Outcomes",
+          "type": "object"
+        },
+        "resource_usage": {
+          "$ref": "#/$defs/ObservedResourceUsage"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "runtime": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Runtime",
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "completed",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "terminal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TerminalStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "experiment_id",
+        "run_id",
+        "attempt",
+        "status",
+        "commit_sha",
+        "environment_hash",
+        "dataset_fingerprint"
+      ],
+      "title": "ExperimentResult",
+      "type": "object"
+    },
+    "FailureClass": {
+      "enum": [
+        "infrastructure",
+        "implementation",
+        "model",
+        "invalid_design"
+      ],
+      "title": "FailureClass",
+      "type": "string"
+    },
+    "ObservedResourceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Hours"
+        },
+        "gpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Hours"
+        },
+        "llm_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Tokens"
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monetary Cost"
+        },
+        "peak_ram_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Ram Gb"
+        },
+        "wall_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Hours"
+        }
+      },
+      "title": "ObservedResourceUsage",
+      "type": "object"
+    },
+    "ResourceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Cpu",
+          "type": "integer"
+        },
+        "expected_minutes": {
+          "default": 60,
+          "exclusiveMinimum": 0,
+          "title": "Expected Minutes",
+          "type": "number"
+        },
+        "full_table_materialization": {
+          "default": false,
+          "title": "Full Table Materialization",
+          "type": "boolean"
+        },
+        "gpu": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu",
+          "type": "integer"
+        },
+        "gpu_memory_gb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Memory Gb",
+          "type": "number"
+        },
+        "memory_gb": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "parquet_scan_columns": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Parquet Scan Columns",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 3600,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "ResourceRequest",
+      "type": "object"
+    },
+    "RunMode": {
+      "enum": [
+        "system_a",
+        "system_b",
+        "system_b_plus",
+        "system_c",
+        "epistemic",
+        "exploiter_only"
+      ],
+      "title": "RunMode",
+      "type": "string"
+    },
+    "SemanticExperimentSignature": {
+      "additionalProperties": false,
+      "description": "Meaning-level identity used instead of command or experiment ID.",
+      "properties": {
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "data_slice": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Slice",
+          "type": "array"
+        },
+        "decision_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Affected",
+          "type": "array"
+        },
+        "observable": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable",
+          "type": "array"
+        },
+        "operation": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operation",
+          "type": "array"
+        },
+        "target_hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Hypotheses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_hypotheses",
+        "data_slice",
+        "operation",
+        "observable",
+        "decision_affected"
+      ],
+      "title": "SemanticExperimentSignature",
+      "type": "object"
+    },
+    "TerminalStatus": {
+      "enum": [
+        "COMPLETED",
+        "FAILED_EXECUTION",
+        "FAILED_RESOURCE",
+        "INVALID_ARTIFACT",
+        "INVALID_LEAKAGE",
+        "INCONCLUSIVE"
+      ],
+      "title": "TerminalStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_lock_hash": {
+      "minLength": 1,
+      "title": "Environment Lock Hash",
+      "type": "string"
+    },
+    "environment_lock_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Lock Ref"
+    },
+    "experiment_id": {
+      "minLength": 1,
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "fold_assignment_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Fold Assignment Refs",
+      "type": "array"
+    },
+    "request": {
+      "$ref": "#/$defs/ExperimentRequest"
+    },
+    "result": {
+      "$ref": "#/$defs/ExperimentResult"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "submission_procedure": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Submission Procedure"
+    },
+    "system_mode": {
+      "$ref": "#/$defs/RunMode"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "run_id",
+    "system_mode",
+    "request",
+    "result",
+    "environment_lock_hash"
+  ],
+  "title": "ExperimentManifest",
+  "type": "object"
+}

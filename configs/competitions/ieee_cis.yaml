@@ -1,0 +1,128 @@
+# Branch-isolated System C run for IEEE-CIS Fraud Detection.
+# Set IEEE_CIS_AGENT_RUN_ID, IEEE_CIS_AGENT_SEED and IEEE_CIS_AGENT_WORKTREE for each worktree.
+run:
+  id: ${IEEE_CIS_AGENT_RUN_ID}
+  mode: system_c
+  seed: ${IEEE_CIS_AGENT_SEED}
+competition:
+  slug: ieee-fraud-detection
+  metric_direction: maximize
+  primary_metric: roc_auc
+  data_path: ${IEEE_CIS_AGENT_WORKTREE}/.data/ieee-cis/parquet
+  sample_submission: ${IEEE_CIS_AGENT_WORKTREE}/.data/ieee-cis/sample_submission.csv
+budgets:
+  max_experiments: 4
+  max_cpu_hours: 4
+  max_gpu_hours: 0
+  max_wall_hours: 2
+  max_llm_tokens: 1000000
+  max_cost: 0
+  max_final_submissions: 0
+  max_daily_submissions: 0
+loop:
+  phase_policy: adaptive
+  max_active_hypotheses: 12
+  max_priority_hypotheses: 6
+  max_consecutive_optimization_experiments: 2
+  minimum_replications_for_support: 1
+  max_validation_reuse: 4
+  max_rounds_without_information: 2
+  anomaly_instability_threshold: 0.05
+selection:
+  cost_lambda: 0.15
+  risk_lambda: 0.5
+  minimum_utility: 0.0
+  eig_method: monte_carlo
+  eig_monte_carlo_samples: 2000
+  discovery: {pragmatic: 0.20, epistemic: 0.45, robustness: 0.20, diversity: 0.15}
+  consolidation: {pragmatic: 0.35, epistemic: 0.30, robustness: 0.25, diversity: 0.10}
+  exploitation: {pragmatic: 0.55, epistemic: 0.15, robustness: 0.25, diversity: 0.05}
+  discovery_allocation: {exploit: 0.30, qd_explore: 0.30, epistemic: 0.40}
+  consolidation_allocation: {exploit: 0.45, qd_explore: 0.30, epistemic: 0.25}
+  exploitation_allocation: {exploit: 0.65, qd_explore: 0.25, epistemic: 0.10}
+validation:
+  worlds: [random, time, group, time_group]
+  entropy_priority_threshold: 0.65
+  require_forward_fraud_label_validation: true
+  horizons: 3
+  require_time_gap: true
+  require_known_new_client_slices: true
+  adversarial_auc_is_diagnostic_only: true
+qd:
+  maximum_archive_size: 24
+  quality_floor_relative_to_best: 0.97
+oof:
+  save_row_level_predictions: true
+  format: parquet
+  required_for_candidate_promotion: true
+  common_final_crossfit: true
+  calculate_residual_correlation: true
+  calculate_effective_rank: true
+  calculate_marginal_ensemble_gain: true
+calibration:
+  enabled: true
+  minimum_records: 3
+  poor_brier_threshold: 0.25
+  prior_shrinkage: 0.25
+preferred_state:
+  targets:
+    validation_fidelity: 0.80
+    hypothesis_resolution: 0.70
+    falsification_coverage: 0.60
+    representation_coverage: 0.35
+    error_diversity: 0.50
+    robustness: 0.80
+  weights: {}
+ablation:
+  remove: []
+holdout:
+  policy: strict_blind
+  max_queries: 0
+  reveal_scores: after_all_paired_runs
+  sealed_store: .sealed
+leaderboard:
+  public_feedback: forbidden
+  max_public_queries: 0
+  query_ledger: .state/leaderboard-queries.jsonl
+  sealed_store: .sealed-scores
+contamination:
+  policy: strict_historical
+  block_kaggle_discussions: true
+  block_kaggle_code: true
+  block_competition_specific_github: true
+  require_source_provenance: false
+  worker_network: disabled
+  obfuscate_competition_name: false
+  hash_column_names: false
+executor:
+  adapter: local
+  queue: kaggle-research
+  retry_infrastructure_failures: 1
+  result_root: .results
+  container_image: python:3.11-slim
+  dataset_mounts: [ieee-cis]
+  workspace: ${IEEE_CIS_AGENT_WORKTREE}
+  command_allowlist: [python, python3, uv]
+scheduler:
+  max_concurrent_heavy_experiments: 1
+  max_concurrent_light_experiments: 3
+  memory_safety_margin: 0.25
+  max_concurrent_parquet_full_scans: 1
+  validate_required_artifacts: true
+artifacts:
+  adapter: local
+  root: .runs
+storage:
+  event_store: jsonl
+  projection: sqlite
+  sqlite_path: .state/epistemic-loop.db
+llm:
+  adapter: cli
+  model: claude-opus-5
+  max_tokens: 16000
+  effort: high
+  structured_output_required: true
+  store_raw_response: true
+  cli_preset: claude
+  cli_timeout_seconds: 900
+  cli_max_attempts: 3

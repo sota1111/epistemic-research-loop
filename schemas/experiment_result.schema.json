@@ -9,6 +9,103 @@
       ],
       "title": "FailureClass",
       "type": "string"
+    },
+    "ObservedResourceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Hours"
+        },
+        "gpu_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Hours"
+        },
+        "llm_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Tokens"
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monetary Cost"
+        },
+        "peak_ram_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Ram Gb"
+        },
+        "wall_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Hours"
+        }
+      },
+      "title": "ObservedResourceUsage",
+      "type": "object"
+    },
+    "TerminalStatus": {
+      "enum": [
+        "COMPLETED",
+        "FAILED_EXECUTION",
+        "FAILED_RESOURCE",
+        "INVALID_ARTIFACT",
+        "INVALID_LEAKAGE",
+        "INCONCLUSIVE"
+      ],
+      "title": "TerminalStatus",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -35,6 +132,11 @@
     },
     "environment_hash": {
       "title": "Environment Hash",
+      "type": "string"
+    },
+    "environment_lock_hash": {
+      "default": "unavailable",
+      "title": "Environment Lock Hash",
       "type": "string"
     },
     "exit_code": {
@@ -90,12 +192,34 @@
       "description": "Why the run failed, in the words of whatever failed. A failure class alone tells the next proposal that a design did not run; it does not tell it what to change.",
       "title": "Failure Excerpt"
     },
+    "manifest_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manifest Ref"
+    },
     "metrics": {
       "additionalProperties": {
         "type": "number"
       },
       "title": "Metrics",
       "type": "object"
+    },
+    "observed_outcomes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Observed Outcomes",
+      "type": "object"
+    },
+    "resource_usage": {
+      "$ref": "#/$defs/ObservedResourceUsage"
     },
     "run_id": {
       "title": "Run Id",
@@ -117,6 +241,17 @@
       ],
       "title": "Status",
       "type": "string"
+    },
+    "terminal_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TerminalStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

@@ -1,8 +1,9 @@
 # Epistemic Research Loop
 
 `epistemic-research-loop` is a hypothesis-centric experiment orchestrator for Kaggle research. It
-decides **what to try next and why**; model training, feature generation, queueing, retries, and
-worker selection stay in the Kaggle Solver and `ai-dev-control-plane`.
+decides **what to try next and why**. Under the C-lite v0.2 code-development contract, isolated
+workers may also create solver code, features, UID candidates, validation, models, post-processing
+and ensembles; the central plane schedules resources and accepts only contracted artifacts.
 
 ```text
 observation -> hypothesis -> preregistered prediction -> experiment selection
@@ -14,6 +15,8 @@ Version: **0.1.0**
 - **[docs/capability_matrix.md](docs/capability_matrix.md)** — one row per capability, naming the
   code that enforces it and the test that would fail if it stopped being true, plus what is *not*
   claimed.
+- **[docs/c_lite_revision_v0.2.md](docs/c_lite_revision_v0.2.md)** — the IEEE-CIS scaling amendment;
+  it supersedes conflicting v0.1 requirements.
 - **[docs/progress.md](docs/progress.md)** — milestones, how to verify them yourself, known
   limitations.
 - **[docs/research_state_selection.md](docs/research_state_selection.md)** — target design for
@@ -46,6 +49,14 @@ and a validation adaptivity budget that bounds how many *selecting* experiments 
 compute efficiency as well as sealed regret, with an IID negative control. `erlctl report compare`
 compares two real runs on the same axes.
 
+**C-lite research state.** `system_a`, `system_b`, `system_b_plus`, and `system_c` are explicit,
+gate-enforced modes. System C keeps a Bayesian posterior over Random / Time / Group validation
+worlds, uses preregistered EIG or EVSI, records independent counter-experiments, maintains a
+multi-descriptor QD archive, and stores row-level OOF residuals for diversity-aware selection.
+Candidate production is tied to seeded mutation/crossover lineages; categorical EIG can use a
+seeded Monte Carlo estimator; forecast calibration feeds back into new priors; and ensemble weights
+are evaluated cross-fitted so a row is never scored by weights learned from its own fold.
+
 The LLM proposes hypotheses and experiments and judges which predictions the evidence matched.
 Schema validation, gates, state transitions, utility, budgets, hashes, dispositions, belief
 arithmetic, holdout access, phase decisions and event recording are all deterministic.
@@ -63,6 +74,12 @@ uv run erlctl run start   --run-id synthetic-epistemic-001
 uv run erlctl run status  --run-id synthetic-epistemic-001
 uv run erlctl report run  --run-id synthetic-epistemic-001
 ```
+
+Select one of the four comparison arms with `configs/system_a.yaml`, `system_b.yaml`,
+`system_b_plus.yaml`, or `system_c.yaml`.
+`configs/system_c_anonymous.yaml` is the contamination-test variant: it anonymizes the competition
+identity and schema, and `erlctl contamination anonymize-csv --run-id ...` creates the matching
+column-neutral data file.
 
 `run start --package <file.json>` seeds the world model from the competition's real schema, metric
 and target. Without it the observer sees only the metric, and every structural question starts
@@ -96,6 +113,8 @@ commands below — the path to reach for when debugging a run, or when a human f
 ### Stepping through it by hand
 
 ```bash
+uv run erlctl run lock-rule --run-id $RUN \
+  --description 'maximum final-candidate utility after verification' # before observing results
 uv run erlctl hypotheses request  --run-id $RUN          # writes prompt + context + JSON Schema
 uv run erlctl hypotheses record   --run-id $RUN --from hypotheses.json
 uv run erlctl experiments request --run-id $RUN
@@ -107,6 +126,17 @@ uv run erlctl beliefs update --run-id $RUN --from belief-a.json --from belief-b.
 uv run erlctl run advance    --run-id $RUN               # phase evidence derived from the log
 uv run erlctl brief create   --run-id $RUN               # required before exploitation may begin
 uv run erlctl run finalize   --run-id $RUN --note '...' --artifact outputs/submission.csv
+```
+
+The C-lite state is inspectable and replayable through:
+
+```bash
+uv run erlctl validation list --run-id $RUN
+uv run erlctl falsifier propose --run-id $RUN --available-data train
+uv run erlctl archive status --run-id $RUN
+uv run erlctl oof analyze --run-id $RUN --from candidate-a.parquet --from candidate-b.parquet
+uv run erlctl oof ensemble --run-id $RUN --from candidate-a.parquet --from candidate-b.parquet
+uv run erlctl hypotheses calibration --run-id $RUN
 ```
 
 The state machine refuses a step invoked from the wrong state, so a prediction cannot be recorded as
@@ -171,15 +201,32 @@ a validation scheme. An anomaly in exploitation returns the run to consolidation
 brief. See [exploiter handoff](docs/exploiter_handoff.md).
 
 A final submission is not an experiment: it buys no information, it is the most expensive fit a run
-makes, and a pragmatic selector scores it negative and refuses it. `run finalize` records it as a
-finalization instead, with the artifacts, the phase reached, and what the run actually spent.
+makes, and a pragmatic selector scores it negative and refuses it. Register the deterministic
+selection rule before any result is observed, then lock only a reproduced, leakage-checked candidate
+with a recorded OOF, fold assignment, replay manifest, and submission procedure:
+
+```bash
+uv run erlctl run lock-rule --run-id $RUN \
+  --description 'maximum final-candidate utility after verification'
+uv run erlctl run finalize --run-id $RUN --note 'budget exhausted' \
+  --artifact outputs/submission.csv
+```
+
+Finalization verifies dataset/code hashes and submission schema, records public-query use, and makes
+the event history terminal. A post-observation artifact mutation is refused.
 
 ## Budgets
 
-Gates charge the estimate a proposal declares. `BudgetManager.reconcile` does not yet replace
-estimates with observed cost, so a run whose estimates are optimistic can consume several times its
-nominal compute. `run status` therefore reports `observed_runtime` beside the estimate with their
-ratio — a ratio far from 1.0 means the run is not operating inside the budget it believes it has.
+Gates reserve the estimate a proposal declares. When a result is imported, CPU, GPU, wall-clock,
+token and monetary usage are reconciled to measured values (falling back field-by-field to the
+estimate when a worker cannot observe one). API/CLI model calls that expose usage also emit
+agent/stage-scoped token records. `run status` reports declared, charged and observed runtime
+together, so optimistic estimates remain visible without corrupting the remaining budget.
+
+The local Linux executor applies CPU affinity, CPU-time and address-space limits and injects a
+fail-closed Python network guard. It records environment-lock, resource and replay manifests. It is
+still a development executor: read-only filesystem mounts and full language-agnostic network
+namespaces require the production container/control-plane adapter.
 
 ## Benchmark
 
@@ -189,6 +236,9 @@ export BENCHMARK_UNSEAL_TOKEN='replace-with-an-evaluator-owned-secret'
 uv run erlctl benchmark run      --plan benchmark-plan.yaml
 uv run erlctl benchmark finalize --plan benchmark-plan.yaml --unseal-token-env BENCHMARK_UNSEAL_TOKEN
 ```
+
+Use `configs/benchmarks/system_comparison.yaml` as the profile to run the A/B/B+/C harness in one
+matched-budget plan.
 
 Scenarios plant a temporal shift, a spurious feature and a search-space wall, plus an IID **negative
 control** where research is supposed to earn nothing and is charged for trying. Both arms are
@@ -351,9 +401,8 @@ Progress, scope and status are recorded here, not in the issue tracker.
 | [IEEE-CIS arm comparison](docs/verification/ieee_cis_arm_comparison.md) | epistemic against an exploiter-only control at matched budget |
 | [control-plane Linear round trip](docs/verification/control_plane_linear_roundtrip.md) | ticket creation and idempotency against the live Linear API |
 | [worker experiment execution](docs/verification/worker_experiment_execution.md) | a fleet worker consuming a real ticket and writing back a result |
+| [IEEE-CIS branch agents](docs/verification/ieee_cis_branch_agents.md) | three isolated System C agents selecting and completing distinct experiment designs |
 
-**What has not been verified:** the fully unattended loop (`run loop`) has never run — there has been
-no `ANTHROPIC_API_KEY` in any verification environment, so the proposal slot was filled by hand
-through the file bridge every time. The Research-to-Exploitation transition is implemented and
-unit-tested but has not been observed in a real run. Both are recorded in
-[progress](docs/progress.md) rather than glossed.
+The CLI-backed unattended loop has now completed on three isolated IEEE-CIS branches without an API
+key. Native role-scoped proposers inside one shared Run and the real-data
+Research-to-Exploitation transition remain unverified; both are recorded in [progress](docs/progress.md).

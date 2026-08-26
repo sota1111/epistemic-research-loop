@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from epistemic_loop.adapters.executor.local import LocalExecutor
-from epistemic_loop.domain.models import DatasetMount, ExperimentRequest, ResourceRequest
+from epistemic_loop.domain.enums import TerminalStatus
+from epistemic_loop.domain.models import DatasetMount, ExperimentManifest, ExperimentRequest, ResourceRequest
 
 
 def test_local_executor_collects_required_outputs(tmp_path) -> None:
@@ -24,7 +25,17 @@ def test_local_executor_collects_required_outputs(tmp_path) -> None:
     result = LocalExecutor(tmp_path, tmp_path / "results").submit(request)
     assert result.status == "completed"
     assert result.metrics == {"score": 0.75}
-    assert len(result.artifact_refs) == 4
+    assert {"stdout.log", "stderr.log", "erl_manifest.json"} <= {Path(item).name for item in result.artifact_refs}
+    assert result.manifest_ref is not None
+    assert Path(result.manifest_ref).is_file()
+    assert result.resource_usage.wall_hours is not None
+    manifest = ExperimentManifest.model_validate_json(Path(result.manifest_ref).read_text(encoding="utf-8"))
+    assert manifest.request.seeds == [11]
+    assert manifest.environment_lock_hash == result.environment_lock_hash
+    assert manifest.environment_lock_ref is not None
+    assert Path(manifest.environment_lock_ref).is_file()
+    assert manifest.completed_at >= manifest.started_at
+    assert manifest.request.dataset_fingerprint == result.dataset_fingerprint
 
 
 def test_the_command_can_name_the_output_directory_symbolically(tmp_path) -> None:
@@ -103,3 +114,62 @@ def test_a_failure_carries_its_own_explanation_back(tmp_path: Path) -> None:
 
     state_view = {"failure_excerpt": result.failure_excerpt}
     assert state_view["failure_excerpt"], "the excerpt is what run_state.failed_experiments() forwards"
+
+
+def test_disabled_network_policy_is_enforced_inside_python_worker(tmp_path: Path) -> None:
+    script = tmp_path / "network.py"
+    script.write_text("import socket; socket.create_connection(('example.com', 80), timeout=1)", encoding="utf-8")
+    request = ExperimentRequest(
+        request_id="req-network",
+        experiment_id="exp-network",
+        run_id="run-network",
+        idempotency_key="run-network:exp-network:attempt-1",
+        base_commit_sha="abc123",
+        implementation_mode="security-test",
+        objective="network must be denied",
+        command=f"python3 {script}",
+        container_image="local",
+        dataset_mounts=[],
+        resources=ResourceRequest(timeout_seconds=10),
+        seeds=[11],
+        required_outputs=["metrics.json"],
+        network_policy="disabled",
+    )
+
+    result = LocalExecutor(tmp_path, tmp_path / "results").submit(request)
+
+    assert result.status == "failed"
+    assert result.failure_excerpt is not None
+    assert "network access is disabled" in result.failure_excerpt
+
+
+def test_exit_zero_without_candidate_contract_is_invalid_artifact(tmp_path: Path) -> None:
+    script = tmp_path / "partial_candidate.py"
+    script.write_text(
+        "import json, os, pathlib\n"
+        "root = pathlib.Path(os.environ['ERL_OUTPUT_DIR'])\n"
+        "(root / 'metrics.json').write_text(json.dumps({'auc': 0.9}))\n",
+        encoding="utf-8",
+    )
+    request = ExperimentRequest(
+        request_id="req-candidate",
+        experiment_id="exp-candidate",
+        run_id="run-candidate",
+        idempotency_key="run-candidate:exp-candidate:attempt-1",
+        base_commit_sha="abc123",
+        implementation_mode="candidate",
+        objective="partial candidate must not be promoted",
+        command=f"python3 {script}",
+        container_image="local",
+        dataset_mounts=[],
+        resources=ResourceRequest(timeout_seconds=10),
+        seeds=[11],
+        required_outputs=["metrics.json"],
+        candidate_producing=True,
+    )
+
+    result = LocalExecutor(tmp_path, tmp_path / "results").submit(request)
+
+    assert result.exit_code == 0
+    assert result.status == "failed"
+    assert result.terminal_status == TerminalStatus.INVALID_ARTIFACT

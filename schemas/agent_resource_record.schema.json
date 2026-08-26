@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "minLength": 1,
+      "title": "Agent",
+      "type": "string"
+    },
+    "cache_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Cache Tokens",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "input_tokens": {
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "model": {
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "monetary_cost": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Monetary Cost",
+      "type": "number"
+    },
+    "output_tokens": {
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "hypothesis_generation",
+        "experiment_design",
+        "falsification_assessment"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "agent",
+    "stage",
+    "model",
+    "input_tokens",
+    "output_tokens"
+  ],
+  "title": "AgentResourceRecord",
+  "type": "object"
+}

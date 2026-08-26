@@ -20,7 +20,10 @@ class ResearchRepository:
         return JsonlEventStore(self.run_root / run_id / "events.jsonl")
 
     def append(self, run_id: str, event_type: EventType, payload: DomainModel | dict[str, Any]) -> EventEnvelope:
-        event = self.event_store(run_id).append(run_id, event_type, payload)
+        store = self.event_store(run_id)
+        if any(event.event_type == EventType.RUN_FINALIZED for event in store.read_all()):
+            raise ValueError(f"run {run_id} is finalized and its research history is immutable")
+        event = store.append(run_id, event_type, payload)
         with SqliteProjection(self.projection_path) as projection:
             projection.apply(event)
         return event

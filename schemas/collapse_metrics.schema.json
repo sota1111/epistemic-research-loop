@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "cycle": {
+      "minimum": 0,
+      "title": "Cycle",
+      "type": "integer"
+    },
+    "dominant_cluster_fraction": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Dominant Cluster Fraction",
+      "type": "number"
+    },
+    "experiment_family_effective_count": {
+      "minimum": 0,
+      "title": "Experiment Family Effective Count",
+      "type": "number"
+    },
+    "hypothesis_family_budget_fraction": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Hypothesis Family Budget Fraction",
+      "type": "number"
+    },
+    "mean_agent_proposal_similarity": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Mean Agent Proposal Similarity",
+      "type": "number"
+    },
+    "qd_niche_occupancy": {
+      "minimum": 0,
+      "title": "Qd Niche Occupancy",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "dominant_cluster_fraction",
+    "experiment_family_effective_count",
+    "qd_niche_occupancy",
+    "hypothesis_family_budget_fraction",
+    "mean_agent_proposal_similarity",
+    "cycle"
+  ],
+  "title": "CollapseMetrics",
+  "type": "object"
+}

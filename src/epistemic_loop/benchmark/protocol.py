@@ -13,10 +13,16 @@ class BenchmarkPlan(BaseModel):
     replicates: int = Field(ge=3)
     seeds: list[int]
     budgets: dict[str, float | int]
-    systems: tuple[str, str] = ("exploiter_only", "epistemic")
+    systems: tuple[str, ...] = Field(default=("exploiter_only", "epistemic"), min_length=2)
     source_policy: str = "strict_historical"
     holdout_policy: str = "strict_blind"
     max_final_submissions: int = 1
+
+    def model_post_init(self, __context: object) -> None:
+        if len(self.systems) != len(set(self.systems)):
+            raise ValueError("benchmark systems must be unique")
+        if len(self.seeds) < self.replicates:
+            raise ValueError("benchmark needs at least one seed per replicate")
 
 
 def save_plan(plan: BenchmarkPlan, path: str | Path) -> None:

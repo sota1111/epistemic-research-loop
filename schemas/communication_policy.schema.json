@@ -1,0 +1,50 @@
+{
+  "$defs": {
+    "CommunicationMode": {
+      "enum": [
+        "no_sharing",
+        "selective_delayed_asymmetric",
+        "full_live_sharing"
+      ],
+      "title": "CommunicationMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "broadcast_raw_results": {
+      "default": false,
+      "title": "Broadcast Raw Results",
+      "type": "boolean"
+    },
+    "hide_source_agent_on_challenge": {
+      "default": true,
+      "title": "Hide Source Agent On Challenge",
+      "type": "boolean"
+    },
+    "migration_interval_cycles": {
+      "default": 3,
+      "minimum": 1,
+      "title": "Migration Interval Cycles",
+      "type": "integer"
+    },
+    "mode": {
+      "$ref": "#/$defs/CommunicationMode",
+      "default": "selective_delayed_asymmetric"
+    },
+    "share_global_best": {
+      "const": false,
+      "default": false,
+      "title": "Share Global Best",
+      "type": "boolean"
+    },
+    "share_posteriors": {
+      "const": false,
+      "default": false,
+      "title": "Share Posteriors",
+      "type": "boolean"
+    }
+  },
+  "title": "CommunicationPolicy",
+  "type": "object"
+}

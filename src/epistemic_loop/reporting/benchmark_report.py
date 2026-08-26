@@ -38,6 +38,24 @@ def build_benchmark_report(result: dict[str, Any]) -> str:
             f"{scenario.get('epistemic_discovery_rate', 0.0):.1%} |"
         )
     lines.extend(["", "## Full paired result", "", "```json", json.dumps(result, indent=2, sort_keys=True), "```"])
+    systems = result.get("systems", [])
+    if len(systems) > 2:
+        lines.extend(
+            [
+                "",
+                "## A/B/B+/C system summary",
+                "",
+                "| Scenario | System | Mean regret | Mean private score | Mean CPU hours |",
+                "| --- | --- | ---: | ---: | ---: |",
+            ]
+        )
+        for scenario_name, scenario in sorted(result["scenarios"].items()):
+            for system in systems:
+                summary = scenario["systems"][system]
+                lines.append(
+                    f"| {scenario_name} | {system} | {summary['mean_regret']:.4f} | "
+                    f"{summary['mean_private_score']:.4f} | {summary['mean_cpu_hours']:.2f} |"
+                )
     return "\n".join(lines) + "\n"
 
 

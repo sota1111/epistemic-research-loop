@@ -1,0 +1,166 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "active_hypotheses": {
+      "minimum": 0,
+      "title": "Active Hypotheses",
+      "type": "integer"
+    },
+    "best_score_variance": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Best Score Variance"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "expected_hidden_interval": {
+      "anyOf": [
+        {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Hidden Interval"
+    },
+    "expected_hidden_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Hidden Score"
+    },
+    "falsification_coverage": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Falsification Coverage",
+      "type": "number"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "hypothesis_calibration_brier": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hypothesis Calibration Brier"
+    },
+    "hypothesis_coverage": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Hypothesis Coverage",
+      "type": "number"
+    },
+    "hypothesis_entropy_bits": {
+      "minimum": 0,
+      "title": "Hypothesis Entropy Bits",
+      "type": "number"
+    },
+    "oof_effective_rank": {
+      "minimum": 0,
+      "title": "Oof Effective Rank",
+      "type": "number"
+    },
+    "preferred_state_gaps": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Preferred State Gaps",
+      "type": "object"
+    },
+    "preferred_state_total_gap": {
+      "default": 0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Preferred State Total Gap",
+      "type": "number"
+    },
+    "qd_occupancy": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Qd Occupancy",
+      "type": "number"
+    },
+    "resolved_hypotheses": {
+      "minimum": 0,
+      "title": "Resolved Hypotheses",
+      "type": "integer"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "validation_fidelity": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Validation Fidelity"
+    },
+    "validation_uncertainty": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Validation Uncertainty",
+      "type": "number"
+    }
+  },
+  "required": [
+    "run_id",
+    "validation_uncertainty",
+    "active_hypotheses",
+    "resolved_hypotheses",
+    "hypothesis_entropy_bits",
+    "hypothesis_coverage",
+    "falsification_coverage",
+    "qd_occupancy",
+    "oof_effective_rank"
+  ],
+  "title": "ResearchStateSnapshot",
+  "type": "object"
+}

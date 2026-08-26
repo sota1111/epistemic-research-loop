@@ -71,3 +71,22 @@ def test_compute_efficiency_is_reported_where_research_cost_extra(tmp_path) -> N
     pair = result["scenarios"]["iid_easy"]["pairs"][0]
     assert pair["regret_removed_per_extra_cpu_hour"] is not None
     assert pair["regret_removed_per_extra_cpu_hour"] <= 0, "the control buys nothing with its overhead"
+
+
+def test_a_b_bplus_c_are_compared_in_one_matched_plan(tmp_path) -> None:
+    plan = BenchmarkPlan(
+        benchmark_id="test-four-arm",
+        scenarios=["temporal_shift", "iid_easy"],
+        replicates=3,
+        seeds=[101, 118, 135],
+        budgets={"max_experiments": 40, "max_cpu_hours": 120},
+        systems=("system_a", "system_b", "system_b_plus", "system_c"),
+    )
+    token = "evaluator-only-secret-token"
+    run_synthetic_plan(plan, tmp_path, unseal_token=token)
+    result = finalize_benchmark(plan, tmp_path, unseal_token=token)
+
+    assert result["systems"] == list(plan.systems)
+    assert result["baseline_system"] == "system_a"
+    assert result["epistemic_system"] == "system_c"
+    assert set(result["scenarios"]["temporal_shift"]["systems"]) == set(plan.systems)
