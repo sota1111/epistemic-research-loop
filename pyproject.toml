@@ -62,7 +62,16 @@ strict = true
 packages = ["epistemic_loop"]
 
 [[tool.mypy.overrides]]
-module = ["catboost", "catboost.*", "lightgbm", "lightgbm.*", "sklearn", "sklearn.*"]
+module = [
+  "catboost",
+  "catboost.*",
+  "lightgbm",
+  "lightgbm.*",
+  "pyarrow",
+  "pyarrow.*",
+  "sklearn",
+  "sklearn.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

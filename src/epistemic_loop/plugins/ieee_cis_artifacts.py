@@ -176,7 +176,7 @@ def _yaml_mapping(path: Path) -> dict[str, Any]:
 def _parquet_row_count(path: Path) -> int:
     if not path.is_file():
         return 0
-    from pyarrow import parquet as pq  # type: ignore[import-untyped]
+    from pyarrow import parquet as pq
 
     return int(pq.read_metadata(path).num_rows)
 
