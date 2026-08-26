@@ -30,11 +30,12 @@ All branches descend from `initial/ieee-cis-state` at
 | `agents/v03-island-01` | `bd8380098c9c80119597dd85ba6f8e68bfd79ce6` | independent agent workspace |
 | `agents/v03-island-02` | `729278b25b2e27a58ff2edb57517c5ad30c58168` | independent agent workspace |
 | `agents/v03-island-03` | `3e8f2b09e91639346b088f97351dc4fb4b975019` | independent agent workspace |
-| `validation/multi-island-v03` | `980b17c5107fe8481a1a11916aabe210e7520685` | clean integration and verification branch |
+| `validation/multi-island-v03` | `5def9fd37bf86536ce4f99cfc0dca3ddcc85003a` | clean integration and verification branch |
 
 Each agent received the same generic prompt, dataset/artifact contract, and resource limit.  It did
 not receive a fixed niche, another worktree, branch history, scores, a global best, or another
-agent's beliefs.  The integrated branch passes all 11 agent-authored tests.
+agent's beliefs.  After synchronizing with `master`, the integrated branch passes all 22 tests,
+including the 11 tests authored for the v0.3 candidates.
 
 ## Independent solution choices
 
