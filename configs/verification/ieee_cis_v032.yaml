@@ -1,0 +1,59 @@
+version: "0.3.2"
+mode: primary_endpoint_and_causal_attribution
+freeze_control_plane: true
+allow_additional_agent_cycles: false
+
+hidden_endpoint:
+  freeze_before_evaluation: true
+  prohibit_post_score_candidate_addition: true
+  compare_single_and_ensemble: true
+  frozen_order:
+    - canonical_baseline
+    - archive_best_single
+    - workstream_02_single
+    - archive_plus_workstream_02_nested_ensemble
+
+predictive_diversity_debt:
+  quality_complementary_candidate: PD-1
+  archive_wide_breadth: PD-2
+  hidden_transfer: PD-3
+  effective_rank_pilot_threshold: 1.2
+
+candidate_eligibility:
+  standalone_gate: true
+  ensemble_gate: true
+  quality_floor: 0.882962947332893
+  seed_stability_max_sd: 0.01
+  ensemble_require_positive_leave_one_out_gain: true
+  ensemble_require_multi_horizon_direction: true
+  maximum_fold_weight: 0.8
+
+attribution:
+  common_train_rows: 590540
+  common_oof_rows: 354324
+  horizons: 3
+  gap_days: 7
+  seeds: [17, 42, 20260826]
+  cells: [A, B, C, D, E, F]
+  temporal_block_bootstrap_repetitions: 500
+
+system_ablation:
+  arms: [B, B_plus, C]
+  require_matched:
+    - llm
+    - agent_count
+    - token_budget
+    - cpu_ram_gpu_budget
+    - wall_clock
+    - heavy_compute_budget
+    - common_folds
+    - seeds
+    - final_submission_count
+
+structure_benchmark:
+  positive_control: true
+  negative_control: true
+  ground_truth_hidden_from_research_policy: true
+
+controller:
+  opportunity_cost_accounting: true
