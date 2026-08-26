@@ -334,7 +334,7 @@ def make_model_family(name: str, *, seed: int = 42) -> Any:
     """Lazy solver-extra factory; orchestration remains free of ML dependencies."""
 
     if name == "logistic":
-        from sklearn.linear_model import LogisticRegression  # type: ignore[import-untyped]
+        from sklearn.linear_model import LogisticRegression
 
         return LogisticRegression(max_iter=500, random_state=seed)
     if name == "lightgbm":
