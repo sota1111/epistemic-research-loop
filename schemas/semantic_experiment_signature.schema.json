@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "description": "Meaning-level identity used instead of command or experiment ID.",
+  "properties": {
+    "candidate_producing": {
+      "default": false,
+      "title": "Candidate Producing",
+      "type": "boolean"
+    },
+    "data_slice": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Data Slice",
+      "type": "array"
+    },
+    "decision_affected": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Decision Affected",
+      "type": "array"
+    },
+    "observable": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Observable",
+      "type": "array"
+    },
+    "operation": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Operation",
+      "type": "array"
+    },
+    "target_hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Target Hypotheses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "target_hypotheses",
+    "data_slice",
+    "operation",
+    "observable",
+    "decision_affected"
+  ],
+  "title": "SemanticExperimentSignature",
+  "type": "object"
+}

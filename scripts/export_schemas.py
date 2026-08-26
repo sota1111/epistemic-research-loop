@@ -5,8 +5,14 @@ from pathlib import Path
 
 from epistemic_loop.domain.events import EventEnvelope
 from epistemic_loop.domain.models import (
+    AgentBeliefState,
     AgentResourceRecord,
     CalibrationSummary,
+    CandidateArtifactRecord,
+    CandidateArtifactValidation,
+    CollapseMetrics,
+    CommunicationPolicy,
+    DecisionBinding,
     ExperimentManifest,
     ExperimentProposal,
     ExperimentRequest,
@@ -15,6 +21,8 @@ from epistemic_loop.domain.models import (
     FinalSelectionRule,
     FoldAssignment,
     ForecastCalibrationRecord,
+    GlobalControlState,
+    GlobalEvidence,
     Hypothesis,
     Observation,
     OOFArtifact,
@@ -23,7 +31,9 @@ from epistemic_loop.domain.models import (
     QDCandidate,
     ResearchBrief,
     ResearchStateSnapshot,
+    ResourceEstimate,
     ResourceReconciliation,
+    SemanticExperimentSignature,
     ValidationWorld,
     ValidationWorldEvidence,
 )
@@ -51,6 +61,16 @@ SCHEMAS = {
     "resource_reconciliation.schema.json": ResourceReconciliation,
     "final_selection_rule.schema.json": FinalSelectionRule,
     "agent_resource_record.schema.json": AgentResourceRecord,
+    "agent_belief_state.schema.json": AgentBeliefState,
+    "global_control_state.schema.json": GlobalControlState,
+    "global_evidence.schema.json": GlobalEvidence,
+    "communication_policy.schema.json": CommunicationPolicy,
+    "semantic_experiment_signature.schema.json": SemanticExperimentSignature,
+    "decision_binding.schema.json": DecisionBinding,
+    "resource_estimate.schema.json": ResourceEstimate,
+    "collapse_metrics.schema.json": CollapseMetrics,
+    "candidate_artifact_record.schema.json": CandidateArtifactRecord,
+    "candidate_artifact_validation.schema.json": CandidateArtifactValidation,
 }
 
 

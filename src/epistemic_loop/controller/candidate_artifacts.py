@@ -1,0 +1,140 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from collections.abc import Iterable
+from pathlib import Path
+
+import yaml
+
+from epistemic_loop.domain.enums import TerminalStatus
+from epistemic_loop.domain.models import CandidateArtifactValidation
+
+CANDIDATE_ARTIFACT_CONTRACT = (
+    "candidate.yaml",
+    "run_manifest.yaml",
+    "feature_manifest.yaml",
+    "fold_assignment.parquet",
+    "oof_predictions.parquet",
+    "test_predictions.parquet",
+    "metrics.json",
+    "model_artifact",
+    "submission.csv",
+    "source_code_ref",
+    "environment_lock",
+)
+
+
+def candidate_required_outputs() -> list[str]:
+    return list(CANDIDATE_ARTIFACT_CONTRACT)
+
+
+class CandidateArtifactValidator:
+    """Validate promotion artifacts without importing a solver dataframe stack."""
+
+    def validate(self, root: str | Path) -> CandidateArtifactValidation:
+        directory = Path(root)
+        missing = [name for name in CANDIDATE_ARTIFACT_CONTRACT if not (directory / name).exists()]
+        invalid: list[str] = []
+        model_dir = directory / "model_artifact"
+        if model_dir.exists() and (not model_dir.is_dir() or not any(model_dir.iterdir())):
+            invalid.append("model_artifact must be a non-empty directory")
+        for name in (
+            "fold_assignment.parquet",
+            "oof_predictions.parquet",
+            "test_predictions.parquet",
+            "submission.csv",
+            "source_code_ref",
+            "environment_lock",
+        ):
+            path = directory / name
+            if path.exists() and (not path.is_file() or path.stat().st_size == 0):
+                invalid.append(f"{name} must be a non-empty file")
+
+        candidate = self._mapping(directory / "candidate.yaml", invalid)
+        run_manifest = self._mapping(directory / "run_manifest.yaml", invalid)
+        feature_manifest = self._mapping(directory / "feature_manifest.yaml", invalid)
+        metrics = self._json_mapping(directory / "metrics.json", invalid)
+        if candidate:
+            required = {"candidate_id", "source_agent", "git_commit", "dataset_hash", "environment_hash"}
+            absent = sorted(required - set(candidate))
+            if absent:
+                invalid.append(f"candidate.yaml missing keys: {absent}")
+            validation = candidate.get("validation")
+            if not isinstance(validation, dict) or not {
+                "protocol",
+                "primary_score",
+                "fold_scores",
+                "score_std",
+            } <= set(validation):
+                invalid.append("candidate.yaml validation section is incomplete")
+            leakage = candidate.get("leakage_check")
+            if not isinstance(leakage, dict) or leakage.get("passed") is not True:
+                invalid.append("candidate leakage_check.passed must be true")
+            reproducibility = candidate.get("reproducibility")
+            if not isinstance(reproducibility, dict) or reproducibility.get("passed") is not True:
+                invalid.append("candidate reproducibility.passed must be true")
+        if run_manifest and not {"candidate_id", "dataset_hash", "environment_hash"} <= set(run_manifest):
+            invalid.append("run_manifest.yaml is incomplete")
+        if feature_manifest and not isinstance(feature_manifest.get("features"), list):
+            invalid.append("feature_manifest.yaml requires a features list")
+        if metrics and not any(isinstance(value, (int, float)) for value in metrics.values()):
+            invalid.append("metrics.json contains no numeric metric")
+
+        if missing or invalid:
+            leakage_invalid = any("leakage" in item for item in invalid)
+            return CandidateArtifactValidation(
+                valid=False,
+                terminal_status=(
+                    TerminalStatus.INVALID_LEAKAGE if leakage_invalid else TerminalStatus.INVALID_ARTIFACT
+                ),
+                missing=missing,
+                invalid=invalid,
+            )
+        return CandidateArtifactValidation(valid=True, terminal_status=TerminalStatus.COMPLETED)
+
+    @staticmethod
+    def _mapping(path: Path, invalid: list[str]) -> dict[str, object]:
+        if not path.is_file():
+            return {}
+        try:
+            value = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, yaml.YAMLError) as exc:
+            invalid.append(f"{path.name} cannot be parsed: {exc}")
+            return {}
+        if not isinstance(value, dict):
+            invalid.append(f"{path.name} must contain an object")
+            return {}
+        return value
+
+    @staticmethod
+    def _json_mapping(path: Path, invalid: list[str]) -> dict[str, object]:
+        if not path.is_file():
+            return {}
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            invalid.append(f"{path.name} cannot be parsed: {exc}")
+            return {}
+        if not isinstance(value, dict):
+            invalid.append(f"{path.name} must contain an object")
+            return {}
+        return value
+
+
+def hash_snapshot(paths: Iterable[str | Path]) -> str:
+    """Content hash a stable collection without mutating the dataset/environment."""
+
+    digest = hashlib.sha256()
+    resolved = sorted((Path(item).resolve() for item in paths), key=str)
+    for path in resolved:
+        if not path.exists():
+            raise FileNotFoundError(path)
+        members = [path] if path.is_file() else sorted(item for item in path.rglob("*") if item.is_file())
+        for member in members:
+            digest.update(str(member.relative_to(path.parent if path.is_file() else path)).encode())
+            digest.update(b"\0")
+            with member.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"

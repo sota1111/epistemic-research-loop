@@ -43,12 +43,22 @@ selection:
 validation:
   worlds: [random, time, group, time_group]
   entropy_priority_threshold: 0.65
+  require_forward_fraud_label_validation: true
+  horizons: 3
+  require_time_gap: true
+  require_known_new_client_slices: true
+  adversarial_auc_is_diagnostic_only: true
 qd:
   maximum_archive_size: 24
   quality_floor_relative_to_best: 0.97
 oof:
   save_row_level_predictions: true
   format: parquet
+  required_for_candidate_promotion: true
+  common_final_crossfit: true
+  calculate_residual_correlation: true
+  calculate_effective_rank: true
+  calculate_marginal_ensemble_gain: true
 calibration:
   enabled: true
   minimum_records: 3
@@ -93,6 +103,12 @@ executor:
   dataset_mounts: [ieee-cis]
   workspace: ${IEEE_CIS_AGENT_WORKTREE}
   command_allowlist: [python, python3, uv]
+scheduler:
+  max_concurrent_heavy_experiments: 1
+  max_concurrent_light_experiments: 3
+  memory_safety_margin: 0.25
+  max_concurrent_parquet_full_scans: 1
+  validate_required_artifacts: true
 artifacts:
   adapter: local
   root: .runs

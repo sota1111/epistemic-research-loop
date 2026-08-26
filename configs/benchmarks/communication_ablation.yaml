@@ -1,0 +1,22 @@
+benchmark_id: c-communication-ablation-001
+search_system: system_c
+communication_modes:
+  - no_sharing
+  - selective_delayed_asymmetric
+  - full_live_sharing
+matched_conditions:
+  llm: identical
+  initial_code: identical
+  action_space: identical
+  token_budget: 400000
+  cpu_minutes: 2400
+  gpu_minutes: 480
+  wall_clock_minutes: 600
+  agent_count: 4
+  cycle_count: 12
+  seeds: [42, 43, 44]
+  hidden_evaluator: identical
+success_rule:
+  - hidden_performance_selective_gte_no_sharing
+  - semantic_duplication_selective_lt_no_sharing
+  - hypothesis_diversity_selective_gt_full_sharing

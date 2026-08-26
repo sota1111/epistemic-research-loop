@@ -295,6 +295,14 @@ class RunState:
         ]
         return tuple(recent[-window:])
 
+    def recent_candidate_flags(self, window: int = 3) -> tuple[bool, ...]:
+        recent = [
+            self.proposals[identifier].candidate_producing
+            for identifier in self.selection_order
+            if identifier in self.proposals
+        ]
+        return tuple(recent[-window:])
+
     def observations_for(self, experiment_id: str) -> list[Observation]:
         return [item for item in self.observations.values() if item.experiment_id == experiment_id]
 
@@ -309,6 +317,9 @@ class RunState:
         source_policy_strict: bool = True,
         max_validation_reuse: int = 0,
         max_consecutive_optimization: int = 3,
+        max_consecutive_diagnostics: int = 3,
+        require_candidate_after_diagnostics: bool = False,
+        enforce_v2_contract: bool = False,
         enforce_brief: bool = True,
         command_allowlist: tuple[str, ...] = (),
         required_request_fields: tuple[str, ...] = (),
@@ -327,10 +338,20 @@ class RunState:
             holdout_policy=self.run.holdout_policy.policy,
             prior_fingerprints=self.settled_fingerprints(),
             recent_experiment_types=self.recent_experiment_types(window=max(max_consecutive_optimization, 1)),
+            recent_candidate_producing=self.recent_candidate_flags(window=max(max_consecutive_diagnostics, 1)),
+            prior_semantic_signatures=tuple(
+                proposal.semantic_signature
+                for identifier, proposal in self.proposals.items()
+                if proposal.semantic_signature is not None
+                and self.experiment_statuses.get(identifier) in SETTLED_STATUSES
+            ),
             source_policy_strict=source_policy_strict,
             validation_reuse=self.validation_reuse(),
             max_validation_reuse=max_validation_reuse,
             max_consecutive_optimization=max_consecutive_optimization,
+            max_consecutive_diagnostics=max_consecutive_diagnostics,
+            require_candidate_after_diagnostics=require_candidate_after_diagnostics,
+            enforce_v2_contract=enforce_v2_contract,
             command_allowlist=command_allowlist,
             required_request_fields=required_request_fields,
             required_brief_fields=required_brief_fields,

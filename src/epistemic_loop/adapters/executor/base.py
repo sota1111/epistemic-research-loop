@@ -56,6 +56,26 @@ BRIEF_CONTRACT = ExecutionContract(
     ),
 )
 
+# v0.2 makes development an explicit part of the action space.  The worker may
+# add scripts, features, splitters, models, post-processing and tests in its own
+# isolated worktree; it still returns only preregistered artifacts.
+CODE_DEVELOPMENT_CONTRACT = ExecutionContract(
+    # `brief` stays wire-compatible with v0.1 controller integrations.
+    kind="brief",
+    required_fields=("brief",),
+    required_brief_fields=("title", "objective", "approach", "verification"),
+    note=(
+        "This work is performed by a developer, not by a shell. Work in the assigned isolated "
+        "competition worktree. Put a development brief in "
+        "`implementation_request.brief` with `title`, `objective`, `approach` and `verification`. "
+        "Creating or changing Python scripts, feature generators, validation splitters, UID "
+        "generators, model families, post-processing, OOF/ensemble pipelines and tests is allowed. "
+        "A shell command is ignored by this executor, so do not spend the design on one. "
+        "Do not read another agent worktree, hidden/private scores, test labels, winner code or "
+        "winner write-ups. A candidate is complete only when every required artifact exists."
+    ),
+)
+
 
 class ExecutorAdapter(ABC):
     #: Overridden by executors whose proposals must look different. See `ExecutionContract`.

@@ -403,6 +403,10 @@ class AutonomousLoop:
                 source_policy_strict=self.config.contamination.require_source_provenance,
                 max_validation_reuse=self.config.loop.max_validation_reuse,
                 max_consecutive_optimization=self.config.loop.max_consecutive_optimization_experiments,
+                max_consecutive_diagnostics=self.config.phase_gate.max_consecutive_diagnostic_experiments,
+                require_candidate_after_diagnostics=(
+                    self.config.phase_gate.require_candidate_after_diagnostics and state.run.mode.value == "system_c"
+                ),
                 command_allowlist=tuple(self.config.executor.command_allowlist),
                 execution_contract=self.executor.contract,
                 eig_method=self.config.selection.eig_method,

@@ -53,6 +53,7 @@ from epistemic_loop.controller.research_graph import (
     fingerprint_path,
 )
 from epistemic_loop.controller.research_state import derive_research_state
+from epistemic_loop.controller.resource_scheduler import ResourceScheduler
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.controller.submission_policy import (
     candidates_from_state,
@@ -153,8 +154,17 @@ def _state(run_id: str) -> RunState:
 
 def _executor(config: AppConfig) -> ExecutorAdapter:
     result_root = _home() / config.executor.result_root
+    scheduler = ResourceScheduler(
+        total_memory_gb=config.scheduler.total_memory_gb,
+        total_gpu_memory_gb=config.scheduler.total_gpu_memory_gb,
+        max_concurrent_heavy_experiments=config.scheduler.max_concurrent_heavy_experiments,
+        max_concurrent_light_experiments=config.scheduler.max_concurrent_light_experiments,
+        max_concurrent_parquet_full_scans=config.scheduler.max_concurrent_parquet_full_scans,
+        memory_safety_margin=config.scheduler.memory_safety_margin,
+        state_path=_home() / ".state" / "resource-scheduler.json",
+    )
     if config.executor.adapter == "local":
-        return LocalExecutor(_home() / config.executor.workspace, result_root)
+        return LocalExecutor(_home() / config.executor.workspace, result_root, scheduler=scheduler)
     if not config.executor.linear_team_id or not config.executor.linear_project_id:
         raise typer.BadParameter("executor.linear_team_id and executor.linear_project_id must be configured")
     if config.executor.adapter == "competition_repo":
@@ -179,7 +189,10 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
         state_id=config.executor.linear_state_id,
     )
     if config.executor.adapter == "linear_local_worker":
-        return LinearLocalWorkerAdapter(control_plane, LocalExecutor(_home() / config.executor.workspace, result_root))
+        return LinearLocalWorkerAdapter(
+            control_plane,
+            LocalExecutor(_home() / config.executor.workspace, result_root, scheduler=scheduler),
+        )
     return control_plane
 
 
@@ -796,6 +809,10 @@ def experiments_select(
             source_policy_strict=config.contamination.require_source_provenance,
             max_validation_reuse=config.loop.max_validation_reuse,
             max_consecutive_optimization=config.loop.max_consecutive_optimization_experiments,
+            max_consecutive_diagnostics=config.phase_gate.max_consecutive_diagnostic_experiments,
+            require_candidate_after_diagnostics=(
+                config.phase_gate.require_candidate_after_diagnostics and state.run.mode.value == "system_c"
+            ),
             command_allowlist=tuple(config.executor.command_allowlist),
             execution_contract=_executor(config).contract,
             eig_method=config.selection.eig_method,

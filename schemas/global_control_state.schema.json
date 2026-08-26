@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "AgentNicheAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "minLength": 1,
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "primary_niche": {
+          "$ref": "#/$defs/EpistemicNiche"
+        },
+        "secondary_niche": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpistemicNiche"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "agent_id",
+        "primary_niche"
+      ],
+      "title": "AgentNicheAssignment",
+      "type": "object"
+    },
+    "EpistemicNiche": {
+      "enum": [
+        "temporal",
+        "entity_client",
+        "validation",
+        "distribution_shift",
+        "label_quality",
+        "feature_representation",
+        "model_family",
+        "error_analysis",
+        "falsification",
+        "post_processing",
+        "ensemble"
+      ],
+      "title": "EpistemicNiche",
+      "type": "string"
+    },
+    "RemainingBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_minutes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cpu Minutes",
+          "type": "number"
+        },
+        "gpu_minutes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Minutes",
+          "type": "number"
+        },
+        "llm_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Llm Tokens",
+          "type": "integer"
+        },
+        "wall_clock_minutes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Wall Clock Minutes",
+          "type": "number"
+        }
+      },
+      "title": "RemainingBudget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "active_agents": {
+      "items": {
+        "$ref": "#/$defs/AgentNicheAssignment"
+      },
+      "title": "Active Agents",
+      "type": "array"
+    },
+    "archive_occupancy": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Archive Occupancy",
+      "type": "object"
+    },
+    "collapse_metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Collapse Metrics",
+      "type": "object"
+    },
+    "dataset_hash": {
+      "minLength": 1,
+      "title": "Dataset Hash",
+      "type": "string"
+    },
+    "experiment_queue": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Experiment Queue",
+      "type": "array"
+    },
+    "remaining_budget": {
+      "$ref": "#/$defs/RemainingBudget"
+    },
+    "resource_pressure": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Resource Pressure",
+      "type": "object"
+    },
+    "running_experiments": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Running Experiments",
+      "type": "array"
+    }
+  },
+  "required": [
+    "dataset_hash"
+  ],
+  "title": "GlobalControlState",
+  "type": "object"
+}

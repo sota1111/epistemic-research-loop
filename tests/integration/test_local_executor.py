@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from epistemic_loop.adapters.executor.local import LocalExecutor
+from epistemic_loop.domain.enums import TerminalStatus
 from epistemic_loop.domain.models import DatasetMount, ExperimentManifest, ExperimentRequest, ResourceRequest
 
 
@@ -140,3 +141,35 @@ def test_disabled_network_policy_is_enforced_inside_python_worker(tmp_path: Path
     assert result.status == "failed"
     assert result.failure_excerpt is not None
     assert "network access is disabled" in result.failure_excerpt
+
+
+def test_exit_zero_without_candidate_contract_is_invalid_artifact(tmp_path: Path) -> None:
+    script = tmp_path / "partial_candidate.py"
+    script.write_text(
+        "import json, os, pathlib\n"
+        "root = pathlib.Path(os.environ['ERL_OUTPUT_DIR'])\n"
+        "(root / 'metrics.json').write_text(json.dumps({'auc': 0.9}))\n",
+        encoding="utf-8",
+    )
+    request = ExperimentRequest(
+        request_id="req-candidate",
+        experiment_id="exp-candidate",
+        run_id="run-candidate",
+        idempotency_key="run-candidate:exp-candidate:attempt-1",
+        base_commit_sha="abc123",
+        implementation_mode="candidate",
+        objective="partial candidate must not be promoted",
+        command=f"python3 {script}",
+        container_image="local",
+        dataset_mounts=[],
+        resources=ResourceRequest(timeout_seconds=10),
+        seeds=[11],
+        required_outputs=["metrics.json"],
+        candidate_producing=True,
+    )
+
+    result = LocalExecutor(tmp_path, tmp_path / "results").submit(request)
+
+    assert result.exit_code == 0
+    assert result.status == "failed"
+    assert result.terminal_status == TerminalStatus.INVALID_ARTIFACT

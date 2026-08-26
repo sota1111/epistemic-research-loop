@@ -31,6 +31,8 @@ names its Linear issue.
 | 2026-08-25 | C-lite minimum implemented: four system modes, validation-world posterior, EVSI/risk, QD/evolution, independent counter-experiments, OOF diversity, locked final artifacts, four-arm benchmark | `tests/unit/test_validation_worlds.py`, `tests/unit/test_qd_archive.py`, `tests/unit/test_oof_diversity.py`, `tests/integration/test_c_lite_components.py` |
 | 2026-08-25 | Specification closure: executable validation splits, lineage-enforced evolution, Monte Carlo EIG, online calibration, preferred-state allocation, cross-fitted OOF ensembles, measured resource/retry reconciliation, replay manifests, contamination variants, and strict terminal final lock | `tests/unit/test_validation_splits.py`, `tests/unit/test_oof_ensemble.py`, `tests/unit/test_calibration_and_monte_carlo.py`, `tests/e2e/test_autonomous_loop.py`, `tests/integration/test_local_executor.py`, `tests/integration/test_c_lite_components.py` |
 | 2026-08-25 | IEEE-CIS branch-isolated agents: three CLI-backed System C processes selected and completed three distinct semantic experiment designs from one clean initial commit | [ieee_cis_branch_agents](verification/ieee_cis_branch_agents.md), `scripts/verify_branch_agent_diversity.py` |
+| 2026-08-26 | C-lite v0.2 scaling correction: private belief islands, selective evidence, semantic collapse control, resource/artifact gates, IEEE-CIS forward/UID plugin, multi-candidate archive and final meta-selector | [v0.2 specification](c_lite_revision_v0.2.md), `tests/unit/test_c_lite_v2.py`, `tests/unit/test_ieee_cis_v2.py`, `tests/unit/test_candidate_archive_v2.py` |
+| 2026-08-26 | IEEE-CIS v0.2 multi-island real-data verification: three generic branches produced three semantic candidate families, sequential resource admission, valid OOF artifacts and a locked nested ensemble | [multi-island verification](verification/ieee_cis_multi_island_v02.md), `scripts/run_ieee_cis_multi_island_validation.py`, `scripts/finalize_ieee_cis_multi_island_validation.py` |
 
 ## What the last milestone changed
 
@@ -67,10 +69,10 @@ what it did **not** establish.
 
 These are deliberate and unfinished, not oversights:
 
-- **Native multi-agent proposal aggregation within one Run is not implemented.** The verified
-  multi-agent topology uses separate branches, worktrees and Runs. Each is fully unattended via the
-  authenticated CLI adapter, but agents do not append private proposal batches into one shared
-  planning transition.
+- **The native multi-island control plane has completed a real-data candidate run, but not a primary-endpoint run.**
+  Three IEEE-CIS belief islands produced valid OOF candidates and a locked ensemble. The common
+  comparison covered only the intersection of independently generated OOF rows, not a full common
+  first-level cross-fit; matched Comm-0/S/F, multi-seed reproduction and Hidden performance remain open.
 - **The Research-to-Exploitation transition has not been observed in a real run.** It is implemented
   and unit-tested; the IEEE-CIS run stayed in discovery because its findings kept failing
   replication, which is the policy working rather than failing. The arithmetic is in the record.

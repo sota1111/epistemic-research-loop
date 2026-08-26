@@ -6,8 +6,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from epistemic_loop.controller.candidate_artifacts import CANDIDATE_ARTIFACT_CONTRACT
+from epistemic_loop.controller.diversity_control import semantic_similarity
 from epistemic_loop.domain.enums import ExperimentType, HoldoutAccess, HoldoutPolicyName, Risk, RunMode
-from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal
+from epistemic_loop.domain.models import Budget, BudgetUsage, ExperimentProposal, SemanticExperimentSignature
 from epistemic_loop.holdout.adaptivity import exhausted as validation_budget_exhausted
 from epistemic_loop.holdout.adaptivity import validation_fingerprint
 
@@ -23,12 +25,17 @@ class GateContext:
     holdout_policy: HoldoutPolicyName
     prior_fingerprints: frozenset[str] = frozenset()
     recent_experiment_types: tuple[ExperimentType, ...] = ()
+    recent_candidate_producing: tuple[bool, ...] = ()
+    prior_semantic_signatures: tuple[SemanticExperimentSignature, ...] = ()
     source_policy_strict: bool = True
     validation_reuse: Mapping[str, int] = field(default_factory=dict)
     max_validation_reuse: int = 0
     #: Consecutive optimization experiments allowed before a non-optimization run is required.
     #: 0 disables the rule, which is what an exploiter-only control arm needs.
     max_consecutive_optimization: int = 3
+    max_consecutive_diagnostics: int = 3
+    require_candidate_after_diagnostics: bool = False
+    enforce_v2_contract: bool = False
     #: Lineages the research brief approved. Empty means no brief has been published, and the
     #: restriction does not apply -- exploitation cannot be entered without one anyway.
     approved_lineages: frozenset[str] = frozenset()
@@ -57,7 +64,7 @@ class GateResult:
 
 
 def experiment_fingerprint(experiment: ExperimentProposal) -> str:
-    identity = {
+    identity: dict[str, object] = {
         "hypothesis_ids": sorted(experiment.hypothesis_ids),
         "protocol": experiment.protocol.strip(),
         "split_strategy": experiment.split_strategy.strip(),
@@ -65,6 +72,11 @@ def experiment_fingerprint(experiment: ExperimentProposal) -> str:
         "metrics": sorted(experiment.metrics),
         "implementation_request": experiment.implementation_request,
     }
+    if experiment.semantic_signature is not None:
+        identity = {
+            "semantic_signature": experiment.semantic_signature.model_dump(mode="json"),
+            "replication": experiment.replication.model_dump(mode="json") if experiment.replication else None,
+        }
     value = json.dumps(identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -203,8 +215,45 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
     for artifact in experiment.required_artifacts:
         # Checked for existence after the run, so a sentence describing a file is a guaranteed
         # failure -- and one discovered only after the experiment has already been executed.
-        if not artifact or " " in artifact or artifact.startswith("/") or ".." in artifact:
+        if not artifact or " " in artifact or artifact.startswith("/") or ".." in Path(artifact).parts:
             reasons.append(f"required_artifacts must be plain relative file names, not {artifact!r}")
+    if experiment.candidate_producing:
+        missing_candidate_artifacts = sorted(set(CANDIDATE_ARTIFACT_CONTRACT) - set(experiment.required_artifacts))
+        if missing_candidate_artifacts:
+            reasons.append(
+                f"candidate-producing experiment is missing artifact contract: {missing_candidate_artifacts}"
+            )
+        if experiment.descriptors is None:
+            reasons.append("candidate-producing experiment requires candidate descriptors")
+        if experiment.semantic_signature is None:
+            reasons.append("candidate-producing experiment requires a semantic signature")
+        if experiment.resource_estimate is None:
+            reasons.append("candidate-producing experiment requires a resource estimate")
+        if experiment.semantic_signature is not None:
+            operations = set(experiment.semantic_signature.operation)
+            observables = set(experiment.semantic_signature.observable)
+            if "adversarial_classifier" in operations and not any(
+                "fraud" in observable and "auc" in observable for observable in observables
+            ):
+                reasons.append(
+                    "adversarial AUC is diagnostic only; candidate adoption requires forward fraud-label AUC"
+                )
+    if context.enforce_v2_contract:
+        if experiment.semantic_signature is None:
+            reasons.append("C-lite v0.2 experiments require a semantic signature")
+        if experiment.resource_estimate is None:
+            reasons.append("C-lite v0.2 experiments require a resource estimate")
+        if not experiment.candidate_producing and experiment.decision_binding is None:
+            reasons.append("diagnostic experiments require a preregistered decision binding")
+    if (
+        experiment.semantic_signature is not None
+        and experiment.replication is None
+        and any(
+            semantic_similarity(experiment.semantic_signature, item) >= 0.85
+            for item in context.prior_semantic_signatures
+        )
+    ):
+        reasons.append("semantic duplicate (only a preregistered replication may repeat it)")
     if experiment.contamination_risk == Risk.HIGH:
         reasons.append("high contamination risk")
     if context.source_policy_strict and any(not source.allowed for source in experiment.source_refs):
@@ -258,5 +307,17 @@ def hard_gate(experiment: ExperimentProposal, context: GateContext) -> GateResul
         and experiment.experiment_type == ExperimentType.OPTIMIZATION
     ):
         reasons.append(f"{limit} consecutive optimization runs require a diagnostic, replication, or falsification run")
+
+    diagnostic_limit = context.max_consecutive_diagnostics
+    diagnostic_tail = context.recent_candidate_producing[-diagnostic_limit:] if diagnostic_limit else ()
+    if (
+        context.require_candidate_after_diagnostics
+        and diagnostic_limit
+        and len(diagnostic_tail) == diagnostic_limit
+        and not any(diagnostic_tail)
+        and not experiment.candidate_producing
+        and experiment.candidate_exception_reason is None
+    ):
+        reasons.append(f"{diagnostic_limit} consecutive diagnostics require a candidate-producing experiment")
 
     return GateResult(passed=not reasons, reasons=tuple(reasons), fingerprint=fingerprint)

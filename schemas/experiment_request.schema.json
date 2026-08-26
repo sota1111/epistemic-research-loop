@@ -21,6 +21,23 @@
       "title": "DatasetMount",
       "type": "object"
     },
+    "EpistemicNiche": {
+      "enum": [
+        "temporal",
+        "entity_client",
+        "validation",
+        "distribution_shift",
+        "label_quality",
+        "feature_representation",
+        "model_family",
+        "error_analysis",
+        "falsification",
+        "post_processing",
+        "ensemble"
+      ],
+      "title": "EpistemicNiche",
+      "type": "string"
+    },
     "ResourceRequest": {
       "additionalProperties": false,
       "properties": {
@@ -30,17 +47,40 @@
           "title": "Cpu",
           "type": "integer"
         },
+        "expected_minutes": {
+          "default": 60,
+          "exclusiveMinimum": 0,
+          "title": "Expected Minutes",
+          "type": "number"
+        },
+        "full_table_materialization": {
+          "default": false,
+          "title": "Full Table Materialization",
+          "type": "boolean"
+        },
         "gpu": {
           "default": 0,
           "minimum": 0,
           "title": "Gpu",
           "type": "integer"
         },
+        "gpu_memory_gb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Memory Gb",
+          "type": "number"
+        },
         "memory_gb": {
           "default": 4,
           "exclusiveMinimum": 0,
           "title": "Memory Gb",
           "type": "number"
+        },
+        "parquet_scan_columns": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Parquet Scan Columns",
+          "type": "integer"
         },
         "timeout_seconds": {
           "default": 3600,
@@ -63,6 +103,66 @@
       ],
       "title": "RunMode",
       "type": "string"
+    },
+    "SemanticExperimentSignature": {
+      "additionalProperties": false,
+      "description": "Meaning-level identity used instead of command or experiment ID.",
+      "properties": {
+        "candidate_producing": {
+          "default": false,
+          "title": "Candidate Producing",
+          "type": "boolean"
+        },
+        "data_slice": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Slice",
+          "type": "array"
+        },
+        "decision_affected": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Decision Affected",
+          "type": "array"
+        },
+        "observable": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observable",
+          "type": "array"
+        },
+        "operation": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operation",
+          "type": "array"
+        },
+        "target_hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Hypotheses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_hypotheses",
+        "data_slice",
+        "operation",
+        "observable",
+        "decision_affected"
+      ],
+      "title": "SemanticExperimentSignature",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -76,6 +176,11 @@
       "additionalProperties": true,
       "title": "Brief",
       "type": "object"
+    },
+    "candidate_producing": {
+      "default": false,
+      "title": "Candidate Producing",
+      "type": "boolean"
     },
     "command": {
       "default": "",
@@ -103,6 +208,17 @@
       },
       "title": "Dataset Mounts",
       "type": "array"
+    },
+    "epistemic_niche": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EpistemicNiche"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "experiment_id": {
       "minLength": 1,
@@ -162,6 +278,17 @@
       "minItems": 1,
       "title": "Seeds",
       "type": "array"
+    },
+    "semantic_signature": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SemanticExperimentSignature"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "system_mode": {
       "$ref": "#/$defs/RunMode",

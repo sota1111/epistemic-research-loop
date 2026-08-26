@@ -1,0 +1,46 @@
+{
+  "$defs": {
+    "TerminalStatus": {
+      "enum": [
+        "COMPLETED",
+        "FAILED_EXECUTION",
+        "FAILED_RESOURCE",
+        "INVALID_ARTIFACT",
+        "INVALID_LEAKAGE",
+        "INCONCLUSIVE"
+      ],
+      "title": "TerminalStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "invalid": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invalid",
+      "type": "array"
+    },
+    "missing": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing",
+      "type": "array"
+    },
+    "terminal_status": {
+      "$ref": "#/$defs/TerminalStatus"
+    },
+    "valid": {
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "valid",
+    "terminal_status"
+  ],
+  "title": "CandidateArtifactValidation",
+  "type": "object"
+}

@@ -36,6 +36,72 @@ class Phase(StrEnum):
     FINALIZED = "finalized"
 
 
+class ResearchPhase(StrEnum):
+    """C-lite v0.2 lifecycle.
+
+    ``Phase`` is retained for replaying v0.1 event logs.  New multi-island
+    orchestration uses this more explicit lifecycle so diagnosis cannot be
+    confused with candidate implementation.
+    """
+
+    PHASE_0_BASELINE = "phase_0_baseline"
+    PHASE_1_DIAGNOSIS = "phase_1_diagnosis"
+    PHASE_2_HYPOTHESIS_DISCRIMINATION = "phase_2_hypothesis_discrimination"
+    PHASE_3_CANDIDATE_IMPLEMENTATION = "phase_3_candidate_implementation"
+    PHASE_4_ROBUSTNESS = "phase_4_robustness"
+    PHASE_5_ENSEMBLE = "phase_5_ensemble"
+    PHASE_6_FINALIZATION = "phase_6_finalization"
+
+
+class CommunicationMode(StrEnum):
+    NO_SHARING = "no_sharing"
+    SELECTIVE_DELAYED_ASYMMETRIC = "selective_delayed_asymmetric"
+    FULL_LIVE_SHARING = "full_live_sharing"
+
+
+class EvidenceVisibility(StrEnum):
+    PRIVATE = "private"
+    CONTROLLER_ONLY = "controller_only"
+    SHAREABLE_FACT = "shareable_fact"
+    SHARED_CHALLENGE = "shared_challenge"
+    GLOBAL_SAFETY = "global_safety"
+
+
+class EpistemicNiche(StrEnum):
+    TEMPORAL = "temporal"
+    ENTITY_CLIENT = "entity_client"
+    VALIDATION = "validation"
+    DISTRIBUTION_SHIFT = "distribution_shift"
+    LABEL_QUALITY = "label_quality"
+    FEATURE_REPRESENTATION = "feature_representation"
+    MODEL_FAMILY = "model_family"
+    ERROR_ANALYSIS = "error_analysis"
+    FALSIFICATION = "falsification"
+    POST_PROCESSING = "post_processing"
+    ENSEMBLE = "ensemble"
+
+
+class ExperimentKind(StrEnum):
+    DIAGNOSTIC = "diagnostic"
+    CANDIDATE_PRODUCING = "candidate_producing"
+
+
+class DecisionOutcome(StrEnum):
+    ACTION_CHANGING = "informative_action_changing"
+    ACTION_NEUTRAL = "informative_action_neutral"
+    INCONCLUSIVE = "inconclusive"
+    INVALID = "invalid"
+
+
+class TerminalStatus(StrEnum):
+    COMPLETED = "COMPLETED"
+    FAILED_EXECUTION = "FAILED_EXECUTION"
+    FAILED_RESOURCE = "FAILED_RESOURCE"
+    INVALID_ARTIFACT = "INVALID_ARTIFACT"
+    INVALID_LEAKAGE = "INVALID_LEAKAGE"
+    INCONCLUSIVE = "INCONCLUSIVE"
+
+
 class RunStatus(StrEnum):
     CREATED = "created"
     RUNNING = "running"

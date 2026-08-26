@@ -58,8 +58,17 @@ def build_experiment_request(
     if network_policy not in NETWORK_POLICIES:
         raise ValueError(f"unknown network policy: {network_policy}")
 
-    resources = request.get("resources")
-    resource_request = ResourceRequest.model_validate(resources) if isinstance(resources, dict) else ResourceRequest()
+    resources = dict(request.get("resources") or {}) if isinstance(request.get("resources"), dict) else {}
+    if proposal.resource_estimate is not None:
+        estimate = proposal.resource_estimate
+        resources.setdefault("cpu", estimate.cpu_cores)
+        resources.setdefault("memory_gb", estimate.memory_gb)
+        resources.setdefault("gpu_memory_gb", estimate.gpu_memory_gb)
+        resources.setdefault("expected_minutes", estimate.expected_minutes)
+        resources.setdefault("parquet_scan_columns", estimate.parquet_scan_columns)
+        resources.setdefault("full_table_materialization", estimate.full_table_materialization)
+        resources.setdefault("timeout_seconds", max(1, int(estimate.expected_minutes * 60 * 2)))
+    resource_request = ResourceRequest.model_validate(resources) if resources else ResourceRequest()
     mounts = request.get("dataset_mounts")
     mount_names = [str(item) for item in mounts] if isinstance(mounts, list) else list(dataset_mounts)
 
@@ -82,4 +91,7 @@ def build_experiment_request(
         required_outputs=list(proposal.required_artifacts),
         network_policy=cast(Any, str(request.get("network_policy") or network_policy)),
         brief=cast("dict[str, Any]", brief) if isinstance(brief := request.get("brief"), dict) else {},
+        candidate_producing=proposal.candidate_producing,
+        semantic_signature=proposal.semantic_signature,
+        epistemic_niche=proposal.epistemic_niche,
     )

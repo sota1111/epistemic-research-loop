@@ -6,4 +6,61 @@ competition:
   slug: local-competition
   metric_direction: maximize
   primary_metric: score
-
+system:
+  mode: system_c
+  communication_mode: selective_delayed_asymmetric
+  max_cycles: 12
+agents:
+  count: 4
+  belief_scope: local
+  share_posteriors: false
+  share_global_best: false
+  niches: [temporal, entity_client, validation, falsification]
+communication:
+  store_all_evidence_globally: true
+  broadcast_raw_results: false
+  broadcast_verified_facts: selective
+  migration_interval_cycles: 3
+  challenge_sharing: true
+  hide_source_agent_on_challenge: true
+diversity:
+  semantic_duplicate_detection: true
+  duplicate_similarity_threshold: 0.85
+  minimum_niche_budget_enabled: true
+  global_best_visibility: controller_only
+  collapse_detection: true
+  niche_budget:
+    temporal: 0.15
+    entity_client: 0.15
+    validation: 0.15
+    distribution_shift: 0.10
+    feature_representation: 0.15
+    model_family: 0.10
+    falsification: 0.10
+    post_processing_ensemble: 0.10
+action_space:
+  allow_new_python_scripts: true
+  allow_pipeline_modification: true
+  allow_new_models: true
+  allow_new_features: true
+  allow_new_uid_candidates: true
+  allow_post_processing: true
+  allow_ensembles: true
+phase_gate:
+  max_consecutive_diagnostic_experiments: 3
+  require_candidate_after_diagnostics: true
+  candidate_exception_requires_reason: true
+archive:
+  portfolio_size: 24
+  minimum_candidate_slots: 8
+  maximum_candidate_slots: 40
+  minimum_niche_slots: 1
+  keep_best_per_niche: true
+  hide_other_candidate_scores_from_agents: true
+scheduler:
+  max_concurrent_heavy_experiments: 1
+  max_concurrent_light_experiments: 3
+  memory_safety_margin: 0.25
+  validate_required_artifacts: true
+evaluation:
+  primary: locked_hidden_performance

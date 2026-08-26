@@ -94,6 +94,18 @@
       },
       "title": "ObservedResourceUsage",
       "type": "object"
+    },
+    "TerminalStatus": {
+      "enum": [
+        "COMPLETED",
+        "FAILED_EXECUTION",
+        "FAILED_RESOURCE",
+        "INVALID_ARTIFACT",
+        "INVALID_LEAKAGE",
+        "INCONCLUSIVE"
+      ],
+      "title": "TerminalStatus",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -229,6 +241,17 @@
       ],
       "title": "Status",
       "type": "string"
+    },
+    "terminal_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TerminalStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

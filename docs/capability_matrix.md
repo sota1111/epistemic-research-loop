@@ -103,6 +103,20 @@ See [benchmark protocol](benchmark_protocol.md).
 | 44 | Infrastructure failures do not stop the run and debug retries are bounded | enforced | the autonomous loop retries only `FailureClass.INFRASTRUCTURE`, caps attempts with `executor.retry_infrastructure_failures`, charges each discarded attempt, and replans after terminal failure | `tests/e2e/test_autonomous_loop.py` |
 | 45 | Branch-isolated agents can start from identical information and select different approaches | measured | neutral competition-repository branches and independent System C Runs; verifier compares descriptors, split, experiment type and command rather than IDs | `docs/verification/ieee_cis_branch_agents.md`, `scripts/verify_branch_agent_diversity.py` |
 
+## 9. C-lite v0.2 scaling corrections
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 46 | Agent belief/posterior is local and owner-only | enforced | `controller/belief_islands.py`; `MultiIslandResearchLoop` exposes no cross-agent belief read | `tests/unit/test_c_lite_v2.py`, `tests/integration/test_multi_island_loop.py` |
+| 47 | All observations are centrally durable but selectively/delayed routed | enforced | `controller/evidence_vault.py`; five visibility states, promotion gate, Comm-0/S/F router | `tests/unit/test_c_lite_v2.py` |
+| 48 | Semantic duplicate and collective collapse are detected independently of experiment ID/command | enforced | `controller/diversity_control.py`; six-field signature and two-condition/two-cycle detector | `tests/unit/test_c_lite_v2.py` |
+| 49 | Three diagnostics force candidate implementation and invalid/resource failures do not advance the gate | enforced | `controller/phase_gate.py`, `domain/validation.py` | `tests/unit/test_c_lite_v2.py` |
+| 50 | Exit zero is insufficient; full Candidate Artifact Contract, leakage and reproduction are gates | enforced | `controller/candidate_artifacts.py`, local and competition-repo executors, `TerminalStatus` | `tests/unit/test_c_lite_v2.py`, `tests/integration/test_local_executor.py` |
+| 51 | Heavy/full-scan experiments are memory-aware and serialized across controller processes | enforced | file-locked `controller/resource_scheduler.py`; CLI local runner wiring | `tests/unit/test_c_lite_v2.py` |
+| 52 | Code-development workers may add scripts/features/UIDs/models/post-processing/OOF/ensembles in isolated worktrees | enforced | `CODE_DEVELOPMENT_CONTRACT`, `controller/workspaces.py`, designer prompt | `tests/integration/test_competition_repo_contract.py` |
+| 53 | IEEE-CIS can generate UID candidates, run 3+ gap folds, fold-safe target-independent aggregates and Known/New/Questionable slices | enforced | `plugins/ieee_cis.py` | `tests/unit/test_ieee_cis_v2.py` |
+| 54 | Multi-candidate archive hides other-agent score/code and Final Meta-selector uses OOF gates, nested weights and content locking | enforced | `qd/candidate_archive.py`, `qd/meta_selector.py`, `oof/ensemble.py` | `tests/unit/test_candidate_archive_v2.py` |
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)

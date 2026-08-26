@@ -16,6 +16,12 @@
           "title": "Entity Hypothesis",
           "type": "string"
         },
+        "epistemic_niche": {
+          "default": "unassigned",
+          "minLength": 1,
+          "title": "Epistemic Niche",
+          "type": "string"
+        },
         "error_profile": {
           "default": "global",
           "minLength": 1,
@@ -28,10 +34,22 @@
           "title": "Model Family",
           "type": "string"
         },
+        "post_processing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Post Processing",
+          "type": "string"
+        },
         "representation": {
           "default": "raw",
           "minLength": 1,
           "title": "Representation",
+          "type": "string"
+        },
+        "routing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Routing",
           "type": "string"
         },
         "shift_hypothesis": {
@@ -40,10 +58,22 @@
           "title": "Shift Hypothesis",
           "type": "string"
         },
+        "source_agent": {
+          "default": "unknown",
+          "minLength": 1,
+          "title": "Source Agent",
+          "type": "string"
+        },
         "validation_type": {
           "default": "random",
           "minLength": 1,
           "title": "Validation Type",
+          "type": "string"
+        },
+        "validation_world": {
+          "default": "unspecified",
+          "minLength": 1,
+          "title": "Validation World",
           "type": "string"
         }
       },

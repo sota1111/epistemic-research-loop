@@ -13,7 +13,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from epistemic_loop.adapters.executor.base import ExecutorAdapter
-from epistemic_loop.domain.enums import FailureClass
+from epistemic_loop.controller.candidate_artifacts import CandidateArtifactValidator
+from epistemic_loop.controller.resource_scheduler import ResourceScheduler
+from epistemic_loop.domain.enums import FailureClass, TerminalStatus
 from epistemic_loop.domain.models import ExperimentManifest, ExperimentRequest, ExperimentResult, ObservedResourceUsage
 
 
@@ -26,16 +28,26 @@ class LocalExecutor(ExecutorAdapter):
         result_root: str | Path,
         *,
         command_allowlist: tuple[str, ...] = ("python", "python3", "uv", "bash"),
+        scheduler: ResourceScheduler | None = None,
+        artifact_validator: CandidateArtifactValidator | None = None,
     ):
         self.workspace = Path(workspace).resolve()
         self.result_root = Path(result_root).resolve()
         self.result_root.mkdir(parents=True, exist_ok=True)
         self.command_allowlist = command_allowlist
+        self.scheduler = scheduler
+        self.artifact_validator = artifact_validator or CandidateArtifactValidator()
 
     def _result_path(self, request: ExperimentRequest) -> Path:
         return self.result_root / request.run_id / request.experiment_id / "result.json"
 
     def submit(self, request: ExperimentRequest) -> ExperimentResult:
+        if self.scheduler is None:
+            return self._execute(request)
+        with self.scheduler.reservation(request.resources.as_estimate()):
+            return self._execute(request)
+
+    def _execute(self, request: ExperimentRequest) -> ExperimentResult:
         output_root = self._result_path(request).parent
         output_root.mkdir(parents=True, exist_ok=True)
         # The proposal is written before the output directory is known, so the command has to be
@@ -107,16 +119,38 @@ class LocalExecutor(ExecutorAdapter):
         cpu_seconds = (usage_after.ru_utime - usage_before.ru_utime) + (usage_after.ru_stime - usage_before.ru_stime)
         (output_root / "stdout.log").write_text(stdout, encoding="utf-8")
         (output_root / "stderr.log").write_text(stderr, encoding="utf-8")
-        missing = [name for name in request.required_outputs if not (output_root / name).is_file()]
+        missing = [name for name in request.required_outputs if not (output_root / name).exists()]
+        terminal_status = TerminalStatus.COMPLETED
+        output_text = f"{stderr}\n{stdout}".lower()
+        resource_failed = process.returncode in {137, -9} or any(
+            marker in output_text
+            for marker in ("arrowmemoryerror", "memoryerror", "out of memory", "cannot allocate memory")
+        )
+        if resource_failed:
+            failure = FailureClass.INFRASTRUCTURE
+            terminal_status = TerminalStatus.FAILED_RESOURCE
         if process.returncode != 0 and failure is None:
             failure = FailureClass.MODEL
+            terminal_status = TerminalStatus.FAILED_EXECUTION
         elif missing and failure is None:
             failure = FailureClass.IMPLEMENTATION
+            terminal_status = TerminalStatus.INVALID_ARTIFACT
         metrics_path = output_root / "metrics.json"
         metrics = json.loads(metrics_path.read_text(encoding="utf-8")) if metrics_path.exists() else {}
         if not isinstance(metrics, dict):
             metrics = {}
             failure = FailureClass.IMPLEMENTATION
+            terminal_status = TerminalStatus.INVALID_ARTIFACT
+        if request.candidate_producing and failure is None:
+            validation = self.artifact_validator.validate(output_root)
+            if not validation.valid:
+                failure = FailureClass.IMPLEMENTATION
+                terminal_status = validation.terminal_status
+                details = [
+                    *(f"missing candidate artifact: {item}" for item in validation.missing),
+                    *validation.invalid,
+                ]
+                stderr = f"{stderr}\n" + "\n".join(details)
         # A failure class is a category; the next proposal needs the sentence. Without it the loop
         # can only learn "that design did not run", and re-proposes the same invalid argument.
         excerpt = None
@@ -130,6 +164,7 @@ class LocalExecutor(ExecutorAdapter):
             run_id=request.run_id,
             attempt=int(request.idempotency_key.rsplit("attempt-", 1)[1]),
             status="completed" if failure is None else "failed",
+            terminal_status=(TerminalStatus.COMPLETED if failure is None else terminal_status),
             exit_code=process.returncode,
             failure_class=failure,
             commit_sha=request.base_commit_sha,
@@ -139,9 +174,7 @@ class LocalExecutor(ExecutorAdapter):
             environment_lock_hash=environment_lock_hash,
             dataset_fingerprint=request.dataset_fingerprint,
             metrics={str(key): float(value) for key, value in metrics.items() if isinstance(value, (int, float))},
-            artifact_refs=[
-                str(output_root / name) for name in request.required_outputs if (output_root / name).is_file()
-            ]
+            artifact_refs=_required_artifact_refs(output_root, request.required_outputs)
             + [
                 str(output_root / "stdout.log"),
                 str(output_root / "stderr.log"),
@@ -200,6 +233,17 @@ def _snapshot_environment_lock(workspace: Path, output_root: Path) -> tuple[str,
     snapshot = output_root / "environment-lock-unavailable.txt"
     snapshot.write_text("No supported environment lockfile was present.\n", encoding="utf-8")
     return hashlib.sha256(b"environment-lock-unavailable").hexdigest(), snapshot
+
+
+def _required_artifact_refs(output_root: Path, required_outputs: list[str]) -> list[str]:
+    refs: list[str] = []
+    for name in required_outputs:
+        path = output_root / name
+        if path.is_file():
+            refs.append(str(path))
+        elif path.is_dir():
+            refs.extend(str(item) for item in sorted(path.rglob("*")) if item.is_file())
+    return refs
 
 
 def _set_resource_limits(cpu_cores: int, timeout_seconds: int, memory_gb: float) -> None:

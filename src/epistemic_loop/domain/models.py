@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from epistemic_loop.domain.enums import (
+    CommunicationMode,
     Consequence,
+    DecisionOutcome,
     Direction,
+    EpistemicNiche,
+    EvidenceVisibility,
+    ExperimentKind,
     ExperimentStatus,
     ExperimentType,
     FailureClass,
@@ -20,6 +26,7 @@ from epistemic_loop.domain.enums import (
     Risk,
     RunMode,
     RunStatus,
+    TerminalStatus,
     ValidationSplitType,
     ValidationWorldStatus,
     VerifierResult,
@@ -390,6 +397,74 @@ class CandidateDescriptors(DomainModel):
     shift_hypothesis: str = Field(default="none", min_length=1)
     entity_hypothesis: str = Field(default="none", min_length=1)
     error_profile: str = Field(default="global", min_length=1)
+    source_agent: str = Field(default="unknown", min_length=1)
+    epistemic_niche: str = Field(default="unassigned", min_length=1)
+    validation_world: str = Field(default="unspecified", min_length=1)
+    routing: str = Field(default="none", min_length=1)
+    post_processing: str = Field(default="none", min_length=1)
+
+
+class SemanticExperimentSignature(DomainModel):
+    """Meaning-level identity used instead of command or experiment ID."""
+
+    target_hypotheses: list[str] = Field(min_length=1)
+    data_slice: list[str] = Field(min_length=1)
+    operation: list[str] = Field(min_length=1)
+    observable: list[str] = Field(min_length=1)
+    decision_affected: list[str] = Field(min_length=1)
+    candidate_producing: bool = False
+
+    @field_validator("target_hypotheses", "data_slice", "operation", "observable", "decision_affected")
+    @classmethod
+    def normalize_signature_terms(cls, value: list[str]) -> list[str]:
+        normalized = ["_".join(item.strip().lower().split()) for item in value if item.strip()]
+        if not normalized:
+            raise ValueError("semantic signature terms cannot be blank")
+        return sorted(set(normalized))
+
+
+class ReplicationSpec(DomainModel):
+    original_experiment_id: str = Field(min_length=1)
+    changed_condition: list[Literal["seed", "time_window", "entity_slice"]] = Field(min_length=1)
+    replication_hypothesis: str = Field(min_length=1)
+
+
+class DecisionBinding(DomainModel):
+    decision_id: str = Field(min_length=1)
+    possible_actions: list[str] = Field(min_length=2)
+    result_to_action: dict[str, str] = Field(min_length=1)
+    outcome: DecisionOutcome | None = None
+    action_changed: bool | None = None
+    action_neutral_reason: str | None = None
+
+    @model_validator(mode="after")
+    def actions_are_preregistered(self) -> DecisionBinding:
+        unknown = set(self.result_to_action.values()) - set(self.possible_actions)
+        if unknown:
+            raise ValueError(f"result_to_action contains unregistered actions: {sorted(unknown)}")
+        if self.outcome == DecisionOutcome.ACTION_NEUTRAL and not self.action_neutral_reason:
+            raise ValueError("an action-neutral result requires a reason")
+        return self
+
+
+class ResourceEstimate(DomainModel):
+    cpu_cores: int = Field(default=1, ge=1)
+    memory_gb: float = Field(default=4, gt=0)
+    gpu_memory_gb: float = Field(default=0, ge=0)
+    expected_minutes: float = Field(default=60, gt=0)
+    parquet_scan_columns: int = Field(default=0, ge=0)
+    full_table_materialization: bool = False
+    heavy: bool | None = None
+
+    @property
+    def is_heavy(self) -> bool:
+        return bool(
+            self.heavy
+            or self.full_table_materialization
+            or self.parquet_scan_columns >= 100
+            or self.memory_gb >= 16
+            or self.gpu_memory_gb > 0
+        )
 
 
 class ExperimentProposal(DomainModel):
@@ -416,6 +491,22 @@ class ExperimentProposal(DomainModel):
     epistemic_assessment: EpistemicAssessment
     robustness_assessment: RobustnessAssessment
     novelty_score: float = Field(ge=0, le=1)
+    experiment_kind: ExperimentKind = ExperimentKind.DIAGNOSTIC
+    candidate_producing: bool = False
+    epistemic_niche: EpistemicNiche | None = None
+    semantic_signature: SemanticExperimentSignature | None = None
+    decision_binding: DecisionBinding | None = None
+    resource_estimate: ResourceEstimate | None = None
+    candidate_exception_reason: (
+        Literal[
+            "validation_leakage_unresolved",
+            "dataset_corruption_unresolved",
+            "required_observation_missing",
+            "insufficient_resources",
+        ]
+        | None
+    ) = None
+    replication: ReplicationSpec | None = None
     descriptors: CandidateDescriptors | None = None
     parent_candidate_ids: list[str] = Field(default_factory=list)
     variation_operator: Literal["seed", "mutation", "crossover"] = "seed"
@@ -470,6 +561,19 @@ class ExperimentProposal(DomainModel):
             raise ValueError("crossover proposals require exactly two parent candidates")
         if len(self.parent_candidate_ids) != len(set(self.parent_candidate_ids)):
             raise ValueError("parent candidate identifiers must be unique")
+        if self.experiment_kind == ExperimentKind.CANDIDATE_PRODUCING and not self.candidate_producing:
+            raise ValueError("candidate-producing experiment_kind requires candidate_producing=true")
+        if (
+            self.semantic_signature is not None
+            and self.semantic_signature.candidate_producing != self.candidate_producing
+        ):
+            raise ValueError("semantic signature candidate_producing must match the proposal")
+        if (
+            self.experiment_type == ExperimentType.REPLICATION
+            and self.replication is not None
+            and self.replication.original_experiment_id != self.is_replication_of
+        ):
+            raise ValueError("replication identifiers must agree")
         return self
 
 
@@ -817,7 +921,21 @@ class ResourceRequest(DomainModel):
     cpu: int = Field(default=1, ge=1)
     memory_gb: float = Field(default=4, gt=0)
     gpu: int = Field(default=0, ge=0)
+    gpu_memory_gb: float = Field(default=0, ge=0)
     timeout_seconds: int = Field(default=3600, ge=1)
+    expected_minutes: float = Field(default=60, gt=0)
+    parquet_scan_columns: int = Field(default=0, ge=0)
+    full_table_materialization: bool = False
+
+    def as_estimate(self) -> ResourceEstimate:
+        return ResourceEstimate(
+            cpu_cores=self.cpu,
+            memory_gb=self.memory_gb,
+            gpu_memory_gb=self.gpu_memory_gb,
+            expected_minutes=self.expected_minutes,
+            parquet_scan_columns=self.parquet_scan_columns,
+            full_table_materialization=self.full_table_materialization,
+        )
 
 
 class DatasetMount(DomainModel):
@@ -851,6 +969,9 @@ class ExperimentRequest(DomainModel):
     #: `command` tells a shell what to run; this tells a developer what to build and what counts as
     #: done, in the target repository's own terms.
     brief: dict[str, Any] = Field(default_factory=dict)
+    candidate_producing: bool = False
+    semantic_signature: SemanticExperimentSignature | None = None
+    epistemic_niche: EpistemicNiche | None = None
 
     @model_validator(mode="after")
     def validate_execution_contract(self) -> ExperimentRequest:
@@ -863,7 +984,7 @@ class ExperimentRequest(DomainModel):
             raise ValueError("idempotency_key must end with :attempt-N")
         if len(set(self.seeds)) != len(self.seeds):
             raise ValueError("seeds must be unique")
-        if any(not output or output.startswith("/") or ".." in output for output in self.required_outputs):
+        if any(not output or output.startswith("/") or ".." in Path(output).parts for output in self.required_outputs):
             raise ValueError("required_outputs must be safe relative paths")
         return self
 
@@ -873,6 +994,7 @@ class ExperimentResult(DomainModel):
     run_id: str
     attempt: int = Field(ge=1)
     status: Literal["queued", "running", "completed", "failed"]
+    terminal_status: TerminalStatus | None = None
     exit_code: int | None = None
     failure_class: FailureClass | None = None
     commit_sha: str
@@ -894,6 +1016,21 @@ class ExperimentResult(DomainModel):
             "next proposal that a design did not run; it does not tell it what to change."
         ),
     )
+
+    @model_validator(mode="after")
+    def assign_terminal_status(self) -> ExperimentResult:
+        if self.status in {"queued", "running"}:
+            if self.terminal_status is not None:
+                raise ValueError("non-terminal results cannot have terminal_status")
+            return self
+        if self.terminal_status is None:
+            inferred = TerminalStatus.COMPLETED if self.status == "completed" else TerminalStatus.FAILED_EXECUTION
+            object.__setattr__(self, "terminal_status", inferred)
+        if self.status == "completed" and self.terminal_status != TerminalStatus.COMPLETED:
+            raise ValueError("completed transport status requires terminal_status COMPLETED")
+        if self.status == "failed" and self.terminal_status == TerminalStatus.COMPLETED:
+            raise ValueError("failed transport status cannot have terminal_status COMPLETED")
+        return self
 
 
 class ExperimentManifest(DomainModel):
@@ -923,3 +1060,162 @@ class ExperimentManifest(DomainModel):
         if self.completed_at < self.started_at:
             raise ValueError("manifest completion cannot precede its start")
         return self
+
+
+# ---------------------------------------------------------------------------
+# C-lite v0.2: shared control data and agent-local belief islands
+
+
+class RemainingBudget(DomainModel):
+    cpu_minutes: float = Field(default=0, ge=0)
+    gpu_minutes: float = Field(default=0, ge=0)
+    llm_tokens: int = Field(default=0, ge=0)
+    wall_clock_minutes: float = Field(default=0, ge=0)
+
+
+class AgentNicheAssignment(DomainModel):
+    agent_id: str = Field(min_length=1)
+    primary_niche: EpistemicNiche
+    secondary_niche: EpistemicNiche | None = None
+
+    @model_validator(mode="after")
+    def niches_are_distinct(self) -> AgentNicheAssignment:
+        if self.secondary_niche == self.primary_niche:
+            raise ValueError("primary and secondary niches must differ")
+        return self
+
+
+class GlobalControlState(DomainModel):
+    dataset_hash: str = Field(min_length=1)
+    remaining_budget: RemainingBudget = Field(default_factory=RemainingBudget)
+    active_agents: list[AgentNicheAssignment] = Field(default_factory=list)
+    experiment_queue: list[str] = Field(default_factory=list)
+    running_experiments: list[str] = Field(default_factory=list)
+    archive_occupancy: dict[str, int] = Field(default_factory=dict)
+    resource_pressure: dict[str, float] = Field(default_factory=dict)
+    collapse_metrics: dict[str, float] = Field(default_factory=dict)
+
+
+class LocalHypothesisBelief(DomainModel):
+    id: str = Field(min_length=1)
+    claim: str = Field(min_length=1)
+    prior_probability: float = Field(ge=0.05, le=0.95)
+    posterior_probability: float = Field(ge=0.05, le=0.95)
+    visibility: Literal["private"] = "private"
+
+
+class AgentBeliefState(DomainModel):
+    agent_id: str = Field(min_length=1)
+    epistemic_niche: EpistemicNiche
+    hypotheses: list[LocalHypothesisBelief] = Field(default_factory=list)
+    validation_world_beliefs: dict[str, float] = Field(default_factory=dict)
+    private_working_notes: list[str] = Field(default_factory=list)
+    experiment_history: list[str] = Field(default_factory=list)
+    rejected_hypotheses: list[str] = Field(default_factory=list)
+    candidate_refs: list[str] = Field(default_factory=list)
+
+    @field_validator("validation_world_beliefs")
+    @classmethod
+    def validation_beliefs_form_distribution(cls, value: dict[str, float]) -> dict[str, float]:
+        if value and (any(item < 0 for item in value.values()) or abs(sum(value.values()) - 1.0) > 1e-6):
+            raise ValueError("validation_world_beliefs must be a probability distribution")
+        return value
+
+
+class EvidenceObservation(DomainModel):
+    metric: str = Field(min_length=1)
+    value: float | str | bool
+    protocol: str = Field(min_length=1)
+
+
+class EvidenceVerification(DomainModel):
+    artifact_contract_valid: bool = False
+    independently_replicated: bool = False
+    observation_interpretation_separated: bool = True
+
+
+class GlobalEvidence(DomainModel):
+    evidence_id: str = Field(min_length=1)
+    experiment_id: str = Field(min_length=1)
+    producer_agent: str = Field(min_length=1)
+    observation: EvidenceObservation
+    artifacts: dict[str, str | None] = Field(default_factory=dict)
+    verification: EvidenceVerification = Field(default_factory=EvidenceVerification)
+    visibility: EvidenceVisibility = EvidenceVisibility.PRIVATE
+    challenge_target_agent: str | None = None
+    created_cycle: int = Field(default=0, ge=0)
+    interpretation: Literal[None] = None
+
+    @model_validator(mode="after")
+    def challenge_has_target(self) -> GlobalEvidence:
+        if self.visibility == EvidenceVisibility.SHARED_CHALLENGE and not self.challenge_target_agent:
+            raise ValueError("shared challenge evidence requires challenge_target_agent")
+        return self
+
+
+class EvidencePromotionRequest(DomainModel):
+    evidence_id: str = Field(min_length=1)
+    expected_compute_saving: bool
+    diversity_risk: float = Field(ge=0, le=1)
+
+
+def _challenge_hidden_fields() -> list[Literal["source_agent", "source_agent_posterior", "source_candidate_score"]]:
+    return ["source_agent", "source_agent_posterior", "source_candidate_score"]
+
+
+class Challenge(DomainModel):
+    challenge_id: str = Field(min_length=1)
+    target_agent: str = Field(min_length=1)
+    statement: str = Field(min_length=1)
+    task: str = Field(min_length=1)
+    hidden_fields: list[Literal["source_agent", "source_agent_posterior", "source_candidate_score"]] = Field(
+        default_factory=_challenge_hidden_fields
+    )
+
+
+class CollapseMetrics(DomainModel):
+    dominant_cluster_fraction: float = Field(ge=0, le=1)
+    experiment_family_effective_count: float = Field(ge=0)
+    qd_niche_occupancy: int = Field(ge=0)
+    hypothesis_family_budget_fraction: float = Field(ge=0, le=1)
+    mean_agent_proposal_similarity: float = Field(ge=0, le=1)
+    cycle: int = Field(ge=0)
+
+
+class CandidateArtifactRecord(DomainModel):
+    candidate_id: str = Field(min_length=1)
+    source_agent: str = Field(min_length=1)
+    git_commit: str = Field(min_length=1)
+    dataset_hash: str = Field(min_length=1)
+    environment_hash: str = Field(min_length=1)
+    artifact_root: str = Field(min_length=1)
+    descriptor: CandidateDescriptors
+    primary_score: float
+    score_std: float = Field(default=0, ge=0)
+    known_client_auc: float | None = None
+    new_client_auc: float | None = None
+    expected_forward_score: float | None = None
+    robustness: float = Field(default=0, ge=0, le=1)
+    marginal_ensemble_gain: float = 0
+    uncertainty: float = Field(default=0, ge=0)
+    leakage_risk: float = Field(default=0, ge=0, le=1)
+    resource_cost: float = Field(default=0, ge=0)
+    leakage_check_passed: bool = False
+    reproducibility_passed: bool = False
+    locked: bool = False
+
+
+class CandidateArtifactValidation(DomainModel):
+    valid: bool
+    terminal_status: TerminalStatus
+    missing: list[str] = Field(default_factory=list)
+    invalid: list[str] = Field(default_factory=list)
+
+
+class CommunicationPolicy(DomainModel):
+    mode: CommunicationMode = CommunicationMode.SELECTIVE_DELAYED_ASYMMETRIC
+    migration_interval_cycles: int = Field(default=3, ge=1)
+    hide_source_agent_on_challenge: bool = True
+    broadcast_raw_results: bool = False
+    share_posteriors: Literal[False] = False
+    share_global_best: Literal[False] = False

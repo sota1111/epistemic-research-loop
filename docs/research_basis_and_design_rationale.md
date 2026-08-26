@@ -6,6 +6,10 @@
 **実装方針:** Evolution / Quality-Diversity + Bayesian Experimental Design + Hypothesis Registry + Falsification + OOF Error Diversity
 **ステータス:** 実装用初期仕様
 
+> [!IMPORTANT]
+> IEEE-CIS scaling検証後の差分仕様は
+> [C-lite修正仕様書 v0.2](./c_lite_revision_v0.2.md) である。両文書が矛盾する場合はv0.2を優先する。
+
 ---
 
 ## 1. 仕様の位置づけ

@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "CandidateDescriptors": {
+      "additionalProperties": false,
+      "description": "Behavior descriptor used by the solution and epistemic QD archives.",
+      "properties": {
+        "data_scope": {
+          "default": "train_only",
+          "minLength": 1,
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "entity_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Entity Hypothesis",
+          "type": "string"
+        },
+        "epistemic_niche": {
+          "default": "unassigned",
+          "minLength": 1,
+          "title": "Epistemic Niche",
+          "type": "string"
+        },
+        "error_profile": {
+          "default": "global",
+          "minLength": 1,
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "model_family": {
+          "default": "other",
+          "minLength": 1,
+          "title": "Model Family",
+          "type": "string"
+        },
+        "post_processing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Post Processing",
+          "type": "string"
+        },
+        "representation": {
+          "default": "raw",
+          "minLength": 1,
+          "title": "Representation",
+          "type": "string"
+        },
+        "routing": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Routing",
+          "type": "string"
+        },
+        "shift_hypothesis": {
+          "default": "none",
+          "minLength": 1,
+          "title": "Shift Hypothesis",
+          "type": "string"
+        },
+        "source_agent": {
+          "default": "unknown",
+          "minLength": 1,
+          "title": "Source Agent",
+          "type": "string"
+        },
+        "validation_type": {
+          "default": "random",
+          "minLength": 1,
+          "title": "Validation Type",
+          "type": "string"
+        },
+        "validation_world": {
+          "default": "unspecified",
+          "minLength": 1,
+          "title": "Validation World",
+          "type": "string"
+        }
+      },
+      "title": "CandidateDescriptors",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_root": {
+      "minLength": 1,
+      "title": "Artifact Root",
+      "type": "string"
+    },
+    "candidate_id": {
+      "minLength": 1,
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "dataset_hash": {
+      "minLength": 1,
+      "title": "Dataset Hash",
+      "type": "string"
+    },
+    "descriptor": {
+      "$ref": "#/$defs/CandidateDescriptors"
+    },
+    "environment_hash": {
+      "minLength": 1,
+      "title": "Environment Hash",
+      "type": "string"
+    },
+    "expected_forward_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Forward Score"
+    },
+    "git_commit": {
+      "minLength": 1,
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "known_client_auc": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Known Client Auc"
+    },
+    "leakage_check_passed": {
+      "default": false,
+      "title": "Leakage Check Passed",
+      "type": "boolean"
+    },
+    "leakage_risk": {
+      "default": 0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Leakage Risk",
+      "type": "number"
+    },
+    "locked": {
+      "default": false,
+      "title": "Locked",
+      "type": "boolean"
+    },
+    "marginal_ensemble_gain": {
+      "default": 0,
+      "title": "Marginal Ensemble Gain",
+      "type": "number"
+    },
+    "new_client_auc": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "New Client Auc"
+    },
+    "primary_score": {
+      "title": "Primary Score",
+      "type": "number"
+    },
+    "reproducibility_passed": {
+      "default": false,
+      "title": "Reproducibility Passed",
+      "type": "boolean"
+    },
+    "resource_cost": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Resource Cost",
+      "type": "number"
+    },
+    "robustness": {
+      "default": 0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Robustness",
+      "type": "number"
+    },
+    "score_std": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Score Std",
+      "type": "number"
+    },
+    "source_agent": {
+      "minLength": 1,
+      "title": "Source Agent",
+      "type": "string"
+    },
+    "uncertainty": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Uncertainty",
+      "type": "number"
+    }
+  },
+  "required": [
+    "candidate_id",
+    "source_agent",
+    "git_commit",
+    "dataset_hash",
+    "environment_hash",
+    "artifact_root",
+    "descriptor",
+    "primary_score"
+  ],
+  "title": "CandidateArtifactRecord",
+  "type": "object"
+}
