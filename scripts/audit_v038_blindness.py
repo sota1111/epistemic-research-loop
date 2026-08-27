@@ -59,6 +59,10 @@ def main() -> None:
     for transcript in sorted(arguments.submission_root.rglob("transcript-attempt-*.stream.jsonl")):
         audited_transcripts += 1
         text = transcript.read_text(errors="ignore")
+        # The agents' interpreter is the project venv, so library RuntimeWarnings name its
+        # site-packages path in stderr. That is not repository file access; reviewed and
+        # allow-listed here so a real repository path mention still fails the audit.
+        text = text.replace("/workspaces/epistemic-research-loop/.venv/lib/", "<interpreter-site-packages>/")
         for token in TRANSCRIPT_FORBIDDEN:
             count = text.count(token)
             if count:
