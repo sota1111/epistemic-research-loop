@@ -90,10 +90,13 @@ class V038LoadedSubmission:
 
 
 def load_v038_submission(path: Path) -> V038LoadedSubmission:
-    payload = json.loads(path.read_text())
+    return parse_v038_submission(json.loads(path.read_text()))
+
+
+def parse_v038_submission(payload: dict[str, Any], expected_version: str = "0.3.8") -> V038LoadedSubmission:
     declared_version = str(payload.get("version"))
-    if declared_version != "0.3.8":
-        raise ValueError(f"expected a v0.3.8 submission, found version {declared_version!r}")
+    if declared_version != expected_version:
+        raise ValueError(f"expected a v{expected_version} submission, found version {declared_version!r}")
     provenance: dict[str, tuple[NullReplicateProvenance, ...]] = {}
     for pack in payload.get("packs", ()):
         pack_id = str(pack.get("opaque_pack_id"))
@@ -124,10 +127,11 @@ def load_v038_submission(path: Path) -> V038LoadedSubmission:
 def validate_v038_submission(
     loaded: V038LoadedSubmission,
     packet: dict[str, Any],
+    expected_packet_version: str = "0.3.8",
 ) -> V037SubmissionValidation:
     base = validate_v037_submission(loaded.core, packet)
     errors = list(base.errors)
-    if packet.get("version") != "0.3.8":
+    if packet.get("version") != expected_packet_version:
         errors.append("packet version mismatch")
     for pack in loaded.core.packs:
         errors.extend(_validate_pack_provenance(pack, loaded.extras.provenance.get(pack.opaque_pack_id, ())))

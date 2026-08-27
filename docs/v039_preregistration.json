@@ -1,0 +1,55 @@
+{
+  "version": "0.3.9",
+  "title": "Terminal-resolution Consistency Qualification",
+  "frozen_before_suite_generation": true,
+  "baseline": "0.3.8",
+  "single_intervention": {
+    "name": "terminal_resolution_consistency",
+    "description": "A falsified pack must report independent implication strengths consistent with absence (at most one context above 0.05) and research gains within the agent's own full-refit null in at least two of three contexts; a validated pack must report implication strengths above 0.05 in at least two contexts. Violations are rejected before lock with repair feedback that references only the agent's own submitted numbers.",
+    "rationale": "In v0.3.8, 73 of 95 blocked evidence-based rejections were falsified declarations co-existing with >0.05 implication strengths in the same bundle; 12 persistent_clear discoveries were lost at the matched-negative gate through this path.",
+    "uses_controller_truth": false,
+    "leaks_structure_information": false
+  },
+  "unchanged_from_v038": [
+    "generator families, ladder, matched negatives, pack design, 3 contexts, 900 rows",
+    "fresh `claude -p` context per run, isolated workdir, deny rules, transcript audit",
+    "per-replicate null provenance contract",
+    "controller-enforced lineage continuity",
+    "P1 prompt (same sha256 d2c60932dad437d950f8763ccd6802d15634e59df7cc754045319e7d98c34fda)",
+    "evaluation code, engineering gates, cluster bootstrap",
+    "model: claude opus via CLI, no provider API key"
+  ],
+  "qualification_suite_ids": ["v039-qual-e01", "v039-qual-e02", "v039-qual-e03", "v039-qual-e04"],
+  "agent_ids": ["agent-01", "agent-02", "agent-03"],
+  "llm_sampling_seeds": [17, 42],
+  "primary_agent_runs": 24,
+  "master_seed": 20260903,
+  "calibration": {
+    "c1_source": "locked v0.3.8 development isotonic map (.runs/v038/calibration_c1.json), reused without refitting",
+    "limitation": "the consistency contract may shift confidence behavior relative to the v0.3.8 development distribution; calibrated metrics remain secondary",
+    "qualification_truth_never_used_for_fitting": true
+  },
+  "engineering_gates": {
+    "median_agent_tsdr": 0.5,
+    "median_agent_tsrr": 0.67,
+    "maximum_agent_fspr": 0.2,
+    "maximum_shared_blind_spot_rate": 0.2,
+    "minimum_leave_one_agent_out_tsrr": 0.67,
+    "ustr": 0.5,
+    "median_structure_gain_strictly_positive": true,
+    "brier": 0.2,
+    "ece": 0.2,
+    "persistent_levels_discovered_by_population": 3,
+    "persistent_agents_with_independent_discovery": 2
+  },
+  "predictions": {
+    "primary": "Median Agent TSRR rises substantially as previously self-contradictory falsifications become evidence-consistent; matched-negative failures on persistent families drop",
+    "risk": "agents may route uncertain negatives to inconclusive instead, lowering resolution rate without raising TSRR"
+  },
+  "non_primary_or_deferred": [
+    "communication M0-M4",
+    "container isolation",
+    "unused real benchmark",
+    "new development suites"
+  ]
+}

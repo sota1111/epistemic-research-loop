@@ -107,16 +107,46 @@ def build_v038_suite(
         master_seed = V038_DEV_MASTER_SEED
     else:
         raise ValueError("v0.3.8 requires a preregistered qualification or development suite identity")
-    suite_index = v038_suite_index(suite_id)
+    return build_versioned_suite(
+        version="0.3.8",
+        suite_id=suite_id,
+        suite_index=v038_suite_index(suite_id),
+        master_seed=master_seed,
+        output_root=output_root,
+        truth_root=truth_root,
+        key=key,
+        prompt_path=prompt_path,
+        policy_contract=policy_contract,
+        contexts_per_pack=contexts_per_pack,
+        rows_per_context=rows_per_context,
+    )
+
+
+def build_versioned_suite(
+    *,
+    version: str,
+    suite_id: str,
+    suite_index: int,
+    master_seed: int,
+    output_root: Path,
+    truth_root: Path,
+    key: bytes,
+    prompt_path: Path,
+    policy_contract: Mapping[str, Any],
+    contexts_per_pack: int = 3,
+    rows_per_context: int = 900,
+) -> V037SuiteBuildResult:
+    """Shared v0.3.8-family suite builder; later revisions supply new identities and seeds."""
+
     if contexts_per_pack < 3 or rows_per_context < 600:
         raise ValueError("aggregate promotion requires three contexts and at least 600 rows")
     if output_root.exists() or (truth_root / f"{suite_id}.manifest.enc").exists():
-        raise FileExistsError("v0.3.8 suites are immutable; use a new suite identity")
+        raise FileExistsError(f"v{version} suites are immutable; use a new suite identity")
     Fernet(key)
     prompt_hashes = {"p1": _sha256_file(prompt_path)}
     policy_hash = hashlib.sha256(json.dumps(policy_contract, sort_keys=True).encode()).hexdigest()
     if not policy_contract.get("null_policy", {}).get("provenance_required"):
-        raise ValueError("v0.3.8 requires per-replicate null provenance in the locked policy contract")
+        raise ValueError(f"v{version} requires per-replicate null provenance in the locked policy contract")
 
     canonical: dict[str, list[tuple[str, list[dict[str, Any]], V038ContextTruth]]] = {}
     for pack_index, definition in enumerate(PACK_DEFINITIONS, start=1):
@@ -247,7 +277,7 @@ def build_v038_suite(
                 }
             )
         packet = {
-            "version": "0.3.8",
+            "version": version,
             "suite_id": suite_id,
             "run_id": run_id,
             "agent_id": agent_id,
