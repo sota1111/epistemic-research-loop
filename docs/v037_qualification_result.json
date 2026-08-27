@@ -1,0 +1,123 @@
+{
+  "acceptance": {
+    "all_agent_fspr": false,
+    "calibration": false,
+    "leave_one_agent_out_rejection": false,
+    "median_agent_tsdr": false,
+    "median_agent_tsrr": false,
+    "overall": false,
+    "persistent_ladder": false,
+    "shared_blind_spots": false,
+    "transfer": true
+  },
+  "report": {
+    "failure_stage_counts": {
+      "evidence": 77,
+      "matched_negative": 10,
+      "promotion": 45
+    },
+    "fspr_interval": {
+      "estimate": 0.1111111111111111,
+      "lower": 0.0695593871009681,
+      "trials": 144,
+      "upper": 0.17287233067694935
+    },
+    "independent_research_diversity": 0.7083333333333334,
+    "lineage_policy_summary": {
+      "deterministic_best": {
+        "maximum_fspr": 0.6666666666666666,
+        "mean_fspr": 0.14583333333333331,
+        "mean_tsdr": 0.10416666666666666,
+        "mean_tsrr": 0.020833333333333332,
+        "median_deep_lineage_completion": 0.5817307692307692,
+        "median_eecr": 0.038461538461538464,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.08333333333333333,
+        "median_tsrr": 0.0,
+        "runs": 8.0
+      },
+      "posterior_commit": {
+        "maximum_fspr": 0.8333333333333334,
+        "mean_fspr": 0.10416666666666667,
+        "mean_tsdr": 0.08333333333333333,
+        "mean_tsrr": 0.041666666666666664,
+        "median_deep_lineage_completion": 0.5817307692307692,
+        "median_eecr": 0.038461538461538464,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.08333333333333333,
+        "median_tsrr": 0.0,
+        "runs": 8.0
+      },
+      "two_hit_maturation": {
+        "maximum_fspr": 0.6666666666666666,
+        "mean_fspr": 0.08333333333333333,
+        "mean_tsdr": 0.0625,
+        "mean_tsrr": 0.020833333333333332,
+        "median_deep_lineage_completion": 0.5874125874125874,
+        "median_eecr": 0.038461538461538464,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.0,
+        "median_tsrr": 0.0,
+        "runs": 8.0
+      }
+    },
+    "median_agent_tsdr": 0.08333333333333333,
+    "median_agent_tsrr": 0.020833333333333332,
+    "median_structure_brier": 0.26139897644596316,
+    "median_structure_ece": 0.18262214379694433,
+    "median_structure_gain": 0.09430991735461375,
+    "median_ustr": 1.0,
+    "minimum_leave_one_agent_out_tsrr": 0.0,
+    "overall_deep_lineage_completion_rate": 0.5972027972027972,
+    "overall_eecr": 0.15104895104895105,
+    "overall_ustr": 0.75,
+    "persistent_agents_discovering": 1,
+    "persistent_levels_discovered": 1,
+    "population_action_types": 3,
+    "population_dominant_family_fraction": 0.125,
+    "population_effective_family_count": 14.350450679968661,
+    "prompt_arm_summary": {
+      "p0": {
+        "maximum_fspr": 0.8333333333333334,
+        "mean_fspr": 0.16666666666666666,
+        "mean_tsdr": 0.06944444444444443,
+        "mean_tsrr": 0.027777777777777776,
+        "median_deep_lineage_completion": 0.5817307692307692,
+        "median_eecr": 0.038461538461538464,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.0,
+        "median_tsrr": 0.0,
+        "runs": 12.0
+      },
+      "p1": {
+        "maximum_fspr": 0.6666666666666666,
+        "mean_fspr": 0.05555555555555555,
+        "mean_tsdr": 0.09722222222222221,
+        "mean_tsrr": 0.027777777777777776,
+        "median_deep_lineage_completion": 0.5817307692307692,
+        "median_eecr": 0.038461538461538464,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.08333333333333333,
+        "median_tsrr": 0.0,
+        "runs": 12.0
+      }
+    },
+    "shared_blind_spot_rate": 0.7916666666666667,
+    "tsdr_interval": {
+      "estimate": 0.08333333333333333,
+      "lower": 0.04831146161870117,
+      "trials": 144,
+      "upper": 0.1400082360004961
+    },
+    "tsrr_interval": {
+      "estimate": 0.027777777777777776,
+      "lower": 0.01085411795640967,
+      "trials": 144,
+      "upper": 0.06924153934534726
+    },
+    "worst_agent_fspr": 0.3333333333333333,
+    "worst_structure_brier": 0.320354873392637,
+    "worst_structure_ece": 0.2732913456020482
+  },
+  "version": "0.3.7"
+}

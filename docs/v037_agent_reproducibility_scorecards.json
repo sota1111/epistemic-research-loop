@@ -1,0 +1,1307 @@
+{
+  "agent_aggregates": [
+    {
+      "agent_id": "agent-01",
+      "calibration_structure": {
+        "brier": 0.320354873392637,
+        "ece": 0.2732913456020482,
+        "log_score": 0.9208211982496555
+      },
+      "fspr": 0.3333333333333333,
+      "fspr_interval": {
+        "estimate": 0.3333333333333333,
+        "lower": 0.21676780694818568,
+        "trials": 48,
+        "upper": 0.4745989029405201
+      },
+      "negative_packs": 48,
+      "positive_packs": 48,
+      "resolution_rate": 0.9270833333333334,
+      "runs": 8,
+      "sampling_seed": null,
+      "tsdr": 0.125,
+      "tsdr_interval": {
+        "estimate": 0.125,
+        "lower": 0.058570514385719794,
+        "trials": 48,
+        "upper": 0.24700458286386834
+      },
+      "tsrr": 0.0625,
+      "tsrr_interval": {
+        "estimate": 0.0625,
+        "lower": 0.021483232908389285,
+        "trials": 48,
+        "upper": 0.1683543805494635
+      },
+      "ustr": 0.0
+    },
+    {
+      "agent_id": "agent-02",
+      "calibration_structure": {
+        "brier": 0.24624108405799625,
+        "ece": 0.18262214379694433,
+        "log_score": 0.6881627020146741
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 6.938893903907228e-18,
+        "trials": 48,
+        "upper": 0.07410012966611748
+      },
+      "negative_packs": 48,
+      "positive_packs": 48,
+      "resolution_rate": 0.84375,
+      "runs": 8,
+      "sampling_seed": null,
+      "tsdr": 0.08333333333333333,
+      "tsdr_interval": {
+        "estimate": 0.08333333333333333,
+        "lower": 0.032883756818091775,
+        "trials": 48,
+        "upper": 0.1955330179036728
+      },
+      "tsrr": 0.020833333333333332,
+      "tsrr_interval": {
+        "estimate": 0.020833333333333332,
+        "lower": 0.003687110977510649,
+        "trials": 48,
+        "upper": 0.10899217995251861
+      },
+      "ustr": 1.0
+    },
+    {
+      "agent_id": "agent-03",
+      "calibration_structure": {
+        "brier": 0.26139897644596316,
+        "ece": 0.07573250247787722,
+        "log_score": 0.7417172062959559
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 6.938893903907228e-18,
+        "trials": 48,
+        "upper": 0.07410012966611748
+      },
+      "negative_packs": 48,
+      "positive_packs": 48,
+      "resolution_rate": 0.7708333333333334,
+      "runs": 8,
+      "sampling_seed": null,
+      "tsdr": 0.041666666666666664,
+      "tsdr_interval": {
+        "estimate": 0.041666666666666664,
+        "lower": 0.011501893489386586,
+        "trials": 48,
+        "upper": 0.13975655870455445
+      },
+      "tsrr": 0.0,
+      "tsrr_interval": {
+        "estimate": 0.0,
+        "lower": 6.938893903907228e-18,
+        "trials": 48,
+        "upper": 0.07410012966611748
+      },
+      "ustr": 1.0
+    }
+  ],
+  "agent_seed_aggregates": [
+    {
+      "agent_id": "agent-01",
+      "calibration_structure": {
+        "brier": 0.3727148116466282,
+        "ece": 0.3394937537040964,
+        "log_score": 1.0511183283923458
+      },
+      "fspr": 0.6666666666666666,
+      "fspr_interval": {
+        "estimate": 0.6666666666666666,
+        "lower": 0.4670631683813174,
+        "trials": 24,
+        "upper": 0.8202780967270225
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 0.8541666666666666,
+      "runs": 4,
+      "sampling_seed": 17,
+      "tsdr": 0.20833333333333334,
+      "tsdr_interval": {
+        "estimate": 0.20833333333333334,
+        "lower": 0.09244825352851857,
+        "trials": 24,
+        "upper": 0.40470453253188665
+      },
+      "tsrr": 0.0,
+      "tsrr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "ustr": 0.0
+    },
+    {
+      "agent_id": "agent-01",
+      "calibration_structure": {
+        "brier": 0.26799493513864586,
+        "ece": 0.2707315625,
+        "log_score": 0.7905240681069653
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 1.0,
+      "runs": 4,
+      "sampling_seed": 42,
+      "tsdr": 0.041666666666666664,
+      "tsdr_interval": {
+        "estimate": 0.041666666666666664,
+        "lower": 0.0073934561655057685,
+        "trials": 24,
+        "upper": 0.20241806478655938
+      },
+      "tsrr": 0.125,
+      "tsrr_interval": {
+        "estimate": 0.125,
+        "lower": 0.04344334080123444,
+        "trials": 24,
+        "upper": 0.31003881270500067
+      },
+      "ustr": 0.0
+    },
+    {
+      "agent_id": "agent-02",
+      "calibration_structure": {
+        "brier": 0.2649815500390966,
+        "ece": 0.2570703500938886,
+        "log_score": 0.734325053092708
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 0.9583333333333334,
+      "runs": 4,
+      "sampling_seed": 17,
+      "tsdr": 0.0,
+      "tsdr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "tsrr": 0.0,
+      "tsrr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "ustr": null
+    },
+    {
+      "agent_id": "agent-02",
+      "calibration_structure": {
+        "brier": 0.22750061807689584,
+        "ece": 0.12354393749999998,
+        "log_score": 0.6420003509366402
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 0.7291666666666666,
+      "runs": 4,
+      "sampling_seed": 42,
+      "tsdr": 0.16666666666666666,
+      "tsdr_interval": {
+        "estimate": 0.16666666666666666,
+        "lower": 0.06678676328632951,
+        "trials": 24,
+        "upper": 0.3585307064969906
+      },
+      "tsrr": 0.041666666666666664,
+      "tsrr_interval": {
+        "estimate": 0.041666666666666664,
+        "lower": 0.0073934561655057685,
+        "trials": 24,
+        "upper": 0.20241806478655938
+      },
+      "ustr": 1.0
+    },
+    {
+      "agent_id": "agent-03",
+      "calibration_structure": {
+        "brier": 0.2765301983271042,
+        "ece": 0.13364497916666668,
+        "log_score": 0.7654151306594512
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 0.8333333333333334,
+      "runs": 4,
+      "sampling_seed": 17,
+      "tsdr": 0.0,
+      "tsdr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "tsrr": 0.0,
+      "tsrr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "ustr": null
+    },
+    {
+      "agent_id": "agent-03",
+      "calibration_structure": {
+        "brier": 0.24626775456482208,
+        "ece": 0.04854098851381766,
+        "log_score": 0.7180192819324608
+      },
+      "fspr": 0.0,
+      "fspr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "negative_packs": 24,
+      "positive_packs": 24,
+      "resolution_rate": 0.7083333333333334,
+      "runs": 4,
+      "sampling_seed": 42,
+      "tsdr": 0.08333333333333333,
+      "tsdr_interval": {
+        "estimate": 0.08333333333333333,
+        "lower": 0.023158815297043306,
+        "trials": 24,
+        "upper": 0.25848802193210685
+      },
+      "tsrr": 0.0,
+      "tsrr_interval": {
+        "estimate": 0.0,
+        "lower": 1.3877787807814457e-17,
+        "trials": 24,
+        "upper": 0.13797620467498017
+      },
+      "ustr": 1.0
+    }
+  ],
+  "individual_runs": [
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.2548294135207762,
+        "ece": 0.228929782107023,
+        "log_score": 0.7351035733681642
+      },
+      "calibration_evidence": {
+        "brier": 0.4431083333333334,
+        "ece": 0.6008333333333332,
+        "log_score": 1.165750303360131
+      },
+      "calibration_structure": {
+        "brier": 0.3761662864498844,
+        "ece": 0.340663648351076,
+        "log_score": 1.061786500893258
+      },
+      "calibration_transfer": {
+        "brier": 0.2903933373966175,
+        "ece": 0.2561451655279742,
+        "log_score": 0.7753643488150922
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 0.5,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 2.82842712474619,
+      "fspr": 0.5,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.01131273495895676,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.9166666666666666,
+      "run_id": "agent-01-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 3,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.21537356590758336,
+        "ece": 0.20185925000000002,
+        "log_score": 0.6816109541664673
+      },
+      "calibration_evidence": {
+        "brier": 0.6214989674416665,
+        "ece": 0.7845171666666666,
+        "log_score": 1.587155949922278
+      },
+      "calibration_structure": {
+        "brier": 0.2712868588226667,
+        "ece": 0.2632568333333334,
+        "log_score": 0.8060408584750126
+      },
+      "calibration_transfer": {
+        "brier": 0.07917188493391666,
+        "ece": 0.19930075,
+        "log_score": 0.2960722620401673
+      },
+      "deep_lineage_completion_rate": 0.5384615384615384,
+      "dominant_family_fraction": 0.5416666666666666,
+      "eecr": 0.07692307692307693,
+      "effective_family_count": 1.9930595659329764,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.006820230057848366,
+      "premature_lineage_rejection_rate": 0.46153846153846156,
+      "prompt_arm": "p0",
+      "resolution_rate": 1.0,
+      "run_id": "agent-01-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.3060604619688641,
+        "ece": 0.32450061972890504,
+        "log_score": 1.0022574787421255
+      },
+      "calibration_evidence": {
+        "brier": 0.81,
+        "ece": 0.9,
+        "log_score": 2.302585092994046
+      },
+      "calibration_structure": {
+        "brier": 0.27864276357693324,
+        "ece": 0.2840381063327697,
+        "log_score": 0.7679054763276518
+      },
+      "calibration_transfer": {
+        "brier": 0.21629629629629632,
+        "ece": 0.09166666666666669,
+        "log_score": 0.6267876158345582
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 0.75,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.7547653506033232,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.0003002396760399262,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p0",
+      "resolution_rate": 1.0,
+      "run_id": "agent-02-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 2,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.19238232583958334,
+        "ece": 0.2190905833333333,
+        "log_score": 0.546661149835899
+      },
+      "calibration_evidence": {
+        "brier": 0.11207766666666667,
+        "ece": 0.2931666666666667,
+        "log_score": 0.37963342867918753
+      },
+      "calibration_structure": {
+        "brier": 0.231507327304,
+        "ece": 0.22241866666666665,
+        "log_score": 0.6510951338665056
+      },
+      "calibration_transfer": {
+        "brier": 0.2021899760375,
+        "ece": 0.2622468333333333,
+        "log_score": 0.5736908316957545
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.5,
+      "eecr": 0.0,
+      "effective_family_count": 3.3162987042769267,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.004382201863572716,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.75,
+      "run_id": "agent-02-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 4,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.2362403641379167,
+        "ece": 0.35421391666666663,
+        "log_score": 0.6658377402655652
+      },
+      "calibration_evidence": {
+        "brier": 0.46,
+        "ece": 0.6666666666666667,
+        "log_score": 1.1794716487886352
+      },
+      "calibration_structure": {
+        "brier": 0.33781078096433337,
+        "ece": 0.43296799999999996,
+        "log_score": 0.9211959778231575
+      },
+      "calibration_transfer": {
+        "brier": 0.18964999999999999,
+        "ece": 0.13,
+        "log_score": 0.5608687727565028
+      },
+      "deep_lineage_completion_rate": 0.625,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.0,
+      "effective_family_count": 1.0,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.00389243504833355,
+      "premature_lineage_rejection_rate": 0.375,
+      "prompt_arm": "p1",
+      "resolution_rate": 1.0,
+      "run_id": "agent-03-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.2972854877959438,
+        "ece": 0.25566567138359114,
+        "log_score": 0.8190570429177596
+      },
+      "calibration_evidence": {
+        "brier": 0.31860858041757456,
+        "ece": 0.4740041802672304,
+        "log_score": 0.887033850822675
+      },
+      "calibration_structure": {
+        "brier": 0.25970297785562774,
+        "ece": 0.1952410091446436,
+        "log_score": 0.7682554901106081
+      },
+      "calibration_transfer": {
+        "brier": 0.2527823888182595,
+        "ece": 0.3445611023380764,
+        "log_score": 0.6837882516458819
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.4166666666666667,
+      "eecr": 0.0,
+      "effective_family_count": 2.9374925023243565,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.0033801688529538354,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-03-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 3,
+      "suite_id": "v037-repro-b01",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.19271899447055976,
+        "ece": 0.21203160159663675,
+        "log_score": 0.564190524559297
+      },
+      "calibration_evidence": {
+        "brier": 0.4290083333333334,
+        "ece": 0.5858333333333333,
+        "log_score": 1.1371715740995618
+      },
+      "calibration_structure": {
+        "brier": 0.3711920025592969,
+        "ece": 0.3414401671873817,
+        "log_score": 1.0454585069039868
+      },
+      "calibration_transfer": {
+        "brier": 0.33409251540365403,
+        "ece": 0.2917630143560048,
+        "log_score": 0.8778090761494699
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.0,
+      "fspr": 0.8333333333333334,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.006349154683799573,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-01-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.21395999126983334,
+        "ece": 0.20690099999999997,
+        "log_score": 0.6719586315418141
+      },
+      "calibration_evidence": {
+        "brier": 0.6352587352959999,
+        "ece": 0.79502,
+        "log_score": 1.6125044542425764
+      },
+      "calibration_structure": {
+        "brier": 0.26733642085325,
+        "ece": 0.27083775000000004,
+        "log_score": 0.7886223692045792
+      },
+      "calibration_transfer": {
+        "brier": 0.023351997379833334,
+        "ece": 0.14679866666666666,
+        "log_score": 0.16007837416659557
+      },
+      "deep_lineage_completion_rate": 0.5384615384615384,
+      "dominant_family_fraction": 0.5416666666666666,
+      "eecr": 0.07692307692307693,
+      "effective_family_count": 1.9930595659329764,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.0002547731617947672,
+      "premature_lineage_rejection_rate": 0.46153846153846156,
+      "prompt_arm": "p0",
+      "resolution_rate": 1.0,
+      "run_id": "agent-01-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.0,
+      "tsrr": 0.16666666666666666,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.27224292497443253,
+        "ece": 0.292279798456683,
+        "log_score": 0.9053069643294341
+      },
+      "calibration_evidence": {
+        "brier": 0.81,
+        "ece": 0.9,
+        "log_score": 2.302585092994046
+      },
+      "calibration_structure": {
+        "brier": 0.24974501012446304,
+        "ece": 0.24366832827059598,
+        "log_score": 0.699003565826427
+      },
+      "calibration_transfer": {
+        "brier": 0.16881944444444444,
+        "ece": 0.07361111111111111,
+        "log_score": 0.5078144327970854
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 0.75,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.7547653506033232,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.00022232354847781521,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p1",
+      "resolution_rate": 1.0,
+      "run_id": "agent-02-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 2,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.1900610694659167,
+        "ece": 0.23470791666666665,
+        "log_score": 0.5438096363411614
+      },
+      "calibration_evidence": {
+        "brier": 0.2083583333333333,
+        "ece": 0.4208333333333334,
+        "log_score": 0.5916739056649616
+      },
+      "calibration_structure": {
+        "brier": 0.23343277200775,
+        "ece": 0.08800591666666664,
+        "log_score": 0.6524011089329641
+      },
+      "calibration_transfer": {
+        "brier": 0.32789159582991667,
+        "ece": 0.40554025000000005,
+        "log_score": 0.8872268140002602
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.4166666666666667,
+      "eecr": 0.0,
+      "effective_family_count": 2.9374925023243565,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.013555364418074922,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-02-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 3,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.20403714978391665,
+        "ece": 0.12472441666666664,
+        "log_score": 0.5990575269897955
+      },
+      "calibration_evidence": {
+        "brier": 0.528,
+        "ece": 0.72,
+        "log_score": 1.337885351901235
+      },
+      "calibration_structure": {
+        "brier": 0.22871023585475003,
+        "ece": 0.13225525,
+        "log_score": 0.6502363365762411
+      },
+      "calibration_transfer": {
+        "brier": 0.12962500000000002,
+        "ece": 0.24916666666666665,
+        "log_score": 0.4341622923923553
+      },
+      "deep_lineage_completion_rate": 0.6363636363636364,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.0,
+      "effective_family_count": 1.0,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.0020566164055826805,
+      "premature_lineage_rejection_rate": 0.36363636363636365,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.9166666666666666,
+      "run_id": "agent-03-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.27556693006734373,
+        "ece": 0.19056082835504812,
+        "log_score": 0.749553979442252
+      },
+      "calibration_evidence": {
+        "brier": 0.332285817531538,
+        "ece": 0.5317467189118861,
+        "log_score": 0.885236465382858
+      },
+      "calibration_structure": {
+        "brier": 0.2450657050756161,
+        "ece": 0.08190312706783479,
+        "log_score": 0.6907444310889629
+      },
+      "calibration_transfer": {
+        "brier": 0.39156713224076656,
+        "ece": 0.4351629236208089,
+        "log_score": 1.035745302749064
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.4166666666666667,
+      "eecr": 0.0,
+      "effective_family_count": 3.444176621717137,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.0032443488087048242,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-03-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 4,
+      "suite_id": "v037-repro-b02",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.28869502283428955,
+        "ece": 0.25089279741395726,
+        "log_score": 0.8244131596854759
+      },
+      "calibration_evidence": {
+        "brier": 0.48175000000000007,
+        "ece": 0.6216666666666667,
+        "log_score": 1.3085357852702584
+      },
+      "calibration_structure": {
+        "brier": 0.37427760928439574,
+        "ece": 0.3377437752818944,
+        "log_score": 1.059487130737656
+      },
+      "calibration_transfer": {
+        "brier": 0.38631989782437137,
+        "ece": 0.374733019530682,
+        "log_score": 1.0441251715174473
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.4444444444444444,
+      "effective_family_count": 1.0,
+      "fspr": 0.6666666666666666,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.006971421172197974,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-01-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.21422308451391667,
+        "ece": 0.20956608333333335,
+        "log_score": 0.6718272504205696
+      },
+      "calibration_evidence": {
+        "brier": 0.6084326169667499,
+        "ece": 0.77653825,
+        "log_score": 1.5420208262494437
+      },
+      "calibration_structure": {
+        "brier": 0.26775785060525,
+        "ece": 0.27503741666666665,
+        "log_score": 0.788767638247375
+      },
+      "calibration_transfer": {
+        "brier": 0.023783639794000003,
+        "ece": 0.147183,
+        "log_score": 0.16076759985597497
+      },
+      "deep_lineage_completion_rate": 0.5384615384615384,
+      "dominant_family_fraction": 0.5416666666666666,
+      "eecr": 0.07692307692307693,
+      "effective_family_count": 1.9930595659329764,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.0018763078190896603,
+      "premature_lineage_rejection_rate": 0.46153846153846156,
+      "prompt_arm": "p1",
+      "resolution_rate": 1.0,
+      "run_id": "agent-01-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.2845948508788764,
+        "ece": 0.27229003096676796,
+        "log_score": 0.8659003122743298
+      },
+      "calibration_evidence": {
+        "brier": 0.7310666666666666,
+        "ece": 0.8466666666666667,
+        "log_score": 2.0634043387791587
+      },
+      "calibration_structure": {
+        "brier": 0.2792528025719546,
+        "ece": 0.22734721199313623,
+        "log_score": 0.7730489325952171
+      },
+      "calibration_transfer": {
+        "brier": 0.27868055555555554,
+        "ece": 0.3125,
+        "log_score": 0.7604804237442795
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 0.75,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.7547653506033232,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.0006876809155164088,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-02-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 2,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.20949542862974999,
+        "ece": 0.1771909166666667,
+        "log_score": 0.6132957885050584
+      },
+      "calibration_evidence": {
+        "brier": 0.12005133333333333,
+        "ece": 0.2603333333333333,
+        "log_score": 0.409345519239517
+      },
+      "calibration_structure": {
+        "brier": 0.2332459987345,
+        "ece": 0.08865616666666669,
+        "log_score": 0.6578446787618591
+      },
+      "calibration_transfer": {
+        "brier": 0.39940505518441666,
+        "ece": 0.5037289166666666,
+        "log_score": 1.0471931561814538
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.4166666666666667,
+      "eecr": 0.0,
+      "effective_family_count": 2.795983321801711,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.00893314611080879,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.6666666666666666,
+      "run_id": "agent-02-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 3,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.24050093061591668,
+        "ece": 0.03438308333333334,
+        "log_score": 0.6738371253102932
+      },
+      "calibration_evidence": {
+        "brier": 0.5668000000000001,
+        "ece": 0.7433333333333334,
+        "log_score": 1.477971315702994
+      },
+      "calibration_structure": {
+        "brier": 0.2580815899775,
+        "ece": 0.08998683333333335,
+        "log_score": 0.718962602386337
+      },
+      "calibration_transfer": {
+        "brier": 0.2956,
+        "ece": 0.36999999999999994,
+        "log_score": 0.7946763906550153
+      },
+      "deep_lineage_completion_rate": 0.625,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.0,
+      "effective_family_count": 1.0,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.002255551889295109,
+      "premature_lineage_rejection_rate": 0.375,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.5833333333333334,
+      "run_id": "agent-03-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.1919363446035259,
+        "ece": 0.22195134790253723,
+        "log_score": 0.5731287333555014
+      },
+      "calibration_evidence": {
+        "brier": 0.21841863642589399,
+        "ece": 0.37697803901825494,
+        "log_score": 0.6588053148955928
+      },
+      "calibration_structure": {
+        "brier": 0.21701474252804429,
+        "ece": 0.22111431419088926,
+        "log_score": 0.6280524904231207
+      },
+      "calibration_transfer": {
+        "brier": 0.2662443945919372,
+        "ece": 0.3095670320228616,
+        "log_score": 0.7175681707086204
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.3333333333333333,
+      "eecr": 0.0,
+      "effective_family_count": 3.8883225944793307,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.00048735658028001283,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.5,
+      "run_id": "agent-03-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 4,
+      "suite_id": "v037-repro-b03",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.0,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.21969621640062895,
+        "ece": 0.17199485288334104,
+        "log_score": 0.6183677859536749
+      },
+      "calibration_evidence": {
+        "brier": 0.44978333333333337,
+        "ece": 0.55,
+        "log_score": 1.2217087294171212
+      },
+      "calibration_structure": {
+        "brier": 0.3692233482929357,
+        "ece": 0.3381274239960338,
+        "log_score": 1.0377411750344818
+      },
+      "calibration_transfer": {
+        "brier": 0.2784879462836923,
+        "ece": 0.12828778128417762,
+        "log_score": 0.7944567347811264
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.0,
+      "fspr": 0.6666666666666666,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.008028355950821381,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p1",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-01-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.3333333333333333,
+      "tsrr": 0.0,
+      "ustr": 0.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-01",
+      "calibration_actionable": {
+        "brier": 0.21222579812950002,
+        "ece": 0.20880383333333333,
+        "log_score": 0.6598865563603719
+      },
+      "calibration_evidence": {
+        "brier": 0.5629563971389999,
+        "ece": 0.6934091666666666,
+        "log_score": 1.4399816375002585
+      },
+      "calibration_structure": {
+        "brier": 0.26559861027341664,
+        "ece": 0.27379425,
+        "log_score": 0.7786654065008946
+      },
+      "calibration_transfer": {
+        "brier": 0.06815899434991667,
+        "ece": 0.14866891666666665,
+        "log_score": 0.25994801925113603
+      },
+      "deep_lineage_completion_rate": 0.5384615384615384,
+      "dominant_family_fraction": 0.5416666666666666,
+      "eecr": 0.07692307692307693,
+      "effective_family_count": 1.9930595659329764,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.0006588026759401788,
+      "premature_lineage_rejection_rate": 0.46153846153846156,
+      "prompt_arm": "p1",
+      "resolution_rate": 1.0,
+      "run_id": "agent-01-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.3333333333333333,
+      "ustr": 0.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.2713077797200077,
+        "ece": 0.3134579805127102,
+        "log_score": 0.8146413790581338
+      },
+      "calibration_evidence": {
+        "brier": 0.81,
+        "ece": 0.9,
+        "log_score": 2.302585092994046
+      },
+      "calibration_structure": {
+        "brier": 0.25228562388303555,
+        "ece": 0.27322775377905273,
+        "log_score": 0.697342237621536
+      },
+      "calibration_transfer": {
+        "brier": 0.16023148148148147,
+        "ece": 0.16666666666666669,
+        "log_score": 0.5050052086740929
+      },
+      "deep_lineage_completion_rate": 0.6666666666666666,
+      "dominant_family_fraction": 0.75,
+      "eecr": 0.3333333333333333,
+      "effective_family_count": 1.7547653506033232,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.0009216895848024412,
+      "premature_lineage_rejection_rate": 0.3333333333333333,
+      "prompt_arm": "p1",
+      "resolution_rate": 1.0,
+      "run_id": "agent-02-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 2,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 2,
+      "agent_id": "agent-02",
+      "calibration_actionable": {
+        "brier": 0.21524373724408333,
+        "ece": 0.15315141666666665,
+        "log_score": 0.5993022893653787
+      },
+      "calibration_evidence": {
+        "brier": 0.18120266666666665,
+        "ece": 0.38066666666666665,
+        "log_score": 0.5285106064281948
+      },
+      "calibration_structure": {
+        "brier": 0.21181637426133335,
+        "ece": 0.09509499999999999,
+        "log_score": 0.6066604821852322
+      },
+      "calibration_transfer": {
+        "brier": 0.3016355371145,
+        "ece": 0.31690466666666667,
+        "log_score": 0.8089587768472927
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.4166666666666667,
+      "eecr": 0.0,
+      "effective_family_count": 2.9374925023243565,
+      "fspr": 0.0,
+      "lineage_policy": "deterministic_best",
+      "mean_transfer_selection_regret": 0.005933096252452756,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.6666666666666666,
+      "run_id": "agent-02-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 3,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.16666666666666666,
+      "tsrr": 0.16666666666666666,
+      "ustr": 1.0
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.2563806583299167,
+        "ece": 0.14953425,
+        "log_score": 0.7071299801425815
+      },
+      "calibration_evidence": {
+        "brier": 0.4388000000000001,
+        "ece": 0.6500000000000001,
+        "log_score": 1.14286898457372
+      },
+      "calibration_structure": {
+        "brier": 0.28151818651183336,
+        "ece": 0.16468700000000006,
+        "log_score": 0.7712656058520695
+      },
+      "calibration_transfer": {
+        "brier": 0.23797500000000002,
+        "ece": 0.1358333333333333,
+        "log_score": 0.6703561016039945
+      },
+      "deep_lineage_completion_rate": 0.6470588235294118,
+      "dominant_family_fraction": 1.0,
+      "eecr": 0.0,
+      "effective_family_count": 1.0,
+      "fspr": 0.0,
+      "lineage_policy": "posterior_commit",
+      "mean_transfer_selection_regret": 0.0037804573255446616,
+      "premature_lineage_rejection_rate": 0.35294117647058826,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.8333333333333334,
+      "run_id": "agent-03-s17",
+      "sampling_seed": 17,
+      "semantic_family_count": 1,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    },
+    {
+      "action_types": 3,
+      "agent_id": "agent-03",
+      "calibration_actionable": {
+        "brier": 0.2648685964526079,
+        "ece": 0.11200167704806058,
+        "log_score": 0.7501902007320848
+      },
+      "calibration_evidence": {
+        "brier": 0.24960939546912217,
+        "ece": 0.4483493770138598,
+        "log_score": 0.7266941539393085
+      },
+      "calibration_structure": {
+        "brier": 0.2632875928000002,
+        "ece": 0.12972612773839876,
+        "log_score": 0.785024716107151
+      },
+      "calibration_transfer": {
+        "brier": 0.26243511011214815,
+        "ece": 0.32501610471929976,
+        "log_score": 0.7160368107669338
+      },
+      "deep_lineage_completion_rate": 0.5,
+      "dominant_family_fraction": 0.3333333333333333,
+      "eecr": 0.0,
+      "effective_family_count": 3.618491900178948,
+      "fspr": 0.0,
+      "lineage_policy": "two_hit_maturation",
+      "mean_transfer_selection_regret": 0.005816902411651341,
+      "premature_lineage_rejection_rate": 0.5,
+      "prompt_arm": "p0",
+      "resolution_rate": 0.6666666666666666,
+      "run_id": "agent-03-s42",
+      "sampling_seed": 42,
+      "semantic_family_count": 4,
+      "suite_id": "v037-repro-b04",
+      "tsdr": 0.0,
+      "tsrr": 0.0,
+      "ustr": null
+    }
+  ]
+}

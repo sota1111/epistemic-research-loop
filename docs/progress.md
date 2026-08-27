@@ -210,3 +210,22 @@ persistent-unit structure was missed by all agents, explicit negative rejection 
 agent 03, agent 02 was poorly calibrated, and one agent-01 validated structure failed sealed
 transfer. Communication modes, IEEE-CIS Hidden transfer, and an unused real benchmark remain
 unmeasured.
+
+## 2026-08-27 — v0.3.7 agent reproducibility and shared blind spots
+
+Four new locked synthetic suites were evaluated under three generic agent identities and two
+sampling conditions. The 24 suite-level evaluations were produced by six LLM trajectories; this is
+recorded as a pilot limitation rather than claimed as 24 fresh-context runs. All outputs were
+artifact-validated and hash-locked before truth unblinding, and the 24 agent-visible views had zero
+truth-token findings.
+
+Evaluation audit removed three optimistic paths: confirmation-time translation maximization,
+persistent-positive credit without matched-negative rejection, and TSRR credit from an unsupported
+`FALSIFIED` label. Controller-derived LOCO and failure stages were added without changing locked
+predictions. Under the corrected evaluation, median agent TSDR/TSRR were 0.0833/0.0208, worst-agent
+FSPR was 0.3333, shared blind-spot rate was 0.7917, and only one persistent ladder level was found by
+one agent. The engineering qualification therefore failed. The surviving actionable structures
+did transfer in 6/8 cases (pooled USTR 0.75, median gain +0.09431), locating the main bottleneck in
+discovery/falsification rather than translation. P1's generic assumption challenge improved mean
+TSDR and reduced mean FSPR relative to P0, but yielded only one persistent discovery; S1/S2 did not
+show a consistent discovery advantage. Communication ablation remains intentionally deferred.

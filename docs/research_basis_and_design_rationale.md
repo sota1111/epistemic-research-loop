@@ -2048,5 +2048,9 @@ EpistemicなDescriptorをQDへ追加する価値がある。
 1. [C-lite v0.2 scaling correction](c_lite_revision_v0.2.md)
 2. [C-lite v0.3 dynamic structure maturation](c_lite_revision_v0.3.md)
 3. [C-lite v0.3.1 measurement and debt closure](c_lite_revision_v0.3.1.md)
+4. [C-lite v0.3.6 blind real-agent qualification](c_lite_revision_v0.3.6.md)
+5. [C-lite v0.3.7 agent reproducibility and blind spots](c_lite_revision_v0.3.7.md)
 
 v0.3.1は、追加Agent/CycleではなくFrozen Hidden Endpoint、Full Common First-level Cross-fit、Structure Debt終端、Predictive Collapse/Stagnation分離を要求する。実測結果は[IEEE-CIS v0.3.1 verification](verification/ieee_cis_v031_measurement.md)に記録する。
+
+v0.3.7はPopulation Union中心の評価を廃止し、Agent identityとSampling conditionを跨ぐ個体再現性、Matched Negativeを含むBehavioral Discovery、Shared Blind-spot、Discovery/Transfer分離を要求する。PilotではStructure TransferのみPassし、個体TSDR/TSRR、FSPR、Persistent Ladder、CalibrationはFailしたため、CommunicationやAgent scalingより先にAgent単体の発見・反証Contractを修正する。

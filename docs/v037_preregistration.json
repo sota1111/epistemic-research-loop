@@ -1,0 +1,88 @@
+{
+  "version": "0.3.7",
+  "title": "Individual Agent Reproducibility and Shared Blind-spot Qualification",
+  "frozen_before_suite_generation": true,
+  "suite_ids": [
+    "v037-repro-b01",
+    "v037-repro-b02",
+    "v037-repro-b03",
+    "v037-repro-b04"
+  ],
+  "superseded_before_primary_completion": {
+    "suite_ids": ["v037-repro-01", "v037-repro-02", "v037-repro-03", "v037-repro-04"],
+    "reason": "agent-visible nested submission schema was incomplete",
+    "truth_unblinded": false,
+    "outputs_used": false
+  },
+  "agent_ids": ["agent-01", "agent-02", "agent-03"],
+  "llm_sampling_seeds": [17, 42],
+  "primary_agent_runs": 24,
+  "prompt_hashes": {
+    "p0": "e39732dc3f8d4054e299f30c903e753db4772a7ecf419fa2f04776db241518e7",
+    "p1": "a767dc39563fa1d2ff344b00e03abcb35f5a2dfa5eaddea25a97154e5e106da6"
+  },
+  "prompt_difference": "one generic assumption-challenge sentence plus arm heading",
+  "lineage_policies": [
+    "deterministic_best",
+    "posterior_commit",
+    "two_hit_maturation"
+  ],
+  "assignment": "suite-rotated Latin square over P0/P1 x S0/S1/S2",
+  "primary_metrics": [
+    "agent_level_tsdr",
+    "agent_level_tsrr",
+    "agent_level_fspr",
+    "agent_level_ustr",
+    "agent_level_resolution_rate",
+    "decomposed_calibration",
+    "shared_blind_spot_rate",
+    "leave_one_agent_out_population_performance",
+    "marginal_agent_contribution"
+  ],
+  "persistent_ladder": {
+    "levels": 4,
+    "matched_negative_per_level": true,
+    "discovery_requires": [
+      "above-row repeated unit hypothesis",
+      "history or linkage intervention",
+      "positive support",
+      "matched-negative non-promotion"
+    ]
+  },
+  "confidence_fields": [
+    "p_structure_exists",
+    "p_evidence_sufficient",
+    "p_actionable",
+    "p_positive_transfer"
+  ],
+  "full_refit_null": {
+    "required_for_terminal_structure_decision": true,
+    "minimum_replicates": 5,
+    "maximum_replicates": 30,
+    "evaluation_interval": 5,
+    "sequential_stopping": true
+  },
+  "hidden_regions": {
+    "structure_confirmation": "may affect discovery adjudication but never translation selection",
+    "transfer_sealed": "transfer evaluation only and never discovery promotion"
+  },
+  "engineering_gates": {
+    "median_agent_tsdr": 0.5,
+    "median_agent_tsrr": 0.67,
+    "maximum_agent_fspr": 0.2,
+    "maximum_shared_blind_spot_rate": 0.2,
+    "minimum_leave_one_agent_out_tsrr": 0.67,
+    "ustr": 0.5,
+    "median_structure_gain_strictly_positive": true,
+    "brier": 0.2,
+    "ece": 0.2,
+    "persistent_levels_discovered_by_population": 3,
+    "persistent_agents_with_independent_discovery": 2
+  },
+  "non_primary_or_deferred": [
+    "communication M0-M4",
+    "container isolation",
+    "unused real benchmark",
+    "B/B+/C comparison"
+  ]
+}

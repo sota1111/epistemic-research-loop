@@ -5,6 +5,12 @@ from epistemic_loop.evaluation.acceptance import (
     AcceptanceStatus,
     V031AcceptanceReport,
 )
+from epistemic_loop.evaluation.calibration_v037 import (
+    CalibrationAdjustedEvidenceGate,
+    IsotonicCalibrationMap,
+    calibration_adjusted_evidence_gate,
+    fit_development_isotonic_map,
+)
 from epistemic_loop.evaluation.primary_endpoint import (
     FrozenSubmissionBatch,
     FrozenSubmissionSpec,
@@ -80,6 +86,17 @@ from epistemic_loop.evaluation.v036 import (
     WilsonInterval,
     evaluate_real_agent_population,
 )
+from epistemic_loop.evaluation.v037 import (
+    V037Acceptance,
+    V037AgentAggregate,
+    V037AggregateReport,
+    V037Calibration,
+    V037EvaluatedPack,
+    V037PopulationBlock,
+    V037RunScorecard,
+    V037WilsonInterval,
+    evaluate_v037_runs,
+)
 
 __all__ = [
     "AcceptanceLayer",
@@ -89,6 +106,7 @@ __all__ = [
     "ArmBudgetLedger",
     "CandidateEligibility",
     "CandidateEligibilityEvidence",
+    "CalibrationAdjustedEvidenceGate",
     "ComponentEffectObservation",
     "ComponentEffectPrediction",
     "ControlFamilyQualification",
@@ -103,6 +121,7 @@ __all__ = [
     "FinalSelectionCandidate",
     "FinalRetrainLock",
     "HiddenEndpointBreakdown",
+    "IsotonicCalibrationMap",
     "MatchedBudgetAssessment",
     "MechanismCalibration",
     "PredictiveDiversityDebtBreakdown",
@@ -139,13 +158,24 @@ __all__ = [
     "V036Acceptance",
     "V036Reliability",
     "V036Status",
+    "V037Acceptance",
+    "V037AgentAggregate",
+    "V037AggregateReport",
+    "V037Calibration",
+    "V037EvaluatedPack",
+    "V037PopulationBlock",
+    "V037RunScorecard",
+    "V037WilsonInterval",
     "ValidationFidelityDebt",
     "VerificationStatus",
     "WilsonInterval",
     "assert_private_result_use_allowed",
+    "calibration_adjusted_evidence_gate",
     "evaluate_sealed_private_batch",
     "evaluate_outcome_batch",
     "evaluate_real_agent_population",
+    "evaluate_v037_runs",
     "classify_outcome_conclusion",
     "freeze_submission_batch",
+    "fit_development_isotonic_map",
 ]
