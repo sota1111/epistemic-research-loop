@@ -51,9 +51,7 @@ def test_one_contradicting_seed_prevents_unstable_promotion() -> None:
 
 def test_held_out_control_false_promotion_blocks_structure() -> None:
     controls = list(_controls())
-    controls[-1] = StructureControlFamilyResult(
-        "held-random-link", ControlFamilyRole.HELD_OUT_EVALUATION, False, True
-    )
+    controls[-1] = StructureControlFamilyResult("held-random-link", ControlFamilyRole.HELD_OUT_EVALUATION, False, True)
     decision = StructurePromotionGateV2().assess(
         _evidence(*([SeedEvidenceDisposition.SUPPORTING_EVIDENCE] * 3)),
         controls,
