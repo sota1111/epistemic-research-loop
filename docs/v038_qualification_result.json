@@ -1,0 +1,120 @@
+{
+  "acceptance": {
+    "all_agent_fspr": false,
+    "calibration": true,
+    "leave_one_agent_out_rejection": false,
+    "median_agent_tsdr": false,
+    "median_agent_tsrr": false,
+    "overall": false,
+    "persistent_ladder": true,
+    "shared_blind_spots": false,
+    "transfer": true
+  },
+  "calibrated_median_structure_brier": 0.17282345668420954,
+  "calibrated_median_structure_ece": 0.055139631610219834,
+  "report": {
+    "adjudicated_failure_stage_counts": {
+      "evidence": 67,
+      "matched_negative": 27,
+      "promotion": 21
+    },
+    "failure_stage_counts": {
+      "evidence": 67,
+      "matched_negative": 27,
+      "promotion": 21
+    },
+    "fspr_cluster_interval": {
+      "blocks": 8,
+      "estimate": 0.10416666666666667,
+      "iterations": 2000,
+      "lower": 0.034722222222222224,
+      "upper": 0.19444444444444445
+    },
+    "independent_research_diversity": 1.0,
+    "lineage_policy_summary": {
+      "deterministic_best": {
+        "maximum_fspr": 0.16666666666666666,
+        "mean_fspr": 0.020833333333333332,
+        "mean_tsdr": 0.20833333333333331,
+        "mean_tsrr": 0.14583333333333331,
+        "median_deep_lineage_completion": 0.6666666666666666,
+        "median_eecr": 0.286231884057971,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.16666666666666666,
+        "median_tsrr": 0.16666666666666666,
+        "runs": 8.0
+      },
+      "posterior_commit": {
+        "maximum_fspr": 0.3333333333333333,
+        "mean_fspr": 0.14583333333333331,
+        "mean_tsdr": 0.22916666666666666,
+        "mean_tsrr": 0.25,
+        "median_deep_lineage_completion": 0.8637931034482759,
+        "median_eecr": 0.3833333333333333,
+        "median_fspr": 0.16666666666666666,
+        "median_tsdr": 0.16666666666666666,
+        "median_tsrr": 0.25,
+        "runs": 8.0
+      },
+      "two_hit_maturation": {
+        "maximum_fspr": 1.0,
+        "mean_fspr": 0.14583333333333334,
+        "mean_tsdr": 0.16666666666666666,
+        "mean_tsrr": 0.16666666666666666,
+        "median_deep_lineage_completion": 0.5,
+        "median_eecr": 0.45,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.16666666666666666,
+        "median_tsrr": 0.08333333333333333,
+        "runs": 8.0
+      }
+    },
+    "mean_pairwise_operator_jaccard": 0.0,
+    "median_agent_tsdr": 0.1875,
+    "median_agent_tsrr": 0.1875,
+    "median_structure_brier": 0.181323229375,
+    "median_structure_ece": 0.10552083333333336,
+    "median_structure_gain": 0.22090423549869587,
+    "median_ustr": 1.0,
+    "minimum_leave_one_agent_out_tsrr": 0.0,
+    "overall_deep_lineage_completion_rate": 0.6375404530744336,
+    "overall_eecr": 0.35436893203883496,
+    "overall_ustr": 1.0,
+    "persistent_agents_discovering": 2,
+    "persistent_levels_discovered": 4,
+    "population_action_types": 3,
+    "population_dominant_family_fraction": 0.034574468085106384,
+    "population_effective_family_count": 86.46339015387608,
+    "prompt_arm_summary": {
+      "p1": {
+        "maximum_fspr": 1.0,
+        "mean_fspr": 0.10416666666666667,
+        "mean_tsdr": 0.20138888888888887,
+        "mean_tsrr": 0.1875,
+        "median_deep_lineage_completion": 0.6666666666666666,
+        "median_eecr": 0.3472222222222222,
+        "median_fspr": 0.0,
+        "median_tsdr": 0.16666666666666666,
+        "median_tsrr": 0.16666666666666666,
+        "runs": 24.0
+      }
+    },
+    "shared_blind_spot_rate": 0.7083333333333334,
+    "tsdr_cluster_interval": {
+      "blocks": 8,
+      "estimate": 0.2013888888888889,
+      "iterations": 2000,
+      "lower": 0.1597222222222222,
+      "upper": 0.2361111111111111
+    },
+    "tsrr_cluster_interval": {
+      "blocks": 8,
+      "estimate": 0.1875,
+      "iterations": 2000,
+      "lower": 0.1111111111111111,
+      "upper": 0.2569444444444444
+    },
+    "worst_agent_fspr": 0.20833333333333334
+  },
+  "version": "0.3.8"
+}
