@@ -51,9 +51,7 @@ REQUIRED_DELIVERABLES = (
 
 
 def _hash(value: object) -> str:
-    return hashlib.sha256(
-        json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()
-    ).hexdigest()
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
 def verify(config_path: Path) -> dict[str, object]:
@@ -171,9 +169,7 @@ def verify(config_path: Path) -> dict[str, object]:
             "past_only": crossfit.verify_past_only(),
             "live_fold_plan_hash": "UNMEASURED",
         },
-        "cycle_contract": {
-            arm.value: cycle_contract.required(arm) for arm in SystemArm
-        },
+        "cycle_contract": {arm.value: cycle_contract.required(arm) for arm in SystemArm},
         "candidate_artifact_contract": V034_CANDIDATE_ARTIFACT_CONTRACT,
         "locked_run_artifact_contract": V034_LOCKED_RUN_ARTIFACTS,
         "semantic_overlap_preflight": asdict(semantic),

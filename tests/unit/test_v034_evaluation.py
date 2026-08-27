@@ -228,10 +228,7 @@ def test_complete_hidden_batch_reports_paired_outcomes_and_capability_pass() -> 
                 valid_submission=True,
             )
         )
-    audits = {
-        output.output_id: DecisionQualityAudit(9, 1.0, 0.0, 0.0, 0.0, 0.0, ())
-        for output in batch.outputs
-    }
+    audits = {output.output_id: DecisionQualityAudit(9, 1.0, 0.0, 0.0, 0.0, 0.0, ()) for output in batch.outputs}
     with pytest.raises(ValueError, match="cover all"):
         evaluate_outcome_batch(batch, scores[:-1], audits, bootstrap_iterations=200)
 

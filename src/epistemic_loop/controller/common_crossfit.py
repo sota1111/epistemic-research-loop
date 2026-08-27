@@ -108,9 +108,7 @@ class CommonCrossfitPlan:
                 raise ValueError("research region is too small for the requested horizons")
             evaluation_min = evaluation[0].transaction_dt
             training = tuple(
-                item
-                for item in rows[: boundaries[horizon]]
-                if item.transaction_dt < evaluation_min - gap_seconds
+                item for item in rows[: boundaries[horizon]] if item.transaction_dt < evaluation_min - gap_seconds
             )
             if not training:
                 raise ValueError("time gap leaves a common fold without training rows")
@@ -147,8 +145,7 @@ class CommonCrossfitPlan:
     def verify_past_only(self) -> bool:
         gap_seconds = self.minimum_gap_days * SECONDS_PER_DAY
         return all(
-            fold.train_max_transaction_dt < fold.evaluation_min_transaction_dt - gap_seconds
-            for fold in self.folds
+            fold.train_max_transaction_dt < fold.evaluation_min_transaction_dt - gap_seconds for fold in self.folds
         )
 
 
