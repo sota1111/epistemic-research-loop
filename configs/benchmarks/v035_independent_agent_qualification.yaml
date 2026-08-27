@@ -1,0 +1,154 @@
+benchmark_id: ieee-cis-v035-independent-agent-qualification
+version: 0.3.5
+title: Independent Agent Evolution and Structure Discovery Qualification
+competition: ieee-fraud-detection
+
+phase_1:
+  agents: 3
+  adaptive_cycles_per_agent: 3
+  fixed_niche: false
+  cross_agent_selection_input: false
+  controller_population_metrics: observe_only
+  share:
+    agent_belief: false
+    candidate: false
+    score: false
+    debt: false
+    failure: false
+    research_direction: false
+    global_best: false
+    population_summary: false
+  common_inputs:
+    - dataset
+    - artifact_contract
+    - validation_contract
+    - safety_and_leakage_rules
+
+agent_local_portfolio:
+  lineages:
+    - incumbent
+    - challenger
+    - structural
+  elites:
+    - performance
+    - information
+    - structural
+  shadow_archive:
+    retain_rejected_valid_candidates: true
+    final_recheck_eligible: true
+    requirements:
+      - artifact_valid
+      - leakage_safe
+      - predictions_available
+      - semantic_difference_from_parent
+
+cycle_contract:
+  minimum_proposals: 3
+  required_modes:
+    - exploit
+    - explore
+  require_one_of:
+    - epistemic
+    - novel_exploration
+  mode_prior:
+    exploit: 0.34
+    explore: 0.33
+    epistemic: 0.33
+  dynamic_agent_local_update: true
+  resource_cost_in_utility: false
+
+research_descriptor:
+  fields:
+    - hypothesis_family
+    - representation_family
+    - validation_world
+    - data_slice
+    - experiment_operator
+    - model_family
+    - downstream_decision
+    - structural_claim
+
+local_stagnation:
+  consecutive_cycles: 2
+  conditions:
+    - same_semantic_family
+    - no_decision_change
+    - no_candidate_improvement
+    - no_uncertainty_reduction
+  notification_only: true
+  controller_specifies_topic: false
+
+structure_controls:
+  blind: true
+  agent_receives_truth: false
+  agent_receives_family: false
+  agent_receives_generator_seed: false
+  positive_families:
+    - persistent_entity
+    - temporal_regime
+    - observation_process
+    - problem_decomposition
+  negative_families:
+    - frequency_artifact
+    - temporal_looking_noise
+    - missingness_artifact
+    - random_routing
+  seeds: [17, 42, 20260826]
+  null_repetitions: 20
+  promotion:
+    seed_level_terminal_promotion: false
+    aggregate_only: true
+    leave_one_seed_out_stability: true
+    minimum_support_fraction: 0.6666666666666666
+  validation_bundle:
+    - competing_hypotheses
+    - fold_causal_safety
+    - confounder_preserving_null
+    - independent_implication
+    - multi_context_replication
+    - multi_seed_replication
+    - negative_control_discrimination
+    - downstream_decision_change
+
+acceptance:
+  independent_agent_diversity:
+    minimum_qualifying_agents: 2
+    minimum_families_per_agent: 2
+    population_effective_family_count: 2.5
+    maximum_dominant_family_fraction: 0.60
+  evolution_and_exploration:
+    minimum_action_types: 3
+    maximum_dominant_action_fraction: 0.70
+    require_performance_improvement: true
+    require_epistemic_or_structure_experiment: true
+  structure:
+    minimum_true_discovery_rate: 0.60
+    minimum_true_rejection_rate: 0.80
+    maximum_false_promotion_rate: 0.20
+    minimum_useful_transfer_rate: 0.50
+    require_positive_median_sealed_gain: true
+  reliability:
+    artifact_contract_completion: 1.0
+    oof_honesty: 1.0
+    sealed_isolation: 1.0
+
+phase_2_communication_ablation:
+  enabled_during_phase_1: false
+  future_modes:
+    - independent
+    - validated_evidence_migration
+    - debt_and_challenge_migration
+    - candidate_migration
+
+resource_policy:
+  use_in_selection: false
+  use_in_acceptance: false
+  compare_outcomes_by_cost: false
+
+winner_information:
+  visible_to_agents: false
+  posthoc_evaluator_only: true
+
+hidden_evaluation:
+  status: unmeasured
+  score_only_after_lock: true

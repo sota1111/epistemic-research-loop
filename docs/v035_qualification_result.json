@@ -1,0 +1,399 @@
+{
+  "acceptance": {
+    "evolution_and_exploration": "pass",
+    "independent_agent_diversity": "pass",
+    "passed": true,
+    "reliability": "pass",
+    "structure_discovery": "pass",
+    "structure_rejection": "pass",
+    "structure_transfer": "pass"
+  },
+  "claims_not_supported": [
+    "Kaggle Hidden or Private performance improved",
+    "the deterministic reference probe equals an LLM agent qualification",
+    "cross-agent communication is harmful or beneficial",
+    "B, B+, or C has an outcome advantage"
+  ],
+  "hidden_private": "UNMEASURED",
+  "phase_1_information_sharing": "none",
+  "population": {
+    "action_balance_gate_passed": true,
+    "action_mix": {
+      "E1_exploitation": 3,
+      "E2_solution_exploration": 2,
+      "E3_epistemic_exploration": 3,
+      "E4_structure_maturation": 1
+    },
+    "agents": [
+      {
+        "agent_id": "island-01",
+        "belief_changes": 3,
+        "best_local_candidate": "island-01-cycle-03-challenger",
+        "best_sealed_candidate": "island-01-cycle-03-challenger",
+        "complementary_candidates": 3,
+        "effective_family_count": 2.9999999999999996,
+        "false_promotions": 0,
+        "falsification_tests": 2,
+        "falsified_structures": 0,
+        "hypotheses_generated": 2,
+        "incumbent_improvements": 2,
+        "provisional_structures": 2,
+        "rejected_challengers": 1,
+        "repeated_family_rate": 0.0,
+        "selection_regret": 0.0,
+        "semantic_families": 3,
+        "shadow_candidates": 1,
+        "successful_parent_changes": 2,
+        "validated_structures": 0
+      },
+      {
+        "agent_id": "island-02",
+        "belief_changes": 3,
+        "best_local_candidate": "island-02-cycle-02-challenger",
+        "best_sealed_candidate": "island-02-cycle-02-challenger",
+        "complementary_candidates": 3,
+        "effective_family_count": 2.9999999999999996,
+        "false_promotions": 0,
+        "falsification_tests": 1,
+        "falsified_structures": 0,
+        "hypotheses_generated": 1,
+        "incumbent_improvements": 0,
+        "provisional_structures": 1,
+        "rejected_challengers": 3,
+        "repeated_family_rate": 0.0,
+        "selection_regret": 0.007599522999999997,
+        "semantic_families": 3,
+        "shadow_candidates": 3,
+        "successful_parent_changes": 0,
+        "validated_structures": 0
+      },
+      {
+        "agent_id": "island-03",
+        "belief_changes": 3,
+        "best_local_candidate": "island-03-cycle-02-challenger",
+        "best_sealed_candidate": "island-03-cycle-02-challenger",
+        "complementary_candidates": 3,
+        "effective_family_count": 2.9999999999999996,
+        "false_promotions": 0,
+        "falsification_tests": 1,
+        "falsified_structures": 0,
+        "hypotheses_generated": 1,
+        "incumbent_improvements": 2,
+        "provisional_structures": 1,
+        "rejected_challengers": 1,
+        "repeated_family_rate": 0.0,
+        "selection_regret": 0.0,
+        "semantic_families": 3,
+        "shadow_candidates": 1,
+        "successful_parent_changes": 2,
+        "validated_structures": 0
+      }
+    ],
+    "diversity_gate_passed": true,
+    "dominant_action_fraction": 0.3333333333333333,
+    "dominant_family_fraction": 0.2222222222222222,
+    "executed_action_types": 4,
+    "independent_research_diversity": 1.0,
+    "population_effective_research_family": 5.66964472452693,
+    "qualifying_agents": 3,
+    "shadow_candidate_recovery_rate": 0.8
+  },
+  "reliability": {
+    "artifact_contract_completion": 1.0,
+    "oof_honesty": 1.0,
+    "sealed_isolation": 1.0
+  },
+  "scope": "qualification preflight plus v0.3.4 IEEE-CIS pilot retrospective",
+  "structure_control": {
+    "brier_score": 0.06091184197345014,
+    "discovery_gate_passed": true,
+    "expected_calibration_error": 0.1725182480057243,
+    "false_structure_promotion_rate": 0.0,
+    "families": [
+      {
+        "control_id": "N1_frequency_artifact",
+        "decision_changed": false,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": false,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": false
+          }
+        ],
+        "median_sealed_gain": -0.0008796525372477548,
+        "promoted": false,
+        "structure_present": false,
+        "supporting_seeds": 0,
+        "useful_structure": false
+      },
+      {
+        "control_id": "N2_temporal_looking_noise",
+        "decision_changed": false,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": false,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": false
+          }
+        ],
+        "median_sealed_gain": -0.0017440846462414283,
+        "promoted": false,
+        "structure_present": false,
+        "supporting_seeds": 0,
+        "useful_structure": false
+      },
+      {
+        "control_id": "N3_missingness_artifact",
+        "decision_changed": false,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": false,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": false
+          }
+        ],
+        "median_sealed_gain": 0.00017377201112145357,
+        "promoted": false,
+        "structure_present": false,
+        "supporting_seeds": 0,
+        "useful_structure": false
+      },
+      {
+        "control_id": "N4_random_routing",
+        "decision_changed": false,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": false,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": false
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": false
+          }
+        ],
+        "median_sealed_gain": -0.0010145989515810694,
+        "promoted": false,
+        "structure_present": false,
+        "supporting_seeds": 0,
+        "useful_structure": false
+      },
+      {
+        "control_id": "P1_persistent_entity",
+        "decision_changed": true,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": true,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": true
+          }
+        ],
+        "median_sealed_gain": 0.18859745390693594,
+        "promoted": true,
+        "structure_present": true,
+        "supporting_seeds": 3,
+        "useful_structure": true
+      },
+      {
+        "control_id": "P2_temporal_regime",
+        "decision_changed": true,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": true,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": true
+          }
+        ],
+        "median_sealed_gain": 0.6730269343509762,
+        "promoted": true,
+        "structure_present": true,
+        "supporting_seeds": 3,
+        "useful_structure": true
+      },
+      {
+        "control_id": "P3_observation_process",
+        "decision_changed": true,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": true,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": true
+          }
+        ],
+        "median_sealed_gain": 0.2308329650905877,
+        "promoted": true,
+        "structure_present": true,
+        "supporting_seeds": 3,
+        "useful_structure": true
+      },
+      {
+        "control_id": "P4_problem_decomposition",
+        "decision_changed": true,
+        "evaluated_seeds": 3,
+        "ground_truth_operator_match": true,
+        "leave_one_seed_out": [
+          {
+            "omitted_seed": 17,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 42,
+            "promoted": true
+          },
+          {
+            "omitted_seed": 20260826,
+            "promoted": true
+          }
+        ],
+        "median_sealed_gain": 0.38266666666666665,
+        "promoted": true,
+        "structure_present": true,
+        "supporting_seeds": 3,
+        "useful_structure": true
+      }
+    ],
+    "median_structure_sealed_gain": 0.30674981587862715,
+    "rejection_gate_passed": true,
+    "reliability_diagram": [
+      {
+        "count": 11,
+        "empirical_frequency": 0.0,
+        "lower": 0.2,
+        "mean_confidence": 0.33648186008351283,
+        "upper": 0.4
+      },
+      {
+        "count": 1,
+        "empirical_frequency": 0.0,
+        "lower": 0.4,
+        "mean_confidence": 0.43845337247996996,
+        "upper": 0.6
+      },
+      {
+        "count": 12,
+        "empirical_frequency": 1.0,
+        "lower": 0.8,
+        "mean_confidence": 0.9999429901051023,
+        "upper": 1.0
+      }
+    ],
+    "transfer_gate_passed": true,
+    "true_structure_discovery_rate": 1.0,
+    "true_structure_rejection_rate": 1.0,
+    "useful_structure_transfer_rate": 1.0
+  },
+  "trials": [
+    {
+      "change": "separate AgentControlView from controller-owned truth",
+      "finding": "the first API passed the complete control object into the agent method and left the generator seed in the opaque identifier; although labels were not used for fitting, blindness was not enforceable by type or identifier",
+      "status": "failed_design_audit",
+      "trial": 0
+    },
+    {
+      "change": "generic four-operator probe with null and independent-implication gates",
+      "finding": "the temporal control was missed because an uncentered interaction was absorbed by the incumbent signal coefficient",
+      "metrics": {
+        "brier_score": 0.07503428993649454,
+        "discovered_positive_families": [
+          "P1_persistent_entity",
+          "P3_observation_process",
+          "P4_problem_decomposition"
+        ],
+        "expected_calibration_error": 0.2044864556436722,
+        "false_promotions": [],
+        "false_structure_promotion_rate": 0.0,
+        "median_structure_sealed_gain": 0.2308329650905877,
+        "missed_positive_families": [
+          "P2_temporal_regime"
+        ],
+        "true_structure_discovery_rate": 0.75,
+        "true_structure_rejection_rate": 1.0,
+        "useful_structure_transfer_rate": 1.0
+      },
+      "status": "partial_recall",
+      "trial": 1
+    },
+    {
+      "change": "orthogonalize the temporal interaction in the early research window; promotion thresholds and negative controls unchanged",
+      "metrics": {
+        "brier_score": 0.06091184197345014,
+        "discovered_positive_families": [
+          "P1_persistent_entity",
+          "P2_temporal_regime",
+          "P3_observation_process",
+          "P4_problem_decomposition"
+        ],
+        "expected_calibration_error": 0.1725182480057243,
+        "false_promotions": [],
+        "false_structure_promotion_rate": 0.0,
+        "median_structure_sealed_gain": 0.30674981587862715,
+        "missed_positive_families": [],
+        "true_structure_discovery_rate": 1.0,
+        "true_structure_rejection_rate": 1.0,
+        "useful_structure_transfer_rate": 1.0
+      },
+      "status": "qualified_on_control_suite",
+      "trial": 2
+    }
+  ],
+  "version": "0.3.5"
+}
