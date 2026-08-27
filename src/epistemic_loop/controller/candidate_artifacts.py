@@ -232,6 +232,7 @@ class V034CandidateArtifactValidator(CandidateArtifactValidator):
             )
         return CandidateArtifactValidation(valid=True, terminal_status=TerminalStatus.COMPLETED)
 
+
 def hash_snapshot(paths: Iterable[str | Path]) -> str:
     """Content hash a stable collection without mutating the dataset/environment."""
 

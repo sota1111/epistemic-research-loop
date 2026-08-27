@@ -165,9 +165,7 @@ class V034FinalMetaSelector:
     def select(self, candidates: Sequence[FinalSelectionCandidate]) -> LockedFinalSelection:
         if not candidates:
             raise ValueError("final selection requires candidates")
-        single_auc = {
-            item.candidate_id: item.nested_strict_forward_auc for item in candidates if not item.is_ensemble
-        }
+        single_auc = {item.candidate_id: item.nested_strict_forward_auc for item in candidates if not item.is_ensemble}
         eligible: list[FinalSelectionCandidate] = []
         for candidate in candidates:
             if candidate.is_ensemble:
@@ -633,9 +631,8 @@ def _validate_outcome_design(outputs: Sequence[V034RunOutputLock], *, outputs_pe
     if len({item.output_id for item in outputs}) != len(outputs):
         raise ValueError("output_id values must be unique")
     seed_sets = {arm: {item.outer_seed for item in outputs if item.arm is arm} for arm in arms}
-    if (
-        len({frozenset(values) for values in seed_sets.values()}) != 1
-        or any(len(values) != outputs_per_arm for values in seed_sets.values())
+    if len({frozenset(values) for values in seed_sets.values()}) != 1 or any(
+        len(values) != outputs_per_arm for values in seed_sets.values()
     ):
         raise ValueError("all arms must use the same outer seed set")
     for field in ("base_commit", "dataset_sha256", "fold_plan_sha256", "row_set_sha256"):
@@ -798,8 +795,7 @@ def evaluate_outcome_batch(
         independent_replications = sum(item.independent_replications for item in arm_scores)
         redundant_duplications = sum(item.redundant_duplications for item in arm_scores)
         wins = sum(
-            private[arm, seed] == max(private[candidate_arm, seed] for candidate_arm in SystemArm)
-            for seed in seeds
+            private[arm, seed] == max(private[candidate_arm, seed] for candidate_arm in SystemArm) for seed in seeds
         )
         summaries.append(
             ArmOutcomeSummary(
@@ -945,9 +941,7 @@ def classify_outcome_conclusion(
     local_prefers_predictive = max(c.mean_local_auc, b_plus.mean_local_auc) > b.mean_local_auc
     private_prefers_b = b.mean_private_auc > max(c.mean_private_auc, b_plus.mean_private_auc)
     correlations = [
-        item.cv_to_private_spearman
-        for item in analysis.arm_summaries
-        if item.cv_to_private_spearman is not None
+        item.cv_to_private_spearman for item in analysis.arm_summaries if item.cv_to_private_spearman is not None
     ]
     if local_prefers_predictive and private_prefers_b and correlations and fmean(correlations) < low_rank_correlation:
         return V034Conclusion.VALIDATION_BOTTLENECK
@@ -1026,8 +1020,7 @@ def _spearman(left: Sequence[float], right: Sequence[float]) -> float | None:
     right_mean = fmean(right_ranks)
     numerator = sum((a - left_mean) * (b - right_mean) for a, b in zip(left_ranks, right_ranks, strict=True))
     denominator = math.sqrt(
-        sum((item - left_mean) ** 2 for item in left_ranks)
-        * sum((item - right_mean) ** 2 for item in right_ranks)
+        sum((item - left_mean) ** 2 for item in left_ranks) * sum((item - right_mean) ** 2 for item in right_ranks)
     )
     return numerator / denominator if denominator else None
 

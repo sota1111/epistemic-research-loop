@@ -230,11 +230,7 @@ def _hash(value: object) -> str:
 
 def _nested_keys(value: object) -> set[str]:
     if isinstance(value, Mapping):
-        return {str(key) for key in value} | {
-            nested
-            for item in value.values()
-            for nested in _nested_keys(item)
-        }
+        return {str(key) for key in value} | {nested for item in value.values() for nested in _nested_keys(item)}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return {nested for item in value for nested in _nested_keys(item)}
     return set()

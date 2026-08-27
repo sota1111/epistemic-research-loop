@@ -75,9 +75,7 @@ class SemanticOverlapClassifier:
             and bool(varying)
         )
         classification = (
-            SemanticOverlapClass.INDEPENDENT_REPLICATION
-            if independent
-            else SemanticOverlapClass.REDUNDANT_DUPLICATION
+            SemanticOverlapClass.INDEPENDENT_REPLICATION if independent else SemanticOverlapClass.REDUNDANT_DUPLICATION
         )
         return SemanticOverlapAssessment(
             cluster_id,

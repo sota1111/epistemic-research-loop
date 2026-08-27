@@ -131,14 +131,17 @@ class ArmHardBudget:
     finalization_wall_reserve_seconds: float
 
     def __post_init__(self) -> None:
-        if min(
-            self.process_tree_cpu_seconds,
-            self.token_count,
-            self.wall_clock_seconds,
-            self.finalization_cpu_reserve_seconds,
-            self.finalization_token_reserve,
-            self.finalization_wall_reserve_seconds,
-        ) < 0:
+        if (
+            min(
+                self.process_tree_cpu_seconds,
+                self.token_count,
+                self.wall_clock_seconds,
+                self.finalization_cpu_reserve_seconds,
+                self.finalization_token_reserve,
+                self.finalization_wall_reserve_seconds,
+            )
+            < 0
+        ):
             raise ValueError("budget values must be non-negative")
         if self.finalization_cpu_reserve_seconds > self.process_tree_cpu_seconds:
             raise ValueError("CPU finalization reserve exceeds budget")

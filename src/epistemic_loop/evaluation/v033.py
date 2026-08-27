@@ -132,9 +132,7 @@ class MechanismCalibration:
                 "range": prediction.minimum_effect <= observation.effect <= prediction.maximum_effect,
                 "rank": prediction.predicted_importance_rank == observation.observed_importance_rank,
                 "slice": bool(set(prediction.strongest_slices) & set(observation.strongest_slices)),
-                "learner_transfer": (
-                    prediction.transfers_across_learners == observation.transferred_across_learners
-                ),
+                "learner_transfer": (prediction.transfers_across_learners == observation.transferred_across_learners),
             }
             sign_hits += checks["sign"]
             range_hits += checks["range"]
