@@ -1,0 +1,90 @@
+{
+  "version": "0.3.4",
+  "title": "Outcome-only B/B+/C and Sealed Decision Quality Verification",
+  "frozen_at_utc": "2026-08-27T00:00:00Z",
+  "comparison_mode": "outcome_only",
+  "competition": "ieee-fraud-detection",
+  "immutable_base": {
+    "commit": "ac3b46975e5da64570fb79d6e1141bc5c7525d0f",
+    "infrastructure_overlay_only": true,
+    "past_solution_evidence_allowed": false
+  },
+  "dataset_snapshot": {
+    "train_parquet_sha256": "a76e41db6d44fd56c840bcb52e697ff48c285e5617e47f8787f2f1e7d38802e0",
+    "test_parquet_sha256": "65c88259eafb4437506a73ddd9b5d078ec694e018d89043dd32a09bad6366548",
+    "train_rows": 590540,
+    "test_rows": 506691
+  },
+  "matrix": {
+    "arms": ["B", "B_plus", "C"],
+    "outer_seeds": [101, 118, 135, 152, 169, 186, 203, 220, 237, 254, 271, 288],
+    "runs_per_arm": 12,
+    "total_runs": 36,
+    "agents_per_run": 3,
+    "cycles_per_agent": 3,
+    "cycle_decisions_per_run": 9,
+    "locked_submissions_per_run": 1
+  },
+  "common_external_conditions": {
+    "base_llm": "locked_identical_version_at_live_initialization",
+    "libraries_and_tools": "locked_identical_environment_at_live_initialization",
+    "code_development_authority": "identical",
+    "dataset_snapshot": "identical",
+    "common_crossfit": "identical",
+    "sealed_decision_set": "identical",
+    "hidden_evaluator": "identical"
+  },
+  "resource_policy": {
+    "cpu_limit": null,
+    "memory_limit_gb": null,
+    "gpu_limit": null,
+    "thread_limit": null,
+    "wall_clock_limit": null,
+    "experiment_cost_penalty": false,
+    "use_resource_in_selection": false,
+    "use_resource_in_acceptance": false,
+    "compare_resource_usage": false,
+    "heavy_execution_order": "sequential"
+  },
+  "information_boundary": {
+    "fixed_niche": false,
+    "share_agent_belief": false,
+    "share_agent_scores": false,
+    "share_global_best": false,
+    "share_solution_code": false,
+    "internet_access": false,
+    "winner_information": false,
+    "private_visible_during_run": false,
+    "inter_arm_evidence_migration": false
+  },
+  "partition": {
+    "stable_sort": ["TransactionDT", "TransactionID"],
+    "research_fraction": 0.8,
+    "sealed_decision_fraction": 0.2,
+    "sealed_labels_visible_to_agents": false
+  },
+  "common_crossfit": {
+    "split_type": "expanding_time",
+    "horizons": 3,
+    "minimum_gap_days": 7,
+    "model_seeds": [17, 42, 20260826],
+    "feature_fit_scope": "fold_train_only",
+    "fold_plan_hash": "locked_at_live_run_initialization",
+    "row_set_hash": "locked_at_live_run_initialization"
+  },
+  "initial_validation_constraints": ["GVC-IEEE-001"],
+  "primary_endpoints": ["private_auc_C_minus_B", "private_auc_C_minus_B_plus"],
+  "minimum_meaningful_private_auc_gain": 0.001,
+  "bootstrap_iterations": 10000,
+  "hidden_evaluation": {
+    "score_only_after_all_outputs_locked": true,
+    "partial_batch_queries": false,
+    "return_intermediate_scores": false
+  },
+  "claim_boundary": {
+    "capability_advantage_allowed": true,
+    "efficiency_advantage_allowed": false,
+    "same_compute_claim_allowed": false,
+    "cost_effectiveness_claim_allowed": false
+  }
+}

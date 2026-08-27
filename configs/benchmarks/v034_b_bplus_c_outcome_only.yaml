@@ -1,0 +1,167 @@
+benchmark_id: ieee-cis-v034-unrestricted-outcome-advantage
+version: 0.3.4
+title: Outcome-only B/B+/C and Sealed Decision Quality Verification
+competition: ieee-fraud-detection
+
+comparison:
+  mode: outcome_only
+  arms: [B, B_plus, C]
+  outer_seeds: [101, 118, 135, 152, 169, 186, 203, 220, 237, 254, 271, 288]
+  agents_per_run: 3
+  cycles_per_agent: 3
+  outputs_per_arm: 12
+  total_outputs: 36
+  execution_order: seed_round_robin_B_B_plus_C
+
+immutable_base:
+  commit: ac3b46975e5da64570fb79d6e1141bc5c7525d0f
+  solution_evidence_allowed: false
+  infrastructure_overlay_only: true
+
+common_external_conditions:
+  base_llm: locked_identical_version_at_live_initialization
+  libraries_and_tools: locked_identical_environment_at_live_initialization
+  code_development_authority: identical
+  dataset_snapshot: identical
+  common_crossfit: identical
+  sealed_decision_set: identical
+  hidden_evaluator: identical
+  final_submission_count: 1
+
+resource_policy:
+  cpu_limit: null
+  memory_limit_gb: null
+  gpu_limit: null
+  thread_limit: null
+  wall_clock_limit: null
+  experiment_cost_penalty: false
+  use_resource_in_selection: false
+  use_resource_in_acceptance: false
+  compare_resource_usage: false
+  heavy_execution_order: sequential
+
+information_boundary:
+  fixed_niche: false
+  share_agent_belief: false
+  share_agent_scores: false
+  share_global_best: false
+  share_solution_code: false
+  internet_access: false
+  winner_information: false
+  private_visible_during_run: false
+
+arms:
+  B:
+    performance_archive: true
+    semantic_descriptor: true
+    implementation_descriptor: true
+    oof_error_archive: true
+    hypothesis_registry: false
+    predictive_slice_preregistration: false
+  B_plus:
+    inherits: B
+    predictive_slice_preregistration: true
+    predicted_difference_mechanism: true
+    predictive_diversity_debt: true
+    standalone_ensemble_eligibility_split: true
+    hypothesis_registry: false
+  C:
+    inherits: B_plus
+    agent_local_hypothesis_registry: true
+    competing_hypotheses: true
+    structure_maturation: true
+    null_skeptic_fork: true
+    validation_debt: true
+    falsification: true
+    belief_update: true
+    evsi_or_discrimination_value: true
+
+global_validation_constraints:
+  initial:
+    - id: GVC-IEEE-001
+      rule: strict_forward_required_for_future_transport
+  independent_agents_required: 2
+  single_agent_horizons_required: 3
+  single_agent_seeds_required: 3
+  allow_safety_immediate_promotion: true
+  reveal_source_agent: false
+
+data:
+  stable_sort: [TransactionDT, TransactionID]
+  research_fraction: 0.80
+  sealed_decision_fraction: 0.20
+  final_retrain_on_full_train: true
+  final_train_rows: 590540
+  final_test_rows: 506691
+
+common_crossfit:
+  split_type: expanding_time
+  horizons: 3
+  minimum_gap_days: 7
+  model_seeds: [17, 42, 20260826]
+  feature_fit_scope: fold_train_only
+  shuffled_candidate_final_eligible: false
+
+candidate_eligibility:
+  standalone_gate: true
+  ensemble_gate: true
+  seed_stability_required: true
+  primary_metric: auc
+
+decision_audit:
+  parent_challenger_lock: true
+  sign_accuracy: true
+  false_rejection_rate: true
+  false_adoption_rate: true
+  selection_regret: true
+
+hidden_evaluation:
+  score_only_after_all_outputs_locked: true
+  one_locked_submission_per_run: true
+  return_intermediate_scores: false
+
+statistics:
+  paired_by_outer_seed: true
+  bootstrap_iterations: 10000
+  confidence: 0.95
+  minimum_meaningful_auc_gain: 0.001
+  paired_test: sign_test
+
+primary:
+  - private_auc_C_minus_B
+  - private_auc_C_minus_B_plus
+
+secondary:
+  - sealed_future_auc
+  - private_win_rate
+  - cv_to_private_spearman
+  - decision_sign_accuracy
+  - false_rejection_rate
+  - false_adoption_rate
+  - selection_regret
+  - nested_ensemble_gain
+  - hidden_ensemble_gain
+  - validated_structure_count
+  - false_structure_promotion_rate
+  - artifact_completion_rate
+  - valid_submission_rate
+
+diagnostic_only:
+  - semantic_cluster_count
+  - qd_occupancy
+  - residual_effective_rank
+  - mean_residual_correlation
+  - model_family_count
+  - representation_count
+  - hypothesis_count
+  - belief_entropy_reduction
+  - realized_information_gain
+
+excluded_from_comparison_and_acceptance:
+  - cpu
+  - memory
+  - gpu
+  - threads
+  - wall_clock
+  - llm_tokens
+  - cost

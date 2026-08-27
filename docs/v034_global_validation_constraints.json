@@ -1,0 +1,29 @@
+{
+  "version": "0.3.4",
+  "constraints": [
+    {
+      "constraint_id": "GVC-IEEE-001",
+      "claim": "Future-transport candidate selection requires past-only strict-forward OOF predictions.",
+      "rule_key": "strict_forward_required_for_future_transport",
+      "applies_to": [
+        "candidate_ranking",
+        "ensemble_weight_learning",
+        "final_candidate_pool",
+        "predictive_diversity_archive"
+      ],
+      "diagnostic_use_allowed": ["random", "shuffled"],
+      "prohibited_in_final_pool": ["shuffled_only_candidate", "random_only_candidate"],
+      "promotion_basis": "frozen_infrastructure_constraint",
+      "agent_notice_reveals_source": false,
+      "agent_notice_reveals_score_model_or_feature": false
+    }
+  ],
+  "new_constraint_promotion": {
+    "independent_agents_required": 2,
+    "or_single_agent_horizons": 3,
+    "or_single_agent_seeds": 3,
+    "single_agent_same_direction_required": true,
+    "artifact_and_verifier_required": true,
+    "safety_immediate_promotion": true
+  }
+}

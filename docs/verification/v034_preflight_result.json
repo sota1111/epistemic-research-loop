@@ -1,0 +1,232 @@
+{
+  "acceptance": {
+    "artifact_reliability": "pass",
+    "control_plane": "pass",
+    "decision_audit": "pass",
+    "final_hidden_outcome": "unmeasured",
+    "full_common_crossfit": "pass",
+    "global_validation_constraint": "pass",
+    "quality_predictive_diversity": "unmeasured",
+    "semantic_diversity": "unmeasured",
+    "structure_falsification": "unmeasured",
+    "true_structure_discovery": "unmeasured",
+    "unrestricted_outcome_advantage_over_b": "inconclusive",
+    "unrestricted_outcome_advantage_over_b_plus": "inconclusive"
+  },
+  "arm_capabilities": {
+    "B": {
+      "belief_update": false,
+      "competing_hypotheses": false,
+      "evsi_or_discrimination_value": false,
+      "falsification": false,
+      "hypothesis_registry": false,
+      "implementation_descriptor": true,
+      "null_skeptic_fork": false,
+      "oof_error_archive": true,
+      "performance_archive": true,
+      "predictive_diversity_debt": false,
+      "predictive_slice_preregistration": false,
+      "semantic_descriptor": true,
+      "standalone_ensemble_eligibility_split": false,
+      "structure_maturation": false,
+      "validation_debt": false
+    },
+    "B_plus": {
+      "belief_update": false,
+      "competing_hypotheses": false,
+      "evsi_or_discrimination_value": false,
+      "falsification": false,
+      "hypothesis_registry": false,
+      "implementation_descriptor": true,
+      "null_skeptic_fork": false,
+      "oof_error_archive": true,
+      "performance_archive": true,
+      "predictive_diversity_debt": true,
+      "predictive_slice_preregistration": true,
+      "semantic_descriptor": true,
+      "standalone_ensemble_eligibility_split": true,
+      "structure_maturation": false,
+      "validation_debt": false
+    },
+    "C": {
+      "belief_update": true,
+      "competing_hypotheses": true,
+      "evsi_or_discrimination_value": true,
+      "falsification": true,
+      "hypothesis_registry": true,
+      "implementation_descriptor": true,
+      "null_skeptic_fork": true,
+      "oof_error_archive": true,
+      "performance_archive": true,
+      "predictive_diversity_debt": true,
+      "predictive_slice_preregistration": true,
+      "semantic_descriptor": true,
+      "standalone_ensemble_eligibility_split": true,
+      "structure_maturation": true,
+      "validation_debt": true
+    }
+  },
+  "candidate_artifact_contract": [
+    "candidate.yaml",
+    "run_manifest.yaml",
+    "feature_manifest.yaml",
+    "fold_assignment.parquet",
+    "oof_predictions.parquet",
+    "test_predictions.parquet",
+    "metrics.json",
+    "model_artifact",
+    "submission.csv",
+    "source_code_ref.json",
+    "environment_lock.json"
+  ],
+  "common_crossfit_preflight": {
+    "gap_days": 7,
+    "horizons": 3,
+    "live_fold_plan_hash": "UNMEASURED",
+    "past_only": true,
+    "research_rows": 80,
+    "sealed_rows": 20,
+    "seeds": [
+      17,
+      42,
+      20260826
+    ],
+    "synthetic_only": true
+  },
+  "conclusion": "v0.3.4 outcome-only contracts pass implementation preflight. No live B/B+/C run, sealed label unblind, Leaderboard query, or Hidden/Private claim was performed.",
+  "cycle_contract": {
+    "B": [
+      "proposal.yaml",
+      "decision_binding.yaml",
+      "semantic_signature.yaml",
+      "experiment_source",
+      "local_metrics.json",
+      "parent_predictions.parquet",
+      "challenger_predictions.parquet",
+      "decision_result.yaml",
+      "artifact_validation.json"
+    ],
+    "B_plus": [
+      "proposal.yaml",
+      "decision_binding.yaml",
+      "semantic_signature.yaml",
+      "experiment_source",
+      "local_metrics.json",
+      "parent_predictions.parquet",
+      "challenger_predictions.parquet",
+      "decision_result.yaml",
+      "artifact_validation.json",
+      "expected_error_slice.yaml",
+      "predicted_mechanism.yaml"
+    ],
+    "C": [
+      "proposal.yaml",
+      "decision_binding.yaml",
+      "semantic_signature.yaml",
+      "experiment_source",
+      "local_metrics.json",
+      "parent_predictions.parquet",
+      "challenger_predictions.parquet",
+      "decision_result.yaml",
+      "artifact_validation.json",
+      "expected_error_slice.yaml",
+      "predicted_mechanism.yaml",
+      "hypothesis.yaml",
+      "alternatives.yaml",
+      "falsification.yaml",
+      "belief_update.yaml",
+      "validation_debt.yaml"
+    ]
+  },
+  "deliverables_complete": true,
+  "global_validation_constraint": {
+    "registered": [
+      "GVC-IEEE-001"
+    ],
+    "shuffled_diagnostic_eligible": true,
+    "shuffled_final_eligible": false,
+    "strict_forward_final_eligible": true
+  },
+  "immutable_base": {
+    "commit": "ac3b46975e5da64570fb79d6e1141bc5c7525d0f",
+    "infrastructure_overlay_only": true,
+    "solution_evidence_allowed": false
+  },
+  "live_outcomes": {
+    "decision_sign_accuracy": "UNMEASURED",
+    "private_auc_C_minus_B": "UNMEASURED",
+    "private_auc_C_minus_B_plus": "UNMEASURED",
+    "selection_regret": "UNMEASURED"
+  },
+  "locked_run_artifact_contract": [
+    "run_manifest.json",
+    "agent_reports",
+    "cycle_decisions",
+    "common_crossfit",
+    "sealed_predictions",
+    "locked_candidate_manifest.json",
+    "locked_selection_reason.json",
+    "final_retrain_lock.json",
+    "locked_submission.csv",
+    "locked_submission.sha256"
+  ],
+  "outcome_only_plan": {
+    "agents_per_run": 3,
+    "all_outputs_locked": false,
+    "cycles_per_agent": 3,
+    "hidden_evaluation_ready": false,
+    "live_runs_completed": 0,
+    "plan_sha256": "ed68169f4c5bb41654483caa81f14970b00438a1ed64106ce17337fb274e1eb5",
+    "planned_runs": 36,
+    "private_visible_during_run": false,
+    "runs_per_arm": 12
+  },
+  "required_deliverables": {
+    "docs/v034_arm_B_plus_policy.md": true,
+    "docs/v034_arm_B_policy.md": true,
+    "docs/v034_arm_C_policy.md": true,
+    "docs/v034_decision_audit.json": true,
+    "docs/v034_final_acceptance.md": true,
+    "docs/v034_global_validation_constraints.json": true,
+    "docs/v034_hidden_outcome_report.json": true,
+    "docs/v034_preregistration.json": true,
+    "docs/v034_semantic_overlap_report.json": true,
+    "results/v034_locked_outputs/.gitkeep": true
+  },
+  "resource_policy": {
+    "compare_resource_usage": false,
+    "cpu_limit": null,
+    "experiment_cost_penalty": false,
+    "gpu_limit": null,
+    "heavy_execution_order": "sequential",
+    "memory_limit_gb": null,
+    "resource_fields_present_in_acceptance": false,
+    "resource_fields_present_in_final_selector": false,
+    "thread_limit": null,
+    "use_resource_in_acceptance": false,
+    "use_resource_in_selection": false,
+    "wall_clock_limit": null
+  },
+  "scope": "implementation_and_policy_preflight_only",
+  "semantic_overlap_preflight": {
+    "classification": "independent_replication",
+    "cluster_id": "validation-gap",
+    "experiment_ids": [
+      "rep-a",
+      "rep-b"
+    ],
+    "independent_agents": [
+      "agent-a",
+      "agent-b"
+    ],
+    "new_evidence_dimensions": [
+      "model",
+      "observable",
+      "data_slice",
+      "falsification_path"
+    ],
+    "qd_contribution": true
+  },
+  "title": "Outcome-only B/B+/C and Sealed Decision Quality Verification",
+  "version": "0.3.4"
+}

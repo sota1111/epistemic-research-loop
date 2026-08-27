@@ -1,0 +1,13 @@
+{
+  "version": "0.3.4",
+  "status": "UNMEASURED",
+  "live_runs_completed": 0,
+  "classifications": [],
+  "classifier_preflight": {
+    "unique_supported": true,
+    "independent_replication_supported": true,
+    "redundant_duplication_supported": true,
+    "experiment_id_alone_implies_novelty": false,
+    "redundant_duplication_receives_qd_contribution": false
+  }
+}
