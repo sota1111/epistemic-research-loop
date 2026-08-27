@@ -1,0 +1,67 @@
+version: "0.3.7"
+benchmark_id: v037-independent-reproducibility-and-blind-spot
+
+suite_lock:
+  suite_ids:
+    - v037-repro-b01
+    - v037-repro-b02
+    - v037-repro-b03
+    - v037-repro-b04
+  agents:
+    - agent-01
+    - agent-02
+    - agent-03
+  llm_sampling_seeds:
+    - 17
+    - 42
+  generate_before_policy_change: true
+  reuse_after_unblinding: false
+
+prompt_ablation:
+  p0: prompts/generic_research_agent/v037_p0.md
+  p1: prompts/generic_research_agent/v037_p1.md
+  inject_solution_vocabulary: false
+
+lineage_selection:
+  arms:
+    - deterministic_best
+    - posterior_commit
+    - two_hit_maturation
+  minimum_commit_cycles: 2
+
+data:
+  contexts_per_pack: 3
+  partitions:
+    research: 0.60
+    structure_confirmation: 0.20
+    transfer_sealed: 0.20
+  persistent_ladder_levels: 4
+  matched_negative_per_level: true
+
+null_policy:
+  require_full_refit: true
+  check_every_replicates: 5
+  minimum_replicates: 5
+  maximum_replicates: 30
+  allow_futility_stop: true
+  allow_early_support_stop: true
+
+confidence:
+  fields:
+    - p_structure_exists
+    - p_evidence_sufficient
+    - p_actionable
+    - p_positive_transfer
+  development_calibration_only: true
+
+engineering_gate:
+  median_agent_tsdr: 0.50
+  median_agent_tsrr: 0.67
+  maximum_agent_fspr: 0.20
+  maximum_shared_blind_spot_rate: 0.20
+  minimum_leave_one_agent_out_tsrr: 0.67
+  useful_structure_transfer_rate: 0.50
+  maximum_brier: 0.20
+  maximum_ece: 0.20
+  persistent_levels_discovered_by_population: 3
+  persistent_agents_with_independent_discovery: 2

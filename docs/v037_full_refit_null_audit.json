@@ -1,0 +1,10 @@
+{
+  "interpretation": "The locked contract records full feature regeneration and model refit for every null, but v0.3.7 did not persist per-replicate source/model/feature fingerprints.",
+  "maximum_null_replicates": 30,
+  "minimum_null_replicates": 5,
+  "pack_count": 288,
+  "per_replicate_fit_fingerprint_available": false,
+  "provenance_status": "PARTIAL",
+  "reported_full_refit_count": 288,
+  "reported_full_refit_rate": 1.0
+}
