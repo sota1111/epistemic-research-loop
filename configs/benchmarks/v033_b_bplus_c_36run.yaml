@@ -1,0 +1,104 @@
+benchmark_id: ieee-cis-v033-incremental-value-over-strong-qd
+version: 0.3.3
+title: Incremental Value over Strong QD Verification
+competition: ieee-fraud-detection
+
+arms:
+  B:
+    performance: true
+    semantic_novelty: true
+    implementation_diversity: true
+    oof_error_diversity: true
+    candidate_archive: true
+    predictive_slice_preregistration: false
+    hypothesis_registry: false
+    structure_maturation: false
+    falsifier: false
+  B_plus:
+    inherits: B
+    predictive_slice_preregistration: true
+    prediction_difference_mechanism: true
+    predictive_diversity_debt: true
+    slice_oof_comparison: true
+    hypothesis_registry: false
+    structure_maturation: false
+    falsifier: false
+  C:
+    inherits: B_plus
+    agent_local_hypothesis_registry: true
+    structural_leverage: true
+    structure_maturation: true
+    null_skeptic_fork: true
+    validation_debt: true
+    falsification: true
+    belief_update: true
+
+seeds: [101, 118, 135, 152, 169, 186, 203, 220, 237, 254, 271, 288]
+outputs_per_arm: 12
+total_outputs: 36
+execution_order: seed_round_robin_B_B_plus_C
+
+fixed_resources:
+  cpu_set: dedicated_cgroup_required
+  threads: 2
+  environment:
+    OMP_NUM_THREADS: "2"
+    MKL_NUM_THREADS: "2"
+    OPENBLAS_NUM_THREADS: "2"
+    NUMEXPR_NUM_THREADS: "2"
+  ram_limit_gb: 24
+  process_tree_cpu_seconds_per_arm: 14400
+  llm_tokens_per_arm: 500000
+  wall_clock_seconds_per_arm: 25200
+  finalization_reserve:
+    process_tree_cpu_seconds: 1800
+    llm_tokens: 50000
+    wall_clock_seconds: 1800
+  next_run_reservation:
+    process_tree_cpu_seconds: 900
+    llm_tokens: 30000
+    wall_clock_seconds: 1800
+
+metering:
+  cgroup_version: 2
+  required_files: [cpu.stat, memory.current, memory.peak]
+  compare_realized_not_requested_resources: true
+  arm_budget_relative_tolerance: 0.01
+  stop_before_reserve_violation: true
+
+mechanism_calibration:
+  preregister:
+    - component_effect_sign
+    - component_effect_range
+    - dominant_mechanism_rank
+    - strongest_error_slice
+    - learner_transfer
+
+structure_promotion:
+  seed_level_terminal_promotion: false
+  minimum_seeds: 3
+  leave_one_seed_out_stability: true
+  separate_threshold_and_held_out_control_families: true
+
+private_evaluation:
+  visible_during_run: false
+  only_after_all_outputs_locked: true
+  partial_batch_queries: false
+  ieee_cis_result_allowed_for_feature_or_model_tuning: false
+  confirmatory_claim_requires_unused_competition: true
+
+primary:
+  - private_auc_C_minus_B_plus
+  - private_auc_C_minus_B
+secondary:
+  - private_auc_B_plus_minus_B
+  - cv_to_private_rank_correlation
+  - validated_structure_count
+  - false_structure_promotion_rate
+  - mechanism_attribution_calibration
+  - nested_ensemble_gain
+  - process_tree_cpu_seconds
+  - llm_tokens
+  - wall_clock_seconds
+  - invalid_artifact_rate
+  - opportunity_cost

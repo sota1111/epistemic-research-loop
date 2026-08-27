@@ -1,0 +1,110 @@
+{
+  "acceptance": {
+    "archive_wide_breadth_blocking": false,
+    "archive_wide_predictive_breadth": "partial_pass",
+    "ensemble_hidden_transfer": "pass",
+    "local_candidate_ranking_fidelity": "partial_pass",
+    "locked_portfolio_gain_vs_previous_archive": "pass",
+    "mechanism_attribution": "partial_pass",
+    "quality_conditioned_predictive_diversity": "pass",
+    "structural_falsification": "pass",
+    "system_c_vs_b": "unmeasured",
+    "system_c_vs_b_plus": "unmeasured",
+    "true_structure_discovery": "partial_pass",
+    "w02_standalone_hidden_transfer": "fail"
+  },
+  "archive_breadth": {
+    "blocking": false,
+    "effective_rank": 1.1165606113452033,
+    "pilot_threshold": 1.2,
+    "purpose": "diagnostic_only",
+    "status": "partial"
+  },
+  "conclusion": "v0.3.3 contracts pass preflight; the live 36-run matched-budget Private comparison remains UNMEASURED because this environment has no dedicated writable cgroup-v2 node and no 36 locked outputs were produced",
+  "matched_ablation": {
+    "all_outputs_locked": false,
+    "common_seed_count": 12,
+    "live_runs_completed": 0,
+    "plan_sha256": "d2794f1cb6ef75d1db762784528b5e56cadb04269c25491a3832f1ce7d7e1d51",
+    "planned_runs": 36,
+    "private_evaluation_ready": false,
+    "private_visible_during_run": false,
+    "runs_per_arm": 12,
+    "system_C_vs_B": "UNMEASURED",
+    "system_C_vs_B_plus": "UNMEASURED"
+  },
+  "mechanism_calibration": {
+    "learner_transfer_accuracy": 1.0,
+    "mismatches": [
+      "missingness_topology:rank",
+      "category_hash:range",
+      "category_hash:rank"
+    ],
+    "range_accuracy": 0.5,
+    "rank_accuracy": 0.0,
+    "sign_accuracy": 1.0,
+    "slice_accuracy": 1.0,
+    "status": "partial"
+  },
+  "private_embargo": {
+    "confirmatory_claim_requires_unused_competition": true,
+    "same_competition_feature_model_or_weight_tuning": "forbidden",
+    "v032_private_use": "research_conclusion_only"
+  },
+  "resource_environment": {
+    "blocker": "current process is attached to shared root cgroup",
+    "cgroup_path": "/sys/fs/cgroup",
+    "cgroup_v2_readable": true,
+    "cpu_usage_seconds_at_preflight": 197234.221786,
+    "dedicated_cgroup": false,
+    "live_matched_run_admitted": false,
+    "memory_current_bytes_at_preflight": 18295250944,
+    "memory_peak_bytes_at_preflight": 28537950208
+  },
+  "scope": "implementation_and_sealed_policy_preflight",
+  "structure_promotion_v2": {
+    "mixed_negative_promoted": false,
+    "mixed_negative_reasons": [
+      "full_seed_aggregate_failed",
+      "leave_one_seed_out_unstable"
+    ],
+    "positive_control_promoted": true,
+    "positive_leave_one_seed_out": [
+      {
+        "omitted_seed": 17,
+        "passed": true
+      },
+      {
+        "omitted_seed": 42,
+        "passed": true
+      },
+      {
+        "omitted_seed": 20260826,
+        "passed": true
+      }
+    ],
+    "seed_level_terminal_promotion": false
+  },
+  "title": "Incremental Value over Strong QD Verification",
+  "v032_frozen_evidence": {
+    "archive_best_private_auc": 0.909654,
+    "ensemble_gain": 0.00513,
+    "local_to_private_spearman": 0.4,
+    "locked_ensemble_private_auc": 0.914784,
+    "w02_private_auc": 0.899993,
+    "w02_standalone_gain": -0.009661
+  },
+  "validation_fidelity_debt": {
+    "candidate_ranking": "open",
+    "ensemble_transfer": "provisional_pass",
+    "private_rank_calibration": "partial",
+    "required_selector_evidence": [
+      "horizon_rank_stability",
+      "leave_one_horizon_out_selection_regret",
+      "seed_stability",
+      "slice_complementarity",
+      "ensemble_weight_stability"
+    ]
+  },
+  "version": "0.3.3"
+}
