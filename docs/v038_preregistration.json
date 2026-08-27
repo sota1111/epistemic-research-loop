@@ -1,0 +1,130 @@
+{
+  "version": "0.3.8",
+  "title": "Fresh-context Agent Reproducibility with Machine-audited Null Provenance",
+  "frozen_before_suite_generation": true,
+  "qualification_suite_ids": [
+    "v038-qual-c01",
+    "v038-qual-c02",
+    "v038-qual-c03",
+    "v038-qual-c04"
+  ],
+  "development_suite_ids": ["v038-dev-d01", "v038-dev-d02"],
+  "development_executed_run_ids": {
+    "v038-dev-d01": ["agent-01-s17", "agent-02-s42", "agent-03-s17"],
+    "v038-dev-d02": ["agent-01-s42", "agent-02-s17", "agent-03-s42"]
+  },
+  "agent_ids": ["agent-01", "agent-02", "agent-03"],
+  "llm_sampling_seeds": [17, 42],
+  "primary_agent_runs": 24,
+  "development_agent_runs": 6,
+  "execution_contract": {
+    "fresh_llm_context_per_run": true,
+    "runner": "one `claude -p` process per (suite, run) in an isolated working directory",
+    "model": "claude opus (CLI alias `opus`), CLI-authenticated, no provider API key in the environment",
+    "contract_repair": "bounded validation-feedback retries in the same context; feedback never contains truth",
+    "transcripts_retained_for_blindness_audit": true
+  },
+  "prompt_hashes": {
+    "p1": "d2c60932dad437d950f8763ccd6802d15634e59df7cc754045319e7d98c34fda"
+  },
+  "prompt_policy": "P1 is the single frozen prompt for every run; no structure-specific vocabulary was added relative to v0.3.7 P1. New sections cover only lineage bindingness and null provenance mechanics.",
+  "lineage_policies": [
+    "deterministic_best",
+    "posterior_commit",
+    "two_hit_maturation"
+  ],
+  "assignment": "suite-rotated balanced rotation over S0/S1/S2 with the prompt arm fixed to P1",
+  "lineage_continuity": {
+    "enforced_by": "controller validation of selected_lineage_id sequences before lock",
+    "rule": "under posterior_commit or two_hit_maturation an open lineage must be re-selected next cycle unless explicitly closed, falsified, or matured"
+  },
+  "null_provenance": {
+    "required_for_every_executed_replicate": true,
+    "fields": [
+      "replicate_index",
+      "permutation_hash",
+      "preserved_statistics",
+      "feature_manifest_hash",
+      "fold_plan_hash",
+      "model_fit_manifest_hash",
+      "oof_prediction_hash",
+      "gain"
+    ],
+    "uniqueness_audit": "permutation/feature/model/OOF hashes must be unique across replicates within a pack",
+    "limitation": "artifacts are agent-computed and structurally audited; independent re-execution is future work"
+  },
+  "calibration": {
+    "c1": "isotonic map fit on development suites only, applied to qualification p_structure_exists as a secondary metric",
+    "c2": "development-ECE-selected evidence gate recorded per agent; primary gates remain the raw v0.3.7 gates for comparability",
+    "qualification_truth_never_used_for_fitting": true
+  },
+  "primary_metrics": [
+    "agent_level_tsdr",
+    "agent_level_tsrr",
+    "agent_level_fspr",
+    "agent_level_ustr",
+    "agent_level_resolution_rate",
+    "decomposed_calibration",
+    "shared_blind_spot_rate",
+    "leave_one_agent_out_population_performance",
+    "marginal_agent_contribution"
+  ],
+  "secondary_metrics": [
+    "suite_by_seed_cluster_bootstrap_intervals",
+    "controller_adjudicated_failure_stages_a_to_c",
+    "c1_calibrated_brier_and_ece",
+    "behavioral_operator_jaccard_overlap"
+  ],
+  "persistent_ladder": {
+    "levels": 4,
+    "matched_negative_per_level": true,
+    "discovery_requires": [
+      "above-row repeated unit hypothesis",
+      "history or linkage intervention",
+      "positive support",
+      "matched-negative non-promotion"
+    ]
+  },
+  "confidence_fields": [
+    "p_structure_exists",
+    "p_evidence_sufficient",
+    "p_actionable",
+    "p_positive_transfer"
+  ],
+  "full_refit_null": {
+    "required_for_terminal_structure_decision": true,
+    "minimum_replicates": 5,
+    "maximum_replicates": 30,
+    "evaluation_interval": 5,
+    "sequential_stopping": true
+  },
+  "hidden_regions": {
+    "structure_confirmation": "may affect discovery adjudication but never translation selection",
+    "transfer_sealed": "transfer evaluation only and never discovery promotion"
+  },
+  "engineering_gates": {
+    "median_agent_tsdr": 0.5,
+    "median_agent_tsrr": 0.67,
+    "maximum_agent_fspr": 0.2,
+    "maximum_shared_blind_spot_rate": 0.2,
+    "minimum_leave_one_agent_out_tsrr": 0.67,
+    "ustr": 0.5,
+    "median_structure_gain_strictly_positive": true,
+    "brier": 0.2,
+    "ece": 0.2,
+    "persistent_levels_discovered_by_population": 3,
+    "persistent_agents_with_independent_discovery": 2
+  },
+  "isolation": {
+    "level": "working-directory isolation outside the repository, CLI deny rules against repository and controller paths, encrypted truth at rest, post-hoc transcript audit",
+    "container_isolation": false,
+    "note": "container/mount isolation remains deferred; this run must not be described as container-isolated"
+  },
+  "generator_policy": "v0.3.7 families, ladder, and pack design unchanged with new master seeds, so the intervention set is the only difference against the v0.3.7 baseline",
+  "non_primary_or_deferred": [
+    "communication M0-M4",
+    "container isolation",
+    "unused real benchmark",
+    "B/B+/C comparison"
+  ]
+}

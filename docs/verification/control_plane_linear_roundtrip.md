@@ -14,7 +14,7 @@
 | 実験 | `EXP-3053-roundtrip`（`docs/verification/sot-3053/experiments.json`） |
 | executor | `ai_dev_control_plane` / worker `claude:opus` / `target_repo=/workspaces/epistemic-research-loop` |
 | `LINEAR_API_KEY` | ai-dev-control-plane 側 `.env` から環境変数として供給（本文・ログ・成果物には出力していない） |
-| `ANTHROPIC_API_KEY` | **値が空**のため `erlctl run loop`（完全自動）は実行できず、検証対象から外した |
+| `ANTHROPIC_API_KEY` | 不使用。完全自動ループは `claude -p`（CLI 認証）で実行する方針が確定している |
 
 自動ループを使わず、手動ステップ `init` → `run start` → `hypotheses record` → `experiments propose`
 → `experiments select` → `experiments dispatch` → `experiments import-result` で 1 件を流した。
@@ -163,8 +163,7 @@ README は `workers:` / `TARGET_REPO=` / 節見出しを省いたチケットは
 ## 残る未検証項目
 
 1. ~~ワーカーが実チケットを消化して `result.json` を書く区間~~ → SOT-3055 で実測済み（`worker_experiment_execution.md`）。
-2. `erlctl run loop` による完全自動運転（`ANTHROPIC_API_KEY` が空のため実行不能）。
-3. `--attempt 2` の再試行が別チケットを作る挙動（実機ではチケットを増やさないため未実施）。
-4. 追試 B / C は control plane の**実装コードを読んで**確認した（B は PR #6 の実測ログも裏付けになる）。
+2. `--attempt 2` の再試行が別チケットを作る挙動（実機ではチケットを増やさないため未実施）。
+3. 追試 B / C は control plane の**実装コードを読んで**確認した（B は PR #6 の実測ログも裏付けになる）。
    C の「既定値で別リポジトリに対して実行される」経路は、実チケットを 1 件消費することになるため
    実機では走らせていない。
