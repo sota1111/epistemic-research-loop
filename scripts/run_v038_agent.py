@@ -191,7 +191,12 @@ def _repair_prompt(errors: tuple[str, ...]) -> str:
 def _environment() -> dict[str, str]:
     # The CLI authenticates itself; never forward provider API keys into the agent process.
     keep = ("PATH", "HOME", "LANG", "TERM", "SHELL")
-    return {name: os.environ[name] for name in keep if name in os.environ}
+    environment = {name: os.environ[name] for name in keep if name in os.environ}
+    # Parallel runs previously hit BLAS thread contention (v0.3.7 trial log); pin the
+    # numerical libraries inside every agent's python processes to two threads.
+    for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        environment[name] = "2"
+    return environment
 
 
 if __name__ == "__main__":
