@@ -1,0 +1,40 @@
+{
+  "version": "0.3.6",
+  "suite_id": "v036-qualification-02",
+  "all_outputs_locked_before_unblinding": true,
+  "agents": [
+    {
+      "agent_id": "agent-01",
+      "cycles": 32,
+      "packs": 8,
+      "contexts": 24,
+      "submission_sha256": "e36545326959caf53fdd40bda0bbc99a0558172c871c3159f0b5d79db7a29e20",
+      "artifact_validation": "pass",
+      "human_assisted": false,
+      "cross_agent_information_used": false
+    },
+    {
+      "agent_id": "agent-02",
+      "cycles": 32,
+      "packs": 8,
+      "contexts": 24,
+      "submission_sha256": "e07a7196cf637f5313a656245332d0a28dff5870a36da28caa16f19cdfecfd7e",
+      "artifact_validation": "pass",
+      "human_assisted": false,
+      "cross_agent_information_used": false
+    },
+    {
+      "agent_id": "agent-03",
+      "cycles": 32,
+      "packs": 8,
+      "contexts": 24,
+      "submission_sha256": "03ae7b5415f959178d4113c1da65952cdbc23cf00a17086d05a9cf9e452c572b",
+      "artifact_validation": "pass",
+      "human_assisted": false,
+      "cross_agent_information_used": false
+    }
+  ],
+  "total_agent_pack_cycles": 96,
+  "total_sealed_probabilities_per_agent": 17280,
+  "truth_unblinded_after_lock": true
+}

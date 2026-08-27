@@ -1,0 +1,8 @@
+{
+  "best_agent_selected_auc": 0.5318912953501077,
+  "median_structure_sealed_gain": 0.01959833329191038,
+  "population_oracle_auc": 0.5205464117432459,
+  "population_selectable_auc": 0.5193285134686858,
+  "shadow_candidate_recovery_rate": 0.625,
+  "useful_structure_transfer_rate": 0.875
+}

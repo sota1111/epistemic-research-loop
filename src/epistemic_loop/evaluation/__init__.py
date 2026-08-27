@@ -70,6 +70,16 @@ from epistemic_loop.evaluation.v035 import (
     V035Acceptance,
     V035Status,
 )
+from epistemic_loop.evaluation.v036 import (
+    EvaluatedPack,
+    RealAgentPopulationReport,
+    RealAgentScorecard,
+    V036Acceptance,
+    V036Reliability,
+    V036Status,
+    WilsonInterval,
+    evaluate_real_agent_population,
+)
 
 __all__ = [
     "AcceptanceLayer",
@@ -87,6 +97,7 @@ __all__ = [
     "DecisionLock",
     "DecisionQualityAudit",
     "EffectSign",
+    "EvaluatedPack",
     "FrozenSubmissionBatch",
     "FrozenSubmissionSpec",
     "FinalSelectionCandidate",
@@ -97,6 +108,8 @@ __all__ = [
     "PredictiveDiversityDebtBreakdown",
     "PrivateResultUse",
     "QualificationReliability",
+    "RealAgentPopulationReport",
+    "RealAgentScorecard",
     "ReliabilityBin",
     "LockedFinalSelection",
     "LockedOutcomeScore",
@@ -123,11 +136,16 @@ __all__ = [
     "V034Status",
     "V035Acceptance",
     "V035Status",
+    "V036Acceptance",
+    "V036Reliability",
+    "V036Status",
     "ValidationFidelityDebt",
     "VerificationStatus",
+    "WilsonInterval",
     "assert_private_result_use_allowed",
     "evaluate_sealed_private_batch",
     "evaluate_outcome_batch",
+    "evaluate_real_agent_population",
     "classify_outcome_conclusion",
     "freeze_submission_batch",
 ]

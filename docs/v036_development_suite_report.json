@@ -1,0 +1,39 @@
+{
+  "version": "0.3.6",
+  "suite_id": "v036-development-01",
+  "scope": "controller-only identifiability and blindness preflight; excluded from real-agent primary metrics",
+  "blindness": {
+    "agent_visible_truth_tokens": 0,
+    "controller_files_in_agent_tree": 0,
+    "passed": true,
+    "isolation": "policy plus content/path audit on a shared development host"
+  },
+  "identifiability": {
+    "positive_packs_identifiable": 4,
+    "negative_packs_rejectable": 4,
+    "total_packs": 8,
+    "passed": true
+  },
+  "trials": [
+    {
+      "trial": 0,
+      "suite": "v036-qualification-01",
+      "status": "superseded_before_agent_execution",
+      "finding": "the agent-visible contract specified only top-level JSON fields and could not support autonomous artifact completion",
+      "action": "freeze a complete nested submission contract and create a new immutable suite id"
+    },
+    {
+      "trial": 1,
+      "suite": "v036-qualification-02",
+      "status": "preflight_pass",
+      "positive_identifiable": 4,
+      "negative_rejectable": 4,
+      "agent_view_leakage_findings": 0
+    }
+  ],
+  "claim_boundary": [
+    "preflight does not count as real-agent structure discovery",
+    "reference-oracle success does not count toward TSDR, TSRR, FSPR, or USTR",
+    "no communication effect or real-benchmark transfer is measured"
+  ]
+}

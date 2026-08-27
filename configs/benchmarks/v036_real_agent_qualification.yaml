@@ -1,0 +1,83 @@
+benchmark_id: v036-blind-real-agent-qualification
+version: 0.3.6
+
+suite:
+  development_suite_id: v036-development-01
+  qualification_suite_id: v036-qualification-01
+  positive_packs: 4
+  negative_packs: 4
+  contexts_per_pack: 3
+  rows_per_context: 1200
+  qualification_reuse_after_failure: false
+  prompt_freeze_before_generation: true
+
+phase_1:
+  agents: 3
+  max_adaptive_cycles_per_pack: 4
+  fixed_niche: false
+  online_population_steering: false
+  cross_agent_information: none
+  human_assistance: forbidden
+  required_lineages:
+    - incumbent
+    - exploration
+    - epistemic_structure
+    - shadow_archive
+
+blindness:
+  agent_api: AgentControlView_only
+  encrypted_controller_truth: true
+  secret_salted_opaque_ids: true
+  separate_seeds:
+    - generator
+    - visible_sampling
+    - null_analysis
+    - model
+  prohibited_runtime_access:
+    - generator_package
+    - controller_truth
+    - reference_probe
+    - family
+    - polarity
+    - generator_seed
+    - sealed_labels
+    - oracle_operator
+
+promotion:
+  aggregate_only: true
+  minimum_supporting_contexts: 2
+  leave_one_context_out_stability: true
+  matched_null: true
+  independent_implication: true
+  causal_safety: true
+
+acceptance:
+  minimum_qualifying_agents: 2
+  minimum_population_effective_family_count: 2.5
+  maximum_dominant_family_fraction: 0.60
+  minimum_executed_action_types: 3
+  require_positive_eecr: true
+  minimum_tsdr: 0.60
+  minimum_tsrr: 0.80
+  maximum_fspr: 0.20
+  minimum_resolution_rate: 0.70
+  maximum_brier: 0.20
+  maximum_ece: 0.20
+  minimum_ustr: 0.50
+  require_positive_median_structure_gain: true
+  artifact_completion: 1.0
+  oof_honesty: 1.0
+  sealed_isolation: 1.0
+  human_assisted_primary_runs: 0
+
+phase_2:
+  branch_after_phase_1_freeze: true
+  modes:
+    - independent
+    - evidence
+    - debt
+    - candidate
+    - full
+  minimum_diversity_retention_ratio: 0.80
+  require_tsdr_or_ustr_improvement: true
+  require_no_fspr_degradation: true

@@ -1,0 +1,560 @@
+{
+  "agents": [
+    {
+      "action_mix": {
+        "epistemic": 16,
+        "exploit": 8,
+        "explore": 8,
+        "structure_maturation": 2
+      },
+      "agent_id": "agent-01",
+      "brier_score": 0.17619024986080312,
+      "dominant_family_fraction": 0.5,
+      "effective_family_count": 4.221686740397734,
+      "expected_calibration_error": 0.18662825130946814,
+      "exploration_to_exploitation_conversion": 0.3333333333333333,
+      "false_structure_promotion_rate": 0.0,
+      "mean_selection_regret": 0.002885526667987942,
+      "semantic_family_count": 6,
+      "structure_resolution_rate": 0.75,
+      "true_structure_discovery_rate": 0.5,
+      "true_structure_rejection_rate": 0.0,
+      "useful_structure_transfer_rate": 0.5
+    },
+    {
+      "action_mix": {
+        "epistemic": 16,
+        "exploit": 16,
+        "structure_maturation": 3
+      },
+      "agent_id": "agent-02",
+      "brier_score": 0.34004090665191034,
+      "dominant_family_fraction": 0.46875,
+      "effective_family_count": 3.925494299271457,
+      "expected_calibration_error": 0.3410748113037383,
+      "exploration_to_exploitation_conversion": 0.5,
+      "false_structure_promotion_rate": 0.0,
+      "mean_selection_regret": 0.002568332932563519,
+      "semantic_family_count": 5,
+      "structure_resolution_rate": 0.625,
+      "true_structure_discovery_rate": 0.75,
+      "true_structure_rejection_rate": 0.0,
+      "useful_structure_transfer_rate": 1.0
+    },
+    {
+      "action_mix": {
+        "epistemic": 13,
+        "exploit": 8,
+        "explore": 11,
+        "structure_maturation": 3
+      },
+      "agent_id": "agent-03",
+      "brier_score": 0.020465624999999998,
+      "dominant_family_fraction": 0.5,
+      "effective_family_count": 4.0,
+      "expected_calibration_error": 0.109375,
+      "exploration_to_exploitation_conversion": 0.3333333333333333,
+      "false_structure_promotion_rate": 0.0,
+      "mean_selection_regret": 0.0005541063120241066,
+      "semantic_family_count": 5,
+      "structure_resolution_rate": 1.0,
+      "true_structure_discovery_rate": 0.75,
+      "true_structure_rejection_rate": 1.0,
+      "useful_structure_transfer_rate": 1.0
+    }
+  ],
+  "best_agent_selected_auc": 0.5318912953501077,
+  "brier_score": 0.1788989271709045,
+  "dominant_action_fraction": 0.4326923076923077,
+  "dominant_family_fraction": 0.21875,
+  "evaluated_packs": [
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-06",
+      "confidence": 0.47833125558440737,
+      "context_sealed_gains": [
+        -0.0028804294458446567,
+        -0.000948886639676072,
+        -0.007730553327987166
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.0028804294458446567,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5298226544383678,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5298226544383678,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-03",
+      "confidence": 0.72,
+      "context_sealed_gains": [
+        0.006728602734652256,
+        -0.07088236212116483,
+        -0.04059531544911665
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.04059531544911665,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5109603433524995,
+      "selection_regret": 0.0022428675782173446,
+      "shadow_oracle_auc": 0.5132032109307169,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-07",
+      "confidence": 0.38,
+      "context_sealed_gains": [
+        0.0034812046884481473,
+        -0.006722408026755833,
+        0.0012987012987012436
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0012987012987012436,
+      "resolution": "inconclusive",
+      "selected_sealed_auc": 0.5246124741923447,
+      "selection_regret": 0.0015933019957165007,
+      "shadow_oracle_auc": 0.5262057761880612,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-05",
+      "confidence": 0.38,
+      "context_sealed_gains": [
+        0.008275862068965523,
+        -0.0013281853281853495,
+        0.0008349826818406791
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0008349826818406791,
+      "resolution": "inconclusive",
+      "selected_sealed_auc": 0.48952586210739396,
+      "selection_regret": 0.003036948250268734,
+      "shadow_oracle_auc": 0.4925628103576627,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-02",
+      "confidence": 0.8472573168581732,
+      "context_sealed_gains": [
+        -0.01764012896825401,
+        0.030000925954504765,
+        -0.014464560258542258
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.014464560258542258,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.4946160717697969,
+      "selection_regret": 0.010701563075598719,
+      "shadow_oracle_auc": 0.5053176348453956,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-01",
+      "confidence": 0.47252685083519763,
+      "context_sealed_gains": [
+        0.010108051585918432,
+        -0.0020038805305512275,
+        0.006420545746388395
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.006420545746388395,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5072226764944933,
+      "selection_regret": 0.005509532444102239,
+      "shadow_oracle_auc": 0.5127322089385955,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-08",
+      "confidence": 0.7080502580844359,
+      "context_sealed_gains": [
+        -0.027043269230769273,
+        -0.030737130578306515,
+        -0.03605142218357965
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.030737130578306515,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5015007907598134,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5015007907598134,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-01",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-04",
+      "confidence": 0.8969088243309123,
+      "context_sealed_gains": [
+        0.006908516372874041,
+        0.007356888004799389,
+        0.021465903434544575
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.007356888004799389,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.5115713839482394,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5115713839482394,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-08",
+      "confidence": 0.819445993743133,
+      "context_sealed_gains": [
+        0.001273133772202173,
+        0.0143875930366541,
+        -0.0024038461538461453
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.001273133772202173,
+      "resolution": "inconclusive",
+      "selected_sealed_auc": 0.49150065964213163,
+      "selection_regret": 0.005220242269618758,
+      "shadow_oracle_auc": 0.4967209019117504,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-02",
+      "confidence": 0.939279251562604,
+      "context_sealed_gains": [
+        0.021391369047618958,
+        0.019938887002685257,
+        0.011828935395814422
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.019938887002685257,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.5318912953501077,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5318912953501077,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-05",
+      "confidence": 0.8180089479757857,
+      "context_sealed_gains": [
+        0.00278327560613556,
+        -0.004170008019246163,
+        -0.005621621621621609
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.004170008019246163,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5265201836800225,
+      "selection_regret": 0.0009277585353786311,
+      "shadow_oracle_auc": 0.5274479422154011,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-03",
+      "confidence": 0.98,
+      "context_sealed_gains": [
+        0.03564466722361459,
+        0.019257779581135503,
+        -0.0005555727028612178
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.019257779581135503,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.4975199718489129,
+      "selection_regret": 0.00018519090095370228,
+      "shadow_oracle_auc": 0.4977051627498666,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-07",
+      "confidence": 0.8376806200966647,
+      "context_sealed_gains": [
+        0.0018843218038389065,
+        0.001915584415584426,
+        0.0003010033444815763
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0018843218038389065,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.48380592337835804,
+      "selection_regret": 0.0013669698546349696,
+      "shadow_oracle_auc": 0.485172893232993,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-04",
+      "confidence": 0.98,
+      "context_sealed_gains": [
+        0.03729979243470988,
+        0.07124191139870584,
+        -0.02393356698557042
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.03729979243470988,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.5076126840785554,
+      "selection_regret": 0.007977855661856825,
+      "shadow_oracle_auc": 0.5155905397404122,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-06",
+      "confidence": 0.7297119650431136,
+      "context_sealed_gains": [
+        0.0015711433340970249,
+        0.005092358299595201,
+        0.006800320769847656
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.005092358299595201,
+      "resolution": "inconclusive",
+      "selected_sealed_auc": 0.5056872472074062,
+      "selection_regret": 0.004487940801179979,
+      "shadow_oracle_auc": 0.5101751880085862,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-02",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-01",
+      "confidence": 0.6244717120086052,
+      "context_sealed_gains": [
+        -0.002154694381951261,
+        0.0011421163106556387,
+        -0.0008588059416647642
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.0008588059416647642,
+      "resolution": "inconclusive",
+      "selected_sealed_auc": 0.4922723273814332,
+      "selection_regret": 0.0003807054368852869,
+      "shadow_oracle_auc": 0.49265303281831846,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-03",
+      "confidence": 0.98,
+      "context_sealed_gains": [
+        0.052631578947368474,
+        0.04163675520459437,
+        0.027562579091947315
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.04163675520459437,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.5030661200685959,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5030661200685959,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-06",
+      "confidence": 0.1,
+      "context_sealed_gains": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "explicitly_falsified": true,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0,
+      "resolution": "falsified",
+      "selected_sealed_auc": 0.49984308711587916,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.49984308711587916,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-04",
+      "confidence": 0.995,
+      "context_sealed_gains": [
+        -0.002447033563828138,
+        0.03960303633648582,
+        0.03623098609002762
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.03623098609002762,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.5165324963870822,
+      "selection_regret": 0.0008156778546093424,
+      "shadow_oracle_auc": 0.5173481742416915,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-08",
+      "confidence": 0.1,
+      "context_sealed_gains": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "explicitly_falsified": true,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0,
+      "resolution": "falsified",
+      "selected_sealed_auc": 0.5057200316430256,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5057200316430256,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-05",
+      "confidence": 0.1,
+      "context_sealed_gains": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "explicitly_falsified": true,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0,
+      "resolution": "falsified",
+      "selected_sealed_auc": 0.49918417756107364,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.49918417756107364,
+      "structure_present": false
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": true,
+      "canonical_pack_id": "pack-02",
+      "confidence": 0.88,
+      "context_sealed_gains": [
+        0.018086977993147957,
+        0.0050533234126984294,
+        -0.0049261083743842304
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0050533234126984294,
+      "resolution": "validated_actionable",
+      "selected_sealed_auc": 0.4958177033545728,
+      "selection_regret": 0.001642036124794799,
+      "shadow_oracle_auc": 0.4974597394793676,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-01",
+      "confidence": 0.67,
+      "context_sealed_gains": [
+        -0.011976787257686139,
+        0.005925409550366023,
+        -0.0003180762746906596
+      ],
+      "explicitly_falsified": false,
+      "false_promotion": false,
+      "median_sealed_gain": -0.0003180762746906596,
+      "resolution": "useful_encoding_unvalidated",
+      "selected_sealed_auc": 0.5085686287060365,
+      "selection_regret": 0.0019751365167887114,
+      "shadow_oracle_auc": 0.5105437652228252,
+      "structure_present": true
+    },
+    {
+      "agent_id": "agent-03",
+      "behaviorally_validated": false,
+      "canonical_pack_id": "pack-07",
+      "confidence": 0.1,
+      "context_sealed_gains": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "explicitly_falsified": true,
+      "false_promotion": false,
+      "median_sealed_gain": 0.0,
+      "resolution": "falsified",
+      "selected_sealed_auc": 0.5022547724310474,
+      "selection_regret": 0.0,
+      "shadow_oracle_auc": 0.5022547724310474,
+      "structure_present": false
+    }
+  ],
+  "executed_action_types": 4,
+  "expected_calibration_error": 0.15145653263682593,
+  "exploration_to_exploitation_conversion": 0.375,
+  "fspr_interval": {
+    "estimate": 0.0,
+    "lower": 0.0,
+    "trials": 4,
+    "upper": 0.4898908364545973
+  },
+  "independent_research_diversity": 1.0,
+  "median_structure_sealed_gain": 0.01959833329191038,
+  "population_effective_family_count": 9.64227600616239,
+  "population_oracle_auc": 0.5205464117432459,
+  "population_selectable_auc": 0.5193285134686858,
+  "population_union_fspr": 0.0,
+  "population_union_tsdr": 0.75,
+  "population_union_tsrr": 1.0,
+  "shadow_candidate_recovery_rate": 0.625,
+  "structure_resolution_rate": 0.7916666666666666,
+  "tsdr_interval": {
+    "estimate": 0.75,
+    "lower": 0.30064184258240184,
+    "trials": 4,
+    "upper": 0.9544127391902995
+  },
+  "tsrr_interval": {
+    "estimate": 1.0,
+    "lower": 0.5101091635454027,
+    "trials": 4,
+    "upper": 1.0
+  },
+  "useful_structure_transfer_rate": 0.875
+}
