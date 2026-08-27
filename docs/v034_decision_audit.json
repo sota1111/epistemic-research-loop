@@ -1,0 +1,14 @@
+{
+  "version": "0.3.4",
+  "status": "UNMEASURED",
+  "live_runs_completed": 0,
+  "locked_decisions": 0,
+  "expected_locked_decisions": 324,
+  "decision_sign_accuracy": null,
+  "false_rejection_rate": null,
+  "false_adoption_rate": null,
+  "mean_selection_regret": null,
+  "run_selection_regret": null,
+  "unblind_allowed": false,
+  "reason": "No live B/B+/C outputs have been locked or scored."
+}

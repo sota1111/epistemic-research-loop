@@ -1,0 +1,13 @@
+{
+  "version": "0.3.4",
+  "status": "UNMEASURED",
+  "locked_outputs": 0,
+  "required_locked_outputs": 36,
+  "private_scores_received": 0,
+  "partial_score_queries_allowed": false,
+  "private_auc_C_minus_B": null,
+  "private_auc_C_minus_B_plus": null,
+  "paired_bootstrap_ci": null,
+  "resource_metrics_used": false,
+  "unblind_allowed": false
+}
