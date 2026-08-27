@@ -199,3 +199,14 @@ The proposals themselves were sound — `duplicate_scan` over the full parquet, 
 zero` to re-derive the harness calibration against the known public all-zero score,
 `split_comparison` of random against spatial folds. Only their shape was wrong, which is the
 signature of this defect class: the research is fine and the plumbing loses it.
+
+## 2026-08-27 — v0.3.6 blind real-agent qualification
+
+Three generic LLM agents independently completed eight opaque packs with four adaptive cycles per
+pack. All submissions were hash-locked before controller truth was decrypted. Population-union
+TSDR/TSRR/FSPR were 0.75/1.00/0.00, USTR was 0.875 after removing a circular sealed-gain condition,
+and all engineering acceptance layers passed. The result is not uniform agent competence:
+persistent-unit structure was missed by all agents, explicit negative rejection came entirely from
+agent 03, agent 02 was poorly calibrated, and one agent-01 validated structure failed sealed
+transfer. Communication modes, IEEE-CIS Hidden transfer, and an unused real benchmark remain
+unmeasured.

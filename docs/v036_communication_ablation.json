@@ -1,0 +1,34 @@
+{
+  "agent_adoption_is_optional": true,
+  "claim_boundary": "unmeasured modes do not support a communication-effect conclusion",
+  "modes": {
+    "candidate": {
+      "reason": "no frozen checkpoint branch output supplied",
+      "status": "unmeasured"
+    },
+    "debt": {
+      "reason": "no frozen checkpoint branch output supplied",
+      "status": "unmeasured"
+    },
+    "evidence": {
+      "reason": "no frozen checkpoint branch output supplied",
+      "status": "unmeasured"
+    },
+    "full": {
+      "reason": "no frozen checkpoint branch output supplied",
+      "status": "unmeasured"
+    },
+    "independent": {
+      "adoption_gate": true,
+      "diversity_retention_ratio": 1.0,
+      "eecr": 0.375,
+      "fspr": 0.0,
+      "status": "measured",
+      "tsdr": 0.75,
+      "tsrr": 1.0,
+      "ustr": 0.875
+    }
+  },
+  "phase": "post-freeze communication ablation",
+  "version": "0.3.6"
+}

@@ -1,0 +1,64 @@
+{
+  "agent-01": {
+    "action_mix": {
+      "epistemic": 16,
+      "exploit": 8,
+      "explore": 8,
+      "structure_maturation": 2
+    },
+    "agent_id": "agent-01",
+    "brier_score": 0.17619024986080312,
+    "dominant_family_fraction": 0.5,
+    "effective_family_count": 4.221686740397734,
+    "expected_calibration_error": 0.18662825130946814,
+    "exploration_to_exploitation_conversion": 0.3333333333333333,
+    "false_structure_promotion_rate": 0.0,
+    "mean_selection_regret": 0.002885526667987942,
+    "semantic_family_count": 6,
+    "structure_resolution_rate": 0.75,
+    "true_structure_discovery_rate": 0.5,
+    "true_structure_rejection_rate": 0.0,
+    "useful_structure_transfer_rate": 0.5
+  },
+  "agent-02": {
+    "action_mix": {
+      "epistemic": 16,
+      "exploit": 16,
+      "structure_maturation": 3
+    },
+    "agent_id": "agent-02",
+    "brier_score": 0.34004090665191034,
+    "dominant_family_fraction": 0.46875,
+    "effective_family_count": 3.925494299271457,
+    "expected_calibration_error": 0.3410748113037383,
+    "exploration_to_exploitation_conversion": 0.5,
+    "false_structure_promotion_rate": 0.0,
+    "mean_selection_regret": 0.002568332932563519,
+    "semantic_family_count": 5,
+    "structure_resolution_rate": 0.625,
+    "true_structure_discovery_rate": 0.75,
+    "true_structure_rejection_rate": 0.0,
+    "useful_structure_transfer_rate": 1.0
+  },
+  "agent-03": {
+    "action_mix": {
+      "epistemic": 13,
+      "exploit": 8,
+      "explore": 11,
+      "structure_maturation": 3
+    },
+    "agent_id": "agent-03",
+    "brier_score": 0.020465624999999998,
+    "dominant_family_fraction": 0.5,
+    "effective_family_count": 4.0,
+    "expected_calibration_error": 0.109375,
+    "exploration_to_exploitation_conversion": 0.3333333333333333,
+    "false_structure_promotion_rate": 0.0,
+    "mean_selection_regret": 0.0005541063120241066,
+    "semantic_family_count": 5,
+    "structure_resolution_rate": 1.0,
+    "true_structure_discovery_rate": 0.75,
+    "true_structure_rejection_rate": 1.0,
+    "useful_structure_transfer_rate": 1.0
+  }
+}

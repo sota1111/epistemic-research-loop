@@ -1,0 +1,35 @@
+{
+  "version": "0.3.6",
+  "title": "Blind Real-Agent Structure Discovery & Population Evolution Qualification",
+  "prompt_sha256": "85d7dde9a498aa49985150af943d20ae1f249590f705d05061566dc6a4d9e32f",
+  "development_suite_id": "v036-development-01",
+  "qualification_suite": {
+    "superseded_pre_execution": "v036-qualification-01",
+    "primary_suite_id": "v036-qualification-02",
+    "supersession_reason": "agent-visible submission schema was incomplete before any agent run",
+    "positive_packs": 4,
+    "negative_packs": 4,
+    "contexts_per_pack": 3,
+    "agents": 3,
+    "max_cycles_per_pack": 4
+  },
+  "phase_1": {
+    "fixed_niche": false,
+    "cross_agent_information": "none",
+    "online_population_steering": false,
+    "human_assistance": false
+  },
+  "primary_metrics": ["IRD", "TSDR", "TSRR", "FSPR", "USTR", "EECR"],
+  "thresholds": {
+    "tsdr": 0.6,
+    "tsrr": 0.8,
+    "fspr_max": 0.2,
+    "resolution_rate": 0.7,
+    "brier_max": 0.2,
+    "ece_max": 0.2,
+    "ustr": 0.5,
+    "median_structure_gain_positive": true
+  },
+  "phase_2_modes": ["independent", "evidence", "debt", "candidate", "full"],
+  "real_benchmark_transfer": "UNMEASURED"
+}
