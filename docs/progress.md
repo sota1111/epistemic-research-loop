@@ -36,6 +36,7 @@ names its Linear issue.
 | 2026-08-26 | IEEE-CIS v0.3 dynamic-structure verification: three no-role islands selected distinct solutions, the controller generated a maturation fork only after a high-leverage hypothesis appeared, and sequential execution produced three OOF candidates plus a locked blend | [v0.3 multi-island verification](verification/ieee_cis_multi_island_v03.md), `scripts/run_ieee_cis_multi_island_v03.py`, `scripts/finalize_ieee_cis_multi_island_v03.py` |
 | 2026-08-26 | IEEE-CIS v0.3 adaptive Cycle 2--4 verification: agent-local evidence drove nine sequential candidate/ablation runs with zero semantic duplicates and zero resource failures; prediction errors nevertheless remained near one effective direction | [adaptive-cycle verification](verification/ieee_cis_adaptive_cycles_v03.md), `scripts/finalize_ieee_cis_adaptive_cycles_v03.py` |
 | 2026-08-26 | IEEE-CIS v0.3.1 measurement closure: frozen four-submission Hidden endpoint, 354,324-row common OOF × 3 seeds, terminal Payment-process debt, Predictive Collapse/Stagnation split, and a 3/3 clean replay | [v0.3.1 verification](verification/ieee_cis_v031_measurement.md), [v0.3.1 specification](c_lite_revision_v0.3.1.md) |
+| 2026-08-27 | C-lite v0.3.5 independent-agent qualification: local three-lineage portfolios, shadow recovery, observe-only population scorecards, and blind four-positive/four-negative structure controls | [v0.3.5 verification](verification/v035_independent_agent_qualification.md), [v0.3.5 specification](c_lite_revision_v0.3.5.md) |
 
 ## What the last milestone changed
 

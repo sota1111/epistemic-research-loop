@@ -1,0 +1,237 @@
+{
+  "brier_score": 0.06091184197345014,
+  "discovery_gate_passed": true,
+  "expected_calibration_error": 0.1725182480057243,
+  "false_structure_promotion_rate": 0.0,
+  "families": [
+    {
+      "control_id": "N1_frequency_artifact",
+      "decision_changed": false,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": false,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": false
+        }
+      ],
+      "median_sealed_gain": -0.0008796525372477548,
+      "promoted": false,
+      "structure_present": false,
+      "supporting_seeds": 0,
+      "useful_structure": false
+    },
+    {
+      "control_id": "N2_temporal_looking_noise",
+      "decision_changed": false,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": false,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": false
+        }
+      ],
+      "median_sealed_gain": -0.0017440846462414283,
+      "promoted": false,
+      "structure_present": false,
+      "supporting_seeds": 0,
+      "useful_structure": false
+    },
+    {
+      "control_id": "N3_missingness_artifact",
+      "decision_changed": false,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": false,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": false
+        }
+      ],
+      "median_sealed_gain": 0.00017377201112145357,
+      "promoted": false,
+      "structure_present": false,
+      "supporting_seeds": 0,
+      "useful_structure": false
+    },
+    {
+      "control_id": "N4_random_routing",
+      "decision_changed": false,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": false,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": false
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": false
+        }
+      ],
+      "median_sealed_gain": -0.0010145989515810694,
+      "promoted": false,
+      "structure_present": false,
+      "supporting_seeds": 0,
+      "useful_structure": false
+    },
+    {
+      "control_id": "P1_persistent_entity",
+      "decision_changed": true,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": true,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": true
+        }
+      ],
+      "median_sealed_gain": 0.18859745390693594,
+      "promoted": true,
+      "structure_present": true,
+      "supporting_seeds": 3,
+      "useful_structure": true
+    },
+    {
+      "control_id": "P2_temporal_regime",
+      "decision_changed": true,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": true,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": true
+        }
+      ],
+      "median_sealed_gain": 0.6730269343509762,
+      "promoted": true,
+      "structure_present": true,
+      "supporting_seeds": 3,
+      "useful_structure": true
+    },
+    {
+      "control_id": "P3_observation_process",
+      "decision_changed": true,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": true,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": true
+        }
+      ],
+      "median_sealed_gain": 0.2308329650905877,
+      "promoted": true,
+      "structure_present": true,
+      "supporting_seeds": 3,
+      "useful_structure": true
+    },
+    {
+      "control_id": "P4_problem_decomposition",
+      "decision_changed": true,
+      "evaluated_seeds": 3,
+      "ground_truth_operator_match": true,
+      "leave_one_seed_out": [
+        {
+          "omitted_seed": 17,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 42,
+          "promoted": true
+        },
+        {
+          "omitted_seed": 20260826,
+          "promoted": true
+        }
+      ],
+      "median_sealed_gain": 0.38266666666666665,
+      "promoted": true,
+      "structure_present": true,
+      "supporting_seeds": 3,
+      "useful_structure": true
+    }
+  ],
+  "median_structure_sealed_gain": 0.30674981587862715,
+  "rejection_gate_passed": true,
+  "reliability_diagram": [
+    {
+      "count": 11,
+      "empirical_frequency": 0.0,
+      "lower": 0.2,
+      "mean_confidence": 0.33648186008351283,
+      "upper": 0.4
+    },
+    {
+      "count": 1,
+      "empirical_frequency": 0.0,
+      "lower": 0.4,
+      "mean_confidence": 0.43845337247996996,
+      "upper": 0.6
+    },
+    {
+      "count": 12,
+      "empirical_frequency": 1.0,
+      "lower": 0.8,
+      "mean_confidence": 0.9999429901051023,
+      "upper": 1.0
+    }
+  ],
+  "transfer_gate_passed": true,
+  "true_structure_discovery_rate": 1.0,
+  "true_structure_rejection_rate": 1.0,
+  "useful_structure_transfer_rate": 1.0
+}
