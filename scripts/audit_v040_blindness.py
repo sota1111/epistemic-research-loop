@@ -61,9 +61,11 @@ def main() -> None:
         audited_transcripts += 1
         text = transcript.read_text(errors="ignore")
         # The agents' interpreter is the project venv, so library RuntimeWarnings name its
-        # site-packages path in stderr. That is not repository file access; reviewed and
-        # allow-listed here so a real repository path mention still fails the audit.
-        text = text.replace("/workspaces/epistemic-research-loop/.venv/lib/", "<interpreter-site-packages>/")
+        # site-packages path in stderr and `which python3` names the venv binary (codex runs,
+        # 2026-08-28: 5 mentions, all `which`/`ls -l` output of the symlink; no site-packages,
+        # src, prompt, view, or truth access followed). That is not repository file access;
+        # reviewed and allow-listed here so a real repository path mention still fails the audit.
+        text = text.replace("/workspaces/epistemic-research-loop/.venv/", "<interpreter-venv>/")
         for token in TRANSCRIPT_FORBIDDEN:
             count = text.count(token)
             if count:
