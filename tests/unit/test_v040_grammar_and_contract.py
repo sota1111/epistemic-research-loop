@@ -13,6 +13,7 @@ from cryptography.fernet import Fernet
 from epistemic_loop.benchmark.v037_repro_suite import CANONICAL_FEATURES
 from epistemic_loop.benchmark.v040_grammar_suite import (
     V040_GEN1_CONFIGS,
+    V040_GEN1_EXCLUDED_RUNS,
     V040_GEN1_SUITE_IDS,
     V040_RUN_IDS,
     accept_grammar_spec,
@@ -69,6 +70,17 @@ def test_grammar_acceptance_finds_identifiable_spec() -> None:
         rows_per_context=600,
     )
     assert spec.motifs
+
+
+def test_preregistered_exclusions_match_the_deviation_record() -> None:
+    preregistration = json.loads(Path("docs/v040_gen1_preregistration.json").read_text())
+    deviations = preregistration["post_registration_deviations"]
+    recorded = {f"{item['run'].split('/')[0]}/{item['run'].split('/')[1]}" for item in deviations}
+    assert recorded == {f"{suite}/{run}" for suite, run in V040_GEN1_EXCLUDED_RUNS}
+    assert preregistration["total_runs"] - len(V040_GEN1_EXCLUDED_RUNS) == deviations[0]["effective_run_count"]
+    for suite, run in V040_GEN1_EXCLUDED_RUNS:
+        assert suite in V040_GEN1_SUITE_IDS
+        assert run in V040_RUN_IDS
 
 
 def test_v040_suite_build_assigns_per_slot_prompts(tmp_path: Path) -> None:

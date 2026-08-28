@@ -15,7 +15,11 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v040_grammar_suite import V040_GEN1_SUITE_IDS, V040_RUN_IDS
+from epistemic_loop.benchmark.v040_grammar_suite import (
+    V040_GEN1_EXCLUDED_RUNS,
+    V040_GEN1_SUITE_IDS,
+    V040_RUN_IDS,
+)
 
 
 def main() -> None:
@@ -25,7 +29,12 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v040/agent_outputs"))
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    pairs = [(suite, run) for suite in V040_GEN1_SUITE_IDS for run in V040_RUN_IDS]
+    pairs = [
+        (suite, run)
+        for suite in V040_GEN1_SUITE_IDS
+        for run in V040_RUN_IDS
+        if (suite, run) not in V040_GEN1_EXCLUDED_RUNS
+    ]
     pending = [
         (suite, run)
         for suite, run in pairs

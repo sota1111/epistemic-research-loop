@@ -18,6 +18,7 @@ from pathlib import Path
 from epistemic_loop.benchmark.v037_repro_suite import decrypt_v037_suite
 from epistemic_loop.benchmark.v040_grammar_suite import (
     V040_GEN1_CONFIGS,
+    V040_GEN1_EXCLUDED_RUNS,
     V040_GEN1_SUITE_IDS,
     V040_RUN_IDS,
 )
@@ -25,6 +26,11 @@ from epistemic_loop.controller.v040_agent import load_v040_submission
 from epistemic_loop.evaluation.v038 import evaluate_v038_runs
 
 SELECTION_FAMILY_PREFIXES = ("persistent_", "grammar_composed")
+
+_EXECUTED_PAIRS = [
+    (suite, run) for suite in V040_GEN1_SUITE_IDS for run in V040_RUN_IDS if (suite, run) not in V040_GEN1_EXCLUDED_RUNS
+]
+_EXPECTED_RUN_COUNT = len(_EXECUTED_PAIRS)
 
 
 def main() -> None:
@@ -36,8 +42,11 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=Path("docs"))
     arguments = parser.parse_args()
     lock = json.loads((arguments.suite_root / "qualification_agent_runs.lock.json").read_text())
-    if not lock.get("all_outputs_locked_before_hidden_evaluation") or lock.get("agent_run_count") != 24:
-        raise SystemExit("all 24 generation-1 outputs must be locked before v0.4.0 unblinding")
+    locked_all = lock.get("all_outputs_locked_before_hidden_evaluation")
+    if locked_all is not True or lock.get("agent_run_count") != _EXPECTED_RUN_COUNT:
+        raise SystemExit(
+            f"all {_EXPECTED_RUN_COUNT} executed generation-1 outputs must be locked before v0.4.0 unblinding"
+        )
     _verify_lock(lock, arguments.suite_root, arguments.submission_root)
     key = arguments.key_file.read_bytes().strip()
     truths = tuple(
@@ -45,8 +54,7 @@ def main() -> None:
     )
     loaded = tuple(
         load_v040_submission(arguments.submission_root / suite_id / run_id / "agent_submission.json")
-        for suite_id in V040_GEN1_SUITE_IDS
-        for run_id in V040_RUN_IDS
+        for suite_id, run_id in _EXECUTED_PAIRS
     )
     report = evaluate_v038_runs(tuple(item.base for item in loaded), truths, None)
     base = report.base
@@ -92,6 +100,7 @@ def main() -> None:
             "generation": 1,
             "selection_metric": "verified discovery events on persistent/grammar families "
             "(matched-negative gate applied), tie-broken by fewer false promotions",
+            "excluded_runs": {f"{suite}/{run}": reason for (suite, run), reason in V040_GEN1_EXCLUDED_RUNS.items()},
             "configurations": selection,
             "ranking": [config_id for config_id, _ in ranking],
         },
@@ -112,11 +121,14 @@ def main() -> None:
 
 def _verify_lock(lock: dict[str, object], suite_root: Path, submission_root: Path) -> None:
     records = lock.get("records")
-    if not isinstance(records, list) or len(records) != 24:
-        raise SystemExit("lock must contain 24 hash records")
+    if not isinstance(records, list) or len(records) != _EXPECTED_RUN_COUNT:
+        raise SystemExit(f"lock must contain {_EXPECTED_RUN_COUNT} hash records")
+    excluded = {f"{suite}/{run}" for suite, run in V040_GEN1_EXCLUDED_RUNS}
     for raw in records:
         if not isinstance(raw, dict):
             raise SystemExit("invalid lock record")
+        if f"{raw.get('suite_id')}/{raw.get('run_id')}" in excluded:
+            raise SystemExit("lock contains a preregistered-excluded run")
         suite_id = str(raw.get("suite_id"))
         run_id = str(raw.get("run_id"))
         packet = suite_root / suite_id / "agent_views" / run_id / "agent_packet.json"

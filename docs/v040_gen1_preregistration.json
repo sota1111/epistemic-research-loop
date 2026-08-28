@@ -57,5 +57,18 @@
   "stopping_rules": [
     "generation 2 proceeds only with configurations showing >= 2 verified discovery events",
     "if no configuration reaches 2 events, synthetic search stops and the best configuration proceeds to the IEEE-CIS bridge (policy stopping rule 1)"
+  ],
+  "post_registration_deviations": [
+    {
+      "recorded": "2026-08-28",
+      "recorded_before_unblinding": true,
+      "kind": "excluded run (infrastructure failure, not agent behavior)",
+      "run": "v040-genA-g04/agent-03-s17",
+      "configuration": "C5 (codex gpt-5.6-sol, prompt p1)",
+      "cause": "codex workspace-write sandbox deterministically non-functional in the container: bwrap cannot create a user namespace (unshare returns EPERM even for root; container seccomp). Both shell commands and the file-edit tool fail to write, verified by isolated smoke tests on 2026-08-28. Earlier codex runs (2026-08-26) executed 381/388 commands successfully, so this is an environment regression, not a contract or agent failure.",
+      "decision": "generation 1 completes with 23 of 24 runs; C5 is evaluated on 3 replicates, which still satisfies the P1 criterion (reproduction in >= 2 independent runs per configuration)",
+      "rejected_alternatives": "running the slot with sandbox bypass (weakens read isolation and mixes sandbox regimes within one configuration); blocking the pipeline on a host-level container change",
+      "effective_run_count": 23
+    }
   ]
 }

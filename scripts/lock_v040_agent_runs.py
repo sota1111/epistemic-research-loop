@@ -8,7 +8,11 @@ import hashlib
 import json
 from pathlib import Path
 
-from epistemic_loop.benchmark.v040_grammar_suite import V040_GEN1_SUITE_IDS, V040_RUN_IDS
+from epistemic_loop.benchmark.v040_grammar_suite import (
+    V040_GEN1_EXCLUDED_RUNS,
+    V040_GEN1_SUITE_IDS,
+    V040_RUN_IDS,
+)
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
 
 
@@ -21,7 +25,12 @@ def main() -> None:
     lock_file = arguments.suite_root / f"{arguments.group}_agent_runs.lock.json"
     if lock_file.exists():
         raise SystemExit(f"v0.4.0 {arguments.group} outputs are already locked")
-    pairs = [(suite, run) for suite in V040_GEN1_SUITE_IDS for run in V040_RUN_IDS]
+    pairs = [
+        (suite, run)
+        for suite in V040_GEN1_SUITE_IDS
+        for run in V040_RUN_IDS
+        if (suite, run) not in V040_GEN1_EXCLUDED_RUNS
+    ]
     records: list[dict[str, object]] = []
     errors: list[str] = []
     for suite_id, run_id in pairs:
@@ -54,6 +63,7 @@ def main() -> None:
         "group": arguments.group,
         "all_outputs_locked_before_hidden_evaluation": True,
         "agent_run_count": len(records),
+        "excluded_runs": {f"{suite}/{run}": reason for (suite, run), reason in V040_GEN1_EXCLUDED_RUNS.items()},
         "records": records,
     }
     lock_file.parent.mkdir(parents=True, exist_ok=True)
