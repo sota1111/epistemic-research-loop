@@ -46,10 +46,25 @@ v0.3.x の 11 Gate 均等追求を廃し、次の 2 つを **Primary** とする
 
 | 軸 | 水準(初期世代) |
 | --- | --- |
-| モデル | claude-opus-5 / claude-sonnet-5 / codex(CLI) ※混成は preregistered 実験変数として導入 |
+| モデル | **claude-fable-5(新・主目標モデル)** / claude-opus-5(v0.3.x 基準線)/ claude-sonnet-5 / codex(CLI) ※混成は preregistered 実験変数として導入 |
 | エピステミック足場 | P1(現行)/ P2: 仮説列挙の広さを強制(cycle 冒頭に観測単位・独立性・定常性・生成機構の各仮定について競合仮説を明示列挙)/ P3: 自己批判パス(昇格前に「この証拠で最も強い反対仮説」を 1 cycle 使って攻撃) |
 | 探索予算 | max cycles 4(現行)/ 8(深掘り許容) |
 | Lineage | S1 固定(v0.3.8 で FSPR 低下に寄与、監査可能) |
+
+### 3.1.1 目標モデルの更新
+
+v0.3.7–0.3.9 の全 run は claude-opus-5 で実行した。v0.4.0 では**主目標モデルを claude-fable-5
+(Claude 5 世代の最上位 tier)へ更新**する。`claude -p --model claude-fable-5` のヘッドレス動作は
+実機確認済み(2026-08-28)。根拠と規律:
+
+1. **能力レバーとしてのモデル更新。** persistent 系の evidence 段階失敗(46/116)は契約では直らず、
+   仮説形成・証拠設計の素の能力に律速されている可能性が高い。モデル更新はその最直接のレバー。
+2. **帰属可能性の維持。** claude-opus-5 arm を基準線として必ず並走させ、「モデル効果」と
+   「足場効果」を分離できる形で比較する(モデル更新を暗黙の交絡にしない)。
+3. **多様性としてのモデル混成。** SBR・相補性は同一モデルでは頭打ちの公算(敵対的レビュー攻撃 4)。
+   fable/opus/sonnet/codex の混成集団は「盲点がモデル水準にある」仮説の直接検定になる。
+4. **Provenance。** 各 run の `run_meta.json` に model id・CLI version を記録し(現行機構)、
+   preregistration に世代ごとの model 割当を固定する。世代途中のモデル変更は行わない。
 
 P2/P3 は**仮定の種類(独立性・観測単位・定常性・生成機構)しか名指ししない**。これらは P0 時代
 から prompt に存在する抽象軸であり、構造 family・演算・語彙は一切含めない(§7)。
@@ -133,6 +148,7 @@ Suite 化する。設計者(私)も個々のインスタンスの形を事前に
 Checkpoint 1  v0.3.9 開封:repair-flip 汚染定量 + TSRR/matched-negative 予測の検証
               → 整合性契約の効果を「flip 由来」と「実質」に分けて記録
 v0.4.0-a     implication provenance 契約 + structure-grammar generator + persistent 厚め Suite
+             + 目標モデルを claude-fable-5 へ更新(opus-5 基準線 arm を並走)
 v0.4.0-b     Track A 世代 1(6 構成 × 4 run)→ 選抜 → 世代 2(新 Suite で再現確認)
 v0.4.0-c     Track B IEEE-CIS blind suite build(受け入れ基準は build 前に lock)
 v0.4.0-d     P1 通過構成(または停止規則 1 発動時は最良構成)で Track B 実行
