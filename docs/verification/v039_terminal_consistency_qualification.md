@@ -31,6 +31,26 @@ v0.3.9 Engineering Qualification は **FAIL**(9 Gate 群のうち 5 Pass / 4 Fai
 Mean Population-union TSDR   0.2917 -> 0.4375
 Mean Population-union TSRR   0.4583 -> 0.9583
 Failure funnel               evidence 88 / promotion 16 / matched_negative 5
+Negative 144 件の内訳       falsified 申告 125 / Evidence-based 棄却 93 / False promotion 9
+```
+
+### Agent 別(8 反復 pooled)
+
+| Agent | TSDR | TSRR | FSPR |
+| --- | ---: | ---: | ---: |
+| 01 | 0.2708 | **0.7083**(個体 Gate 通過) | 0.0833 |
+| 02 | 0.2292 | 0.6042 | 0.0625 |
+| 03 | 0.2292 | 0.6250 | 0.0417 |
+
+### Family 別の個体発見(24 反復中、v0.3.8 → v0.3.9)
+
+```text
+observation_routing_composition  23 -> 19   (昇格慎重化による退行)
+persistent_clear                  2 ->  7
+persistent_delayed_history        1 ->  5
+persistent_compositional          1 ->  3
+persistent_noisy_proxy            1 ->  1
+stable_structure_nonactionable    1 ->  0   (implication 要件の直撃)
 ```
 
 ## 汚染検査(開封前に実施、Truth 不使用)
