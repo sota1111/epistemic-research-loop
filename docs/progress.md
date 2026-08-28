@@ -262,3 +262,19 @@ contexts; validated packs must report at least two implication supports). Repair
 references only the agent's own numbers, so nothing about structures leaks. New suites
 v039-qual-e01..e04 were preregistered and locked with the same P1 prompt hash; C1 is reused from
 the locked v0.3.8 development fit. The 24 fresh-context qualification runs are in flight.
+
+## 2026-08-28 — v0.3.9 terminal-resolution consistency: single intervention, predicted effect
+
+The only change over v0.3.8 was a pre-lock contract that a terminal resolution must be internally
+consistent with the agent's own artifacts. Both preregistered predictions landed: median agent TSRR
+rose 0.1875→0.6250 (agent-01 individually passed the 0.67 gate at 0.7083) and matched-negative
+failures collapsed 27→5; the predicted risk (escape into inconclusive) did not occur. Worst-agent
+FSPR passed its gate for the first time (0.2083→0.0833) and all three agents now discover on the
+persistent ladder. Pre-unblinding contamination checks defused the adversarial-review concern:
+12 of 13 repair attempts recomputed on data rather than relabeling, and single-attempt runs had
+higher TSRR (0.702) than repaired runs (0.567), so the gain is not repair-loop compliance learning.
+Side effects: promotion became more conservative (observation-routing 23→19, non-actionable 1→0,
+Brier 0.1813→0.2043 now failing), and the failure funnel moved upstream — 88 of 116 undiscovered
+positives now fail at the evidence stage. The contract lever is spent; per the v0.4.0 policy the
+program moves to capability levers (configuration search over models and epistemic scaffolds) and
+the preregistered IEEE-CIS bridge.

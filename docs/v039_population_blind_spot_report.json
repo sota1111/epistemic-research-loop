@@ -1,0 +1,194 @@
+{
+  "mean_pairwise_operator_jaccard": 0.0,
+  "per_agent_distinct_operators": {
+    "agent-01": 38,
+    "agent-02": 28,
+    "agent-03": 25
+  },
+  "population_blocks": [
+    {
+      "discovery_complementarity": 0.16666666666666669,
+      "leave_one_agent_out_tsrr": 0.8333333333333334,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.16666666666666669
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.16666666666666663
+      },
+      "persistent_agents_discovering": 2,
+      "persistent_levels_discovered": 2,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 17,
+      "shared_blind_spot_rate": 0.5,
+      "suite_id": "v039-qual-e01",
+      "union_fspr": 0.3333333333333333,
+      "union_tsdr": 0.5,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.16666666666666669,
+      "leave_one_agent_out_tsrr": 0.8333333333333334,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.16666666666666669,
+        "agent-02": 0.0,
+        "agent-03": 0.16666666666666669
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 2,
+      "persistent_levels_discovered": 2,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 42,
+      "shared_blind_spot_rate": 0.5,
+      "suite_id": "v039-qual-e01",
+      "union_fspr": 0.3333333333333333,
+      "union_tsdr": 0.5,
+      "union_tsrr": 0.8333333333333334
+    },
+    {
+      "discovery_complementarity": 0.16666666666666666,
+      "leave_one_agent_out_tsrr": 0.6666666666666666,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.16666666666666666,
+        "agent-02": 0.16666666666666666,
+        "agent-03": 0.0
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.33333333333333337,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 1,
+      "persistent_levels_discovered": 1,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 17,
+      "shared_blind_spot_rate": 0.6666666666666666,
+      "suite_id": "v039-qual-e02",
+      "union_fspr": 0.0,
+      "union_tsdr": 0.3333333333333333,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.16666666666666669,
+      "leave_one_agent_out_tsrr": 0.6666666666666666,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.16666666666666669,
+        "agent-02": 0.0,
+        "agent-03": 0.16666666666666669
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.33333333333333337,
+        "agent-02": 0.0,
+        "agent-03": 0.16666666666666663
+      },
+      "persistent_agents_discovering": 2,
+      "persistent_levels_discovered": 2,
+      "rejection_complementarity": 0.16666666666666663,
+      "sampling_seed": 42,
+      "shared_blind_spot_rate": 0.5,
+      "suite_id": "v039-qual-e02",
+      "union_fspr": 0.0,
+      "union_tsdr": 0.5,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.0,
+      "leave_one_agent_out_tsrr": 1.0,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.33333333333333337
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 1,
+      "persistent_levels_discovered": 2,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 17,
+      "shared_blind_spot_rate": 0.5,
+      "suite_id": "v039-qual-e03",
+      "union_fspr": 0.16666666666666666,
+      "union_tsdr": 0.5,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.0,
+      "leave_one_agent_out_tsrr": 0.5,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.0,
+        "agent-02": 0.0,
+        "agent-03": 0.0
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.5,
+        "agent-02": 0.0,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 2,
+      "persistent_levels_discovered": 1,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 42,
+      "shared_blind_spot_rate": 0.6666666666666666,
+      "suite_id": "v039-qual-e03",
+      "union_fspr": 0.16666666666666666,
+      "union_tsdr": 0.3333333333333333,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.16666666666666669,
+      "leave_one_agent_out_tsrr": 0.8333333333333334,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.16666666666666669,
+        "agent-02": 0.0,
+        "agent-03": 0.0
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.16666666666666663,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 3,
+      "persistent_levels_discovered": 2,
+      "rejection_complementarity": 0.16666666666666663,
+      "sampling_seed": 17,
+      "shared_blind_spot_rate": 0.5,
+      "suite_id": "v039-qual-e04",
+      "union_fspr": 0.0,
+      "union_tsdr": 0.5,
+      "union_tsrr": 1.0
+    },
+    {
+      "discovery_complementarity": 0.0,
+      "leave_one_agent_out_tsrr": 0.6666666666666666,
+      "marginal_agent_contribution_tsdr": {
+        "agent-01": 0.0,
+        "agent-02": 0.16666666666666666,
+        "agent-03": 0.0
+      },
+      "marginal_agent_contribution_tsrr": {
+        "agent-01": 0.0,
+        "agent-02": 0.16666666666666674,
+        "agent-03": 0.0
+      },
+      "persistent_agents_discovering": 1,
+      "persistent_levels_discovered": 1,
+      "rejection_complementarity": 0.0,
+      "sampling_seed": 42,
+      "shared_blind_spot_rate": 0.6666666666666666,
+      "suite_id": "v039-qual-e04",
+      "union_fspr": 0.0,
+      "union_tsdr": 0.3333333333333333,
+      "union_tsrr": 0.8333333333333334
+    }
+  ]
+}
