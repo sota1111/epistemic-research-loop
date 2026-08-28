@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prefer an already injected secret. For local development only, fall back to
+# the ignored workspace .env file without exporting its unrelated variables.
+glm_env_file="${GLM_ENV_FILE:-/workspace/.env}"
+if [[ -z "${GLM_API_KEY:-}" && -f "$glm_env_file" ]]; then
+  # shellcheck disable=SC1090
+  source "$glm_env_file"
+fi
+
+: "${GLM_API_KEY:?Set GLM_API_KEY or provide it in ${glm_env_file}}"
+
+export ZAI_API_KEY="$GLM_API_KEY"
+export ZAI_BASE_URL="${ZAI_BASE_URL:-https://api.z.ai/api/coding/paas/v4}"
+export ZAI_MODEL="${ZAI_MODEL:-glm-5.3}"
+
+exec zai "$@"
