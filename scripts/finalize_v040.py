@@ -56,7 +56,12 @@ def main() -> None:
         load_v040_submission(arguments.submission_root / suite_id / run_id / "agent_submission.json")
         for suite_id, run_id in _EXECUTED_PAIRS
     )
-    report = evaluate_v038_runs(tuple(item.base for item in loaded), truths, None)
+    report = evaluate_v038_runs(
+        tuple(item.base for item in loaded),
+        truths,
+        None,
+        excluded_pairs=frozenset(V040_GEN1_EXCLUDED_RUNS),
+    )
     base = report.base
     selection: dict[str, dict[str, object]] = {}
     for run_id, config in V040_GEN1_CONFIGS.items():

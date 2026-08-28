@@ -196,18 +196,28 @@ class V037Acceptance:
 def evaluate_v037_runs(
     submissions: Sequence[V037AgentSubmission],
     truths: Sequence[V037SuiteTruth],
+    *,
+    excluded_pairs: frozenset[tuple[str, str]] = frozenset(),
 ) -> V037AggregateReport:
-    """Evaluate locked outputs across four suites without using transfer labels for discovery."""
+    """Evaluate locked outputs across four suites without using transfer labels for discovery.
+
+    ``excluded_pairs`` names (suite_id, run_id) slots that a preregistered, pre-unblinding
+    deviation dropped from the batch (e.g. an infrastructure failure recorded before truth
+    was opened). It defaults to empty, so the v0.3.7/8/9 callers that never pass it keep the
+    exact 24-run gate unchanged.
+    """
 
     truth_by_suite = {item.suite_id: item for item in truths}
     if len(truth_by_suite) != 4:
         raise ValueError("v0.3.7 requires four distinct locked qualification suites")
-    expected_pairs = {
-        (suite_id, run_id) for suite_id in truth_by_suite for run_id in _run_ids(truth_by_suite[suite_id])
-    }
+    full_grid = {(suite_id, run_id) for suite_id in truth_by_suite for run_id in _run_ids(truth_by_suite[suite_id])}
+    if not excluded_pairs <= full_grid:
+        raise ValueError("excluded_pairs must be a subset of the preregistered 24-run grid")
+    expected_pairs = full_grid - excluded_pairs
+    expected_total = len(expected_pairs)
     actual_pairs = {(item.suite_id, item.run_id) for item in submissions}
-    if actual_pairs != expected_pairs or len(submissions) != 24:
-        raise ValueError("v0.3.7 primary evaluation requires exactly 24 unique agent runs")
+    if actual_pairs != expected_pairs or len(submissions) != expected_total:
+        raise ValueError(f"v0.3.7 primary evaluation requires exactly {expected_total} unique agent runs")
     preliminary = tuple(
         _evaluate_submission_pack(submission, pack, truth_by_suite[submission.suite_id])
         for submission in submissions

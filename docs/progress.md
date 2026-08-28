@@ -278,3 +278,30 @@ Brier 0.1813→0.2043 now failing), and the failure funnel moved upstream — 88
 positives now fail at the evidence stage. The contract lever is spent; per the v0.4.0 policy the
 program moves to capability levers (configuration search over models and epistemic scaffolds) and
 the preregistered IEEE-CIS bridge.
+
+## 2026-08-28 — v0.4.0 Track A generation 1: configuration selection, not gate-chasing
+
+Generation 1 ran 6 preregistered execution configurations (model x prompt-arm x CLI, one codex
+reasoning variant per slot) x 4 replicates on a persistent-heavy suite that also introduced a
+machine-composed structure-grammar family the designer does not hand-pick instances of. Selection
+is by discovery-event count, not TSDR median, per the v0.4.0 policy pivot away from sequential gate
+improvement. One replicate (codex sol, g04) was excluded before unblinding: the container's
+unprivileged user-namespace creation is now blocked (`unshare` returns EPERM even as root), so
+codex's workspace-write sandbox cannot write through either the shell or file-edit path — verified
+by isolated smoke tests and recorded as a preregistration deviation. The evaluator's `excluded_pairs`
+parameter (new, defaults to empty, v0.3.7/8/9 callers unaffected) lets the locked v0.3.7 evaluation
+core handle the resulting 23-run batch without weakening the run-count integrity check.
+
+Three of six configurations passed the >=2 discovery-event threshold for generation 2: opus-5xP1
+(baseline, 7 events), fable-5xP2 (5), fable-5xP1 (2). Genuinely novel discovery occurred on the
+structure-grammar family (5/23 and 9/23) — a direct instance of the policy's core aim, discovery of
+previously-unseen structure. But the well-characterized persistent ladder positions 1-3 (clear,
+noisy-proxy, delayed-history) collapsed to 0/23 each (from 7, 1, 5 out of 24 in v0.3.9), with
+promotion-stage failures roughly tripling (16->41) — a plausible new contract-lever bottleneck from
+this version's own implication-provenance requirement, not yet disentangled from suite/prompt
+attention effects. The preregistered primary prediction (some configuration separates from the
+opus-5 baseline) did not hold in the hoped direction: baseline was the top performer, meaning model
+choice dominated the prompt-arm scaffold change in this generation. codex (sol/terra) continued the
+evasion pattern flagged during generation 1 execution: terra reached zero terminal resolutions
+across all 24 packs. Full detail:
+[verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md).

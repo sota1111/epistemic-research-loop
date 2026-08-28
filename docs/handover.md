@@ -1,7 +1,7 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-28
-**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 実行中
+**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了(3 構成が世代 2 進出)
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -18,14 +18,18 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
 - **敵対的レビュー(2026-08-28)を実施し、[v0.4.0 方針](c_lite_v040_policy.md) へ転換。**
   Gate 数値の逐次改善を止め、「発見に至るエージェント構成の発生」(P1)と「IEEE-CIS 橋」(P2)を
   Primary に再定義。目標モデル=あるべき姿の 8 能力柱(重心は柱 2 構造仮説生成・柱 3 識別実験設計)。
-- **v0.4.0 Track A 世代 1 実行中。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
-  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate = 24 fresh run。
-  Suite は persistent 厚め 14 pack + **structure-grammar generator**(モチーフ機械合成、
-  設計者も個別インスタンスを事前に知らない)。implication provenance 契約を追加。
-  Preregistration: [v040_gen1_preregistration.json](v040_gen1_preregistration.json)
+- **v0.4.0 Track A 世代 1 完了。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
+  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate を preregistration。うち 1 replicate
+  (codex sol、g04)はコンテナの user namespace 遮断による codex sandbox 恒久障害のため開封前に
+  preregistration deviation として除外し、23 run で確定・開封。**発見イベント数で 3 構成
+  (opus-5×P1=7、fable-5×P2=5、fable-5×P1=2)が世代 2 進出の閾値(>=2)を通過。**
+  structure-grammar family(machine-composed・未知構造)での発見が実際に発生(5/23・9/23)した
+  一方、persistent ラダー L1–L3 は 0/23 に退行(v0.3.9: 7・1・5/24)——新設の implication
+  provenance 契約が新しい contract-lever ボトルネックになっている可能性を含め未解明。
+  詳細: [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md)
 - **v0.4 の旧 stash は指示により破棄済み**(復元不能)。
 - 完全自動ループは `claude -p` / `codex exec`(CLI 認証、API key 不使用)で実行。
-  累計 78+ run が人手ゼロで完走している。
+  累計 101 run(v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24・評価対象 23)が人手ゼロで完走。
 
 ## 2. 最重要結果(v0.3.8)
 
@@ -131,32 +135,44 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **v0.3.9 の完走・Lock・開封**(実行中)。予測:TSRR 大幅上昇、persistent 系の matched-negative
-   失敗解消。リスク:falsified が inconclusive へ逃げて resolution rate 低下。
-2. 残る本質課題は **persistent 系 family の evidence 段階**(46/116)。介入は Prompt へ構造語彙を
-   足さずに設計すること(例:cycle 予算・Null 設計の一般的強化)。
-3. `useful_encoding_without_structure` への false promotion(8 件)対策は v0.3.9 の
-   validated ⇔ implication 契約で部分的に当たる。効果を開封後に確認。
-4. Worst FSPR 0.2083 は Gate 0.20 と僅差。agent-02 の false promotion 集中を確認する。
-5. 個体 Gate へ十分近づいた段階で **IEEE-CIS 実データの Blind Suite**(`.data/ieee-cis` にデータあり)
-   へ移行。解法・構造を Agent へ教えない原則は不変。
-6. Container 隔離、Null の独立再実行検証、新 Generator family は Confirmatory 前の必須項目。
+1. **v0.4.0 Track A 世代 2。** 上位 3 構成(C1 fable-5×P1・C2 fable-5×P2・C3 opus-5×P1 baseline)を
+   新規生成した別 Suite インスタンス(新 master seed、選抜に使った Suite は再利用しない)で
+   各 6–8 run 再現確認する(policy §3.2)。世代 2 を通過した構成のみ P1 判定(独立 2 run 再現)へ。
+2. **persistent L1–L3(clear/noisy_proxy/delayed_history)の 0/23 退行を transcript 差分診断で
+   切り分ける**(policy §3.3、構造語彙を足さない範囲)。候補要因:(a) implication provenance
+   契約(0.95 null 位置)自体が新しい contract-lever ボトルネックになっている、(b) Suite 内の
+   attention 配分が grammar-composed family 追加で変化した、(c) この世代の master seed 固有の
+   難度。世代 2 の新 Suite で再現するかどうかが最初の切り分け材料になる。
+3. codex(sol/terra)の終端解決回避パターンの定量化は継続。terra は世代 1 で 4 replicate 24 pack
+   全てが非終端。世代 2 では reasoning-effort ablation(sol/terra/luna 内の水準違い)を候補に含める
+   かを検討(v0.4.0 の deferred_to_generation_2 に記載済み)。
+4. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
+   へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
+5. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
+6. GLM-5.3・Kimi K3 等の追加モデル系統は世代 2 の preregistration 時点で候補プールに加える判断
+   ポイント(世代途中のモデル変更はしない)。導入前提:CLI 経路の確保・認証方針(API key 例外の
+   preregistration への明記)・claude/codex 相当の隔離パリティ・1 run のパイロット疎通確認。
 
 ## 7. 再現・確認コマンド
 
 ```bash
-make ci          # 388 tests / coverage 85.28% / ruff / mypy / schema / secret / audit 全 Pass
+make ci          # ruff / mypy / schema / secret / audit 全 Pass(tests は都度件数変動)
 
-# v0.3.9 パイプライン(Suite は生成・Lock 済み)
-uv run python scripts/run_v039_batch.py --parallel 4      # 再開可能
-uv run python scripts/audit_v039_blindness.py
-uv run python scripts/lock_v039_agent_runs.py
-uv run python scripts/finalize_v039.py                    # 全 24 Lock 後のみ
+# v0.4.0 Track A 世代 2(新 Suite ID を preregister してから)
+uv run python scripts/build_v040_suites.py --suite-ids <gen2 suite ids>
+uv run python scripts/run_v040_batch.py --parallel 3       # 再開可能。V040_GEN1_EXCLUDED_RUNS は
+                                                             # スロット単位の preregistered 除外
+uv run python scripts/audit_v040_blindness.py
+uv run python scripts/lock_v040_agent_runs.py
+uv run python scripts/finalize_v040.py                     # 実行対象全 run が Lock 済みの場合のみ
 ```
 
 `.runs/` `.state/` `.controller_truth/` は Git ignore 対象。開封済み Suite ID
-(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`)は再利用禁止。v0.3.9 Suite は Agent 実行中のため
-Truth 開封は 24 run Lock 後のみ。
+(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`, `v039-qual-*`, `v040-genA-*`)は再利用禁止。
+世代 2 は新規 suite id・新規 master seed で preregister すること(方針§3.2:世代間でのメタ過適合
+防止)。`evaluate_v037_runs`/`evaluate_v038_runs` は preregistered 除外を扱うための
+`excluded_pairs` 引数(デフォルト空集合)を持つ——インフラ障害等で run が実行不能になった場合は
+開封前にこの引数へ追加し、preregistration に deviation エントリを残すこと。
 
 ## 8. 正本文書
 
@@ -168,7 +184,11 @@ Truth 開封は 24 run Lock 後のみ。
   [Blind Spots](v038_population_blind_spot_report.json) /
   [Failure Traces](v038_structure_failure_traces.json) /
   [Null Audit](v038_full_refit_null_audit.json)
-- [v0.3.9 Preregistration](v039_preregistration.json)
+- [v0.3.9 Preregistration](v039_preregistration.json) /
+  [v0.3.9 検証](verification/v039_terminal_consistency_qualification.md)
+- [v0.4.0 方針](c_lite_v040_policy.md) / [v0.4.0 世代 1 Preregistration](v040_gen1_preregistration.json)
+- [v0.4.0 世代 1 検証](verification/v040_gen1_track_a_qualification.md) /
+  [Selection Table](v040_gen1_selection.json) / [Diagnostics](v040_gen1_diagnostics.json)
 - [進捗ログ](progress.md)
 
 ## 9. Git 状態
