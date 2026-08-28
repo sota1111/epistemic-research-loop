@@ -1,7 +1,8 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-28
-**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了・修正済み(5 構成が世代 2 進出、codex sol 含む)
+**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了・修正済み(5 構成が世代 2 進出)/
+sol reasoning-effort ablation 完了(xhigh 最良、persistent_clear 初発見)/ scaffold-ladder screen 実行中
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -36,13 +37,26 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   新しい contract-lever ボトルネックになっている疑いが強まった。旧(汚染)データは
   `.runs/v040/agent_outputs_pre_sandboxfix_backup/`(未 commit)に保全。
   詳細: [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md)
-- **codex sol reasoning-effort ablation を独立 side-probe として実行中。**
-  low/medium/high/xhigh × 4 replicate = 16 run(CLI/model/prompt-arm は世代 1 の C5 と同一、
-  reasoning effort のみ変える単一介入設計)。新 Suite(`v040-solE-b01..b04`、master seed
-  20260915、世代 1 の Suite は再利用しない)。評価器の 4-suite 固定要件(`evaluate_v037_runs`)に
-  合わせ replicate は 3 でなく 4 とした。予測は**単調増加を仮定しない**——「effort が高いほど
-  diversity(semantic_family_count 等)が下がる」narrowing 仮説も対等に検証対象とする。
-  Preregistration: [v040_sol_effort_ablation_preregistration.json](v040_sol_effort_ablation_preregistration.json)
+- **codex sol reasoning-effort ablation 完了。** low/medium/high/xhigh × 6 replicate = 24 run
+  (CLI/model/prompt-arm は世代 1 の C5 と同一、effort のみ変える単一介入設計。新 Suite
+  `v040-solE-b01..b06`)。当初 replicate=4 は統計的根拠のない選択だったとユーザー指摘を受け
+  6(policy §3.2 の下限)へ修正し、`evaluate_v037_runs`/`evaluate_v038_runs` に
+  `expected_suite_count` 引数を追加(既存呼び出しは無変更)。**結果は narrowing 仮説を明確に
+  棄却し capacity 仮説を支持:発見イベント low 2→medium 3→high 4→xhigh **7** と単調増加、
+  diversity 指標(semantic_family_count 等)も同方向に単調増加(トレードオフなし)。
+  さらに `persistent_clear` が high・xhigh でのみ計 2 件、history 上初めて真に発見された**
+  (gen1・scaffold-ladder では 0 件のまま)——persistent ラダーの壁が evidentiary capacity
+  (held-out 証拠を 0.95 閾値まで積む能力)の問題であるという仮説を支持する最初の肯定的証拠。
+  世代 2 の codex sol 構成には xhigh を採用する根拠が得られた。
+  詳細: [verification/v040_sol_effort_ablation_qualification.md](verification/v040_sol_effort_ablation_qualification.md)
+- **Opus + Sol scaffold-ladder screen(Stage 1)を実行中。** 「Opus と Sol だけで解法の多様性・
+  未知構造発見に到達できる構造」を第一優先課題とする方針のもと、P1(baseline)/ P2(仮説列挙強制)/
+  P3(新規:昇格前の自己批判 cycle、既存 cycle 予算内)を opus・sol に交差させた 6 構成 × 4 replicate
+  = 24 run(新 Suite `v040-scaf-c01..c04`)。スクリーニング段階として replicate=4 を明示的に
+  正当化(P1→P2 で 2.5 倍の効果が既に出ている実績があり、大きな効果の検出が目的)。反証データ
+  (persistent L1–L3 が scaffold・architecture 双方で 0/24)を preregistration に事前開示済み。
+  Preregistration: [v040_scaffold_ladder_preregistration.json](v040_scaffold_ladder_preregistration.json)
+  新規プロンプト: [v040_p3.md](../prompts/generic_research_agent/v040_p3.md)
 - **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
   (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
   **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで
@@ -148,6 +162,12 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 3. **`claude -p` は `--dangerously-skip-permissions` + settings deny rule で運用。** deny は
    bypass でも強制される。ネットワークは WebFetch/WebSearch/curl/wget/git を deny。
 4. 契約 repair feedback には Truth 情報を含めないこと(validation error 文字列のみ)。
+5. **この devcontainer の作業ディレクトリは複数セッション/タスクで共有されている。**
+   2026-08-28、無関係な別セッションが同じ working directory で `git checkout`/commit/PR
+   マージ/`git pull` を実行し、このセッションの HEAD を無警告で `main`(v0.4.0 作業を一切
+   含まない)へ移動させた。バックグラウンドバッチが新しい subprocess を起動する直前に発覚・
+   復旧(`git checkout system/c-lite-v0.3.8`)。commit 自体は失われない(branch ref は残る)が、
+   **長時間バックグラウンド実行中は定期的に `git branch --show-current` を確認すること。**
 
 ## 5. 既知の制約
 
@@ -163,25 +183,27 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **v0.4.0 Track A 世代 2。** 上位候補(C3 opus-5×P1 baseline・C2 fable-5×P2・**C5 codex sol×P1**、
-   tie-break 次第で C1 fable-5×P1 も検討)を新規生成した別 Suite インスタンス(新 master seed、
-   選抜に使った Suite は再利用しない)で各 6–8 run 再現確認する(policy §3.2)。terra(C6)は
-   false promotion 5 件(1 replicate 集中)を再現するか要観察——世代 2 で再現しなければ単発の
-   暴走と判断してよい。世代 2 を通過した構成のみ P1 判定(独立 2 run 再現)へ。
-2. **persistent L1–L3(clear/noisy_proxy/delayed_history)の 0/24 退行を transcript 差分診断で
-   切り分ける**(policy §3.3、構造語彙を足さない範囲)。sandbox 修正後のデータで **CLI 非依存
-   (claude・codex とも 0 件)と判明した**ため、implication provenance 契約(0.95 null 位置)が
-   新しい contract-lever ボトルネックになっている疑いが強まった。世代 2 の新 Suite で再現するか
-   どうかが最初の切り分け材料になる。
-3. **codex sol reasoning-effort ablation の完走・監査・Lock・開封**(実行中、16 run)。
-   `scripts/audit_v040_sol_ablation_blindness.py` → `lock_v040_sol_ablation_runs.py` →
-   `finalize_v040_sol_ablation.py` の順。結果(discovery event 数と diversity 指標の
-   effort 水準ごとの関係)は、世代 2 の codex sol 構成にどの reasoning effort を使うかを
-   決める材料として読み込む。ablation 自体は独立の停止規則を持たない(12→16 run 固定)。
+1. **scaffold-ladder screen(Stage 1)の完走・監査・Lock・開封**(実行中、24 run)。
+   `scripts/audit_v040_scaffold_ladder_blindness.py` → `lock_v040_scaffold_ladder_runs.py` →
+   `finalize_v040_scaffold_ladder.py` の順。sol ablation の結論(xhigh が全指標で最良)と
+   整合的に読めるかを確認する(scaffold-ladder の sol 側は xhigh 固定)。P3(自己批判)が
+   false promotion を下げるかが二次予測。
+2. **v0.4.0 Track A 世代 2 の設計。** sol ablation の結論(xhigh 採用)と scaffold-ladder の結果を
+   踏まえて確定する。現時点の暫定候補:C3 opus-5×P1 baseline・C2 fable-5×P2・C5 codex sol×xhigh。
+   各 6–8 run 再現確認(policy §3.2)。terra(C6)は false promotion 5 件(1 replicate 集中)を
+   再現するか要観察。
+3. **persistent L1–L3 の壁について新しい手がかりが得られた。** sol ablation で `persistent_clear`
+   が high・xhigh でのみ計 2 件、history 上初めて真に発見された(low/medium・gen1・
+   scaffold-ladder では 0 件)。**evidentiary capacity(reasoning effort・cycle 予算)が壁を
+   動かす可能性が高まった**——contract(implication provenance 0.95 閾値)自体の問題という
+   仮説より優先して検証すべき。次の一手は **cycle 予算 4→8 の ablation**(deferred_to_generation_2
+   に記載済み、まだ未実施)。
 4. **GLM(zai)の正式な study 設計。** runner 統合・smoke test は完了しているが、
    世代・config 数・replicate 数を伴う preregistration はまだない。次の preregistration
    (世代 2、または独立 GLM probe)で候補プールに加える判断ポイント。GLM-5.3 のみが確認済みで、
-   Kimi K3 等の別系統は別途 CLI 導入・smoke test が必要。
+   Kimi K3 等の別系統は別途 CLI 導入・smoke test が必要。なお `Dockerfile`/`scripts/glm-cli`
+   として GLM/codex/claude CLI を dev container イメージへ正式に組み込む作業が別セッションで
+   進行し、`main` へ PR #18 としてマージ済み(このブランチとは独立)。
 5. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
    へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
 6. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。

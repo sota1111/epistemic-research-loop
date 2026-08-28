@@ -374,3 +374,45 @@ needed. Verified under the exact restricted subprocess environment the runner ac
 transcript output all work. No GLM study is preregistered yet -- integration is ready, but
 placement (which generation, how many configs/replicates) is a decision for the next
 preregistration.
+
+## 2026-08-28 — sol reasoning-effort ablation: capacity beats narrowing, first true persistent_clear discovery
+
+The ablation's replicate count was corrected from 4 to 6 (policy's own recommended lower bound)
+before unblinding, per the same-day finding that 4 was an unexamined engineering shortcut, not a
+statistical choice -- generalized `evaluate_v037_runs`/`evaluate_v038_runs` with an explicit
+`expected_suite_count` parameter (default 4, existing callers unaffected) rather than leaving the
+hardcoded suite-count check in place. All 24 runs (4 effort levels x 6 replicates) completed, audited
+clean, and unblinded.
+
+Results were unambiguous: discovery events rose monotonically with reasoning effort (low 2 ->
+medium 3 -> high 4 -> xhigh 7), and so did every diversity metric (semantic_family_count,
+effective_family_count, eecr) -- directly falsifying the preregistered "narrowing" hypothesis
+(that higher effort would trade discovery for reduced hypothesis diversity) in favor of the
+"capacity" hypothesis. More strikingly, `persistent_clear` -- 0/24 in generation 1 and 0 in the
+scaffold-ladder screen so far, the single most persistent blind spot across every configuration
+tested this session -- was genuinely discovered twice, both at high or xhigh effort, never at low
+or medium. This is the first positive evidence that the persistent-ladder collapse is an
+evidentiary-capacity problem (can the agent accumulate enough held-out statistical support to
+cross the implication-provenance bar) rather than purely a contract-lever or hypothesis-generation
+problem, and it points squarely at the still-untested cycle-budget lever (4 -> 8) as the next
+priority. `high`'s 5 false promotions were all concentrated in a single suite instance (same
+single-outlier pattern as generation 1's terra/g03), not spread across its 6 replicates. Full
+detail: [verification/v040_sol_effort_ablation_qualification.md](verification/v040_sol_effort_ablation_qualification.md).
+
+Separately, launched an independent scaffold-ladder screen (Opus x Sol, P1/P2/P3 crossed with both
+models, 24 runs) per the user's explicit priority that Opus and Sol alone reach solution diversity
+and unknown-structure discovery without depending on quota-limited fable/GLM. Wrote
+`prompts/generic_research_agent/v040_p3.md` (P1 plus exactly one inserted self-critique-before-
+promotion paragraph, cycle budget unchanged) and generalized `build_v040_suite`'s prompt-arm
+validation to be driven by what the passed configs actually reference rather than hardcoded to
+{p1, p2}. Preregistration explicitly discloses counter-evidence (the persistent-ladder collapse
+already spans both prompt arms and both architectures in generation 1) and frames the goal as two
+subproblems: hypothesis-generation diversity (this probe) versus evidentiary capacity (deferred to
+a cycle-budget follow-up). Still running as of this entry.
+
+Also discovered mid-session that this devcontainer's working directory is shared across concurrent,
+unrelated sessions: another task performed `git checkout`/commit/PR-merge/pull in the same working
+tree, silently moving this session's HEAD to `main` (which contains none of this work) while a
+background batch was mid-flight. Caught and recovered (`git checkout system/c-lite-v0.3.8`) before
+any subprocess spawn could fail; no commits were lost (branch refs are independent of HEAD), but
+this is now a standing risk for any long-running background execution in this environment.

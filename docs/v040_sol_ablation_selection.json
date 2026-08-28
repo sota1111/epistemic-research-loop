@@ -1,0 +1,94 @@
+{
+  "effort_order": [
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+  ],
+  "per_effort_level": {
+    "high": {
+      "all_positive_tsdr": 0.14285714285714285,
+      "config_id": "S-high",
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_clear"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.5,
+        "mean_eecr": 0.25,
+        "mean_effective_family_count": 1.0489095348352189,
+        "mean_semantic_family_count": 1.1666666666666667
+      },
+      "evidence_rejections": 21,
+      "false_promotions": 5,
+      "replicates": 6,
+      "run_slot": "agent-02-s17",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 4
+    },
+    "low": {
+      "all_positive_tsdr": 0.047619047619047616,
+      "config_id": "S-low",
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.0,
+        "mean_eecr": 0.0,
+        "mean_effective_family_count": 1.0,
+        "mean_semantic_family_count": 1.0
+      },
+      "evidence_rejections": 9,
+      "false_promotions": 0,
+      "replicates": 6,
+      "run_slot": "agent-01-s17",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 2
+    },
+    "medium": {
+      "all_positive_tsdr": 0.11904761904761904,
+      "config_id": "S-medium",
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.5,
+        "mean_eecr": 0.5,
+        "mean_effective_family_count": 1.0489095348352189,
+        "mean_semantic_family_count": 1.1666666666666667
+      },
+      "evidence_rejections": 15,
+      "false_promotions": 1,
+      "replicates": 6,
+      "run_slot": "agent-01-s42",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 3
+    },
+    "xhigh": {
+      "all_positive_tsdr": 0.21428571428571427,
+      "config_id": "S-xhigh",
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_clear"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.4444444444444444,
+        "mean_eecr": 0.3888888888888889,
+        "mean_effective_family_count": 1.3262187416849869,
+        "mean_semantic_family_count": 1.6666666666666667
+      },
+      "evidence_rejections": 23,
+      "false_promotions": 1,
+      "replicates": 6,
+      "run_slot": "agent-02-s42",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 7
+    }
+  },
+  "study": "sol-effort-ablation",
+  "version": "0.4.0"
+}
