@@ -86,7 +86,7 @@ Kaggle 上位解法級の発見に至るエージェントのあるべき姿を�
 
 | 軸 | 水準(初期世代) |
 | --- | --- |
-| LLM(実行基盤) | Claude 系:claude-fable-5 / claude-opus-5(v0.3.x 基準線)/ claude-sonnet-5 / claude-haiku-4-5。codex 系:sol / terra / luna(リーズニング違いの 3 水準) |
+| LLM(実行基盤) | Claude 系:claude-fable-5 / claude-opus-5(v0.3.x 基準線)/ claude-sonnet-5 / claude-haiku-4-5。codex 系:sol / terra / luna の 3 モデル × 各モデル内のリーズニング努力量水準(モデルとリーズニングは独立の副軸として扱う) |
 | エピステミック足場 | P1(現行)/ P2: 仮説列挙の広さを強制(cycle 冒頭に観測単位・独立性・定常性・生成機構の各仮定について競合仮説を明示列挙)/ P3: 自己批判パス(昇格前に「この証拠で最も強い反対仮説」を 1 cycle 使って攻撃) |
 | 探索予算 | max cycles 4(現行)/ 8(深掘り許容) |
 | Lineage | S1 固定(v0.3.8 で FSPR 低下に寄与、監査可能) |
@@ -96,10 +96,13 @@ Kaggle 上位解法級の発見に至るエージェントのあるべき姿を�
 LLM は目標モデル(§2)ではなく、**変異の素材**である。あるべき姿(柱 2・3)に到達する構成を
 探すために、推論の癖が異なる基盤を widest に張る:
 
-1. **Claude 系 4 tier**(fable-5 / opus-5 / sonnet-5 / haiku-4-5)と **codex 系 3 リーズニング水準**
-   (sol / terra / luna)を変異軸に置く。`claude -p --model claude-fable-5` は実機確認済み
-   (2026-08-28)。codex は `codex exec -m <model>` を Track A 世代 1 のセットアップ時に
-   スモークテストし、利用可能な水準のみ preregistration に固定する。
+1. **Claude 系 4 tier**(fable-5 / opus-5 / sonnet-5 / haiku-4-5)と **codex 系 3 モデル**
+   (sol / terra / luna)を変異軸に置く。codex 側は**モデルとリーズニング努力量が独立の
+   2 副軸**である(sol の中にも複数のリーズニング水準がある)。全組合せは張らず、世代 1 では
+   「モデル間比較(既定リーズニング)」を先に行い、有望モデルに対してのみリーズニング水準の
+   ablation を世代 2 で行う。`claude -p --model claude-fable-5` は実機確認済み(2026-08-28)。
+   codex は `codex exec -m <model>` とリーズニング設定を Track A 世代 1 のセットアップ時に
+   スモークテストし、利用可能な組合せのみ preregistration に固定する。
 2. **基準線の並走。** claude-opus-5 arm(v0.3.x と同一基盤)を必ず含め、「基盤効果」と
    「足場効果」を分離できる比較設計を保つ。
 3. **混成集団の意味。** SBR・相補性は同一モデルでは頭打ちの公算(敵対的レビュー攻撃 4)。
