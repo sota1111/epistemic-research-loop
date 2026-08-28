@@ -1,25 +1,31 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-27
-**現在の基準:** C-lite v0.3.8 完了(FAIL・全指標改善)/ v0.3.9 実行中
+**更新日:** 2026-08-28
+**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 実行中
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
 ## 1. 現在地
 
-v0.3.7(PR #17、`879812e`)の Engineering Qualification FAIL を受け、同一の Generator・Gate のまま
-測定・契約の欠陥だけを直す是正回を実施した。
+v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方針転換)** と進行中。
 
-- **v0.3.8 完了(結論 FAIL、ただし全 Gate 指標が改善し 3 Gate 群が新規 Pass)。**
-  介入は 4 点のみ:①24 評価 = 24 個の独立 `claude -p` fresh context(CLI 認証、API key 不使用)、
-  ②Null replicate ごとの provenance artifact 契約必須化、③S1/S2 の Lineage 継続を Controller 強制、
-  ④P1 単独 Prompt 固定 + C1/C2 を Development Suite のみで fit。
-- **v0.3.9 実行中。** 介入は 1 点のみ:終端 resolution の自己整合性契約
-  (falsified ⇔ implication>0.05 / 自己 Null 超え research gain の共存、validated ⇔ implication
-  不足を Lock 前に差し戻す。Truth 不使用)。Suite `v039-qual-e01..e04`、C1 は v0.3.8 Dev fit を再利用。
-- **v0.4 の stash は指示により破棄済み**(`git stash drop` 実行、復元不能)。
-- 完全自動ループは `claude -p`(CLI 認証)で実行する方針が確定しており、実際に 54+ run が
-  人手ゼロで完走している。
+- **v0.3.8 完了(FAIL、全指標改善)。** fresh context / Null provenance / Lineage 強制 / P1 固定。
+- **v0.3.9 完了(FAIL、単一介入は予測どおり奏功)。** 終端 resolution 自己整合性契約により
+  TSRR 0.1875→0.6250(agent-01 は 0.7083 で個体 Gate 通過)、matched_negative 失敗 27→5、
+  FSPR Gate 新規 Pass。開封前の汚染検査で「repair loop による辻褄合わせ」仮説を棄却
+  (13 repair 中 12 が実データ再計算、一発 Pass run の TSRR の方が高い)。
+  詳細: [verification/v039_terminal_consistency_qualification.md](verification/v039_terminal_consistency_qualification.md)
+- **敵対的レビュー(2026-08-28)を実施し、[v0.4.0 方針](c_lite_v040_policy.md) へ転換。**
+  Gate 数値の逐次改善を止め、「発見に至るエージェント構成の発生」(P1)と「IEEE-CIS 橋」(P2)を
+  Primary に再定義。目標モデル=あるべき姿の 8 能力柱(重心は柱 2 構造仮説生成・柱 3 識別実験設計)。
+- **v0.4.0 Track A 世代 1 実行中。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
+  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate = 24 fresh run。
+  Suite は persistent 厚め 14 pack + **structure-grammar generator**(モチーフ機械合成、
+  設計者も個別インスタンスを事前に知らない)。implication provenance 契約を追加。
+  Preregistration: [v040_gen1_preregistration.json](v040_gen1_preregistration.json)
+- **v0.4 の旧 stash は指示により破棄済み**(復元不能)。
+- 完全自動ループは `claude -p` / `codex exec`(CLI 認証、API key 不使用)で実行。
+  累計 78+ run が人手ゼロで完走している。
 
 ## 2. 最重要結果(v0.3.8)
 
