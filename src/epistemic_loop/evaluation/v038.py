@@ -88,9 +88,10 @@ def evaluate_v038_runs(
     calibration_map: IsotonicCalibrationMap | None = None,
     *,
     excluded_pairs: frozenset[tuple[str, str]] = frozenset(),
+    expected_suite_count: int = 4,
 ) -> V038AggregateReport:
     cores = tuple(item.core for item in loaded)
-    base = evaluate_v037_runs(cores, truths, excluded_pairs=excluded_pairs)
+    base = evaluate_v037_runs(cores, truths, excluded_pairs=excluded_pairs, expected_suite_count=expected_suite_count)
     return V038AggregateReport(
         base=base,
         provenance_audit=_provenance_audit(loaded),

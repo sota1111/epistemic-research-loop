@@ -27,17 +27,21 @@ from pathlib import Path
 from epistemic_loop.benchmark.v040_grammar_suite import (
     V040_GEN1_CONFIGS,
     V040_GEN1_SUITE_IDS,
+    V040_SCAFFOLD_LADDER_CONFIGS,
+    V040_SCAFFOLD_LADDER_SUITE_IDS,
     V040_SOL_ABLATION_CONFIGS,
     V040_SOL_ABLATION_SUITE_IDS,
 )
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
 
-#: Each study (generation-1 Track A, the codex sol reasoning-effort ablation, ...) preregisters
-#: its own suite ids and execution-configuration mapping; this runner is shared across studies
-#: that reuse the same grammar/pack-plan machinery, so it selects the mapping by suite id.
+#: Each study (generation-1 Track A, the codex sol reasoning-effort ablation, the Opus+Sol
+#: scaffold-ladder screen, ...) preregisters its own suite ids and execution-configuration
+#: mapping; this runner is shared across studies that reuse the same grammar/pack-plan
+#: machinery, so it selects the mapping by suite id.
 _CONFIG_REGISTRY: tuple[tuple[tuple[str, ...], Mapping[str, Mapping[str, str]]], ...] = (
     (V040_GEN1_SUITE_IDS, V040_GEN1_CONFIGS),
     (V040_SOL_ABLATION_SUITE_IDS, V040_SOL_ABLATION_CONFIGS),
+    (V040_SCAFFOLD_LADDER_SUITE_IDS, V040_SCAFFOLD_LADDER_CONFIGS),
 )
 
 

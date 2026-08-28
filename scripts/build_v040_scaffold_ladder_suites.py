@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Build and lock the suites for the codex sol reasoning-effort ablation.
+"""Build and lock the four suites for the Opus + Sol scaffold-ladder screen (Stage 1).
 
-Independent side-probe (not part of Track A generation 2): CLI/model/prompt-arm held
-fixed at generation 1's C5 configuration, reasoning_effort varied across four levels.
-Resumable: a suite whose output directory already exists is left untouched and its prior
-build result is carried into the merged lock, so V040_SOL_ABLATION_SUITE_IDS can grow (as
-it did once, 4 -> 6 suites, to match policy Sec 3.2's own "6-8 run" recommendation) without
-rebuilding or invalidating already-built, already-immutable suite instances. See
-docs/v040_sol_effort_ablation_preregistration.json.
+Independent side-probe (not part of Track A generation 2): tests whether the prompt
+scaffold (P1/P2/P3) is a viable diversity lever that lets Opus and Sol alone substitute
+for cross-architecture diversity. Resumable, matching build_v040_sol_ablation_suites.py's
+pattern: a suite whose output directory already exists is left untouched and its prior
+build result carried into the merged lock. See
+docs/v040_scaffold_ladder_preregistration.json.
 """
 
 from __future__ import annotations
@@ -20,10 +19,10 @@ from pathlib import Path
 
 from epistemic_loop.benchmark.v038_repro_suite import V038_NULL_PROVENANCE_FIELDS
 from epistemic_loop.benchmark.v040_grammar_suite import (
-    V040_SOL_ABLATION_CONFIGS,
-    V040_SOL_ABLATION_MASTER_SEED,
-    V040_SOL_ABLATION_RUN_IDS,
-    V040_SOL_ABLATION_SUITE_IDS,
+    V040_SCAFFOLD_LADDER_CONFIGS,
+    V040_SCAFFOLD_LADDER_MASTER_SEED,
+    V040_SCAFFOLD_LADDER_RUN_IDS,
+    V040_SCAFFOLD_LADDER_SUITE_IDS,
     build_v040_suite,
 )
 from epistemic_loop.controller.v040_agent import v040_submission_contract
@@ -36,20 +35,21 @@ def main() -> None:
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
     parser.add_argument("--rows-per-context", type=int, default=900)
     arguments = parser.parse_args()
-    lock_path = arguments.output_root / "sol_ablation_suite_set_lock.json"
+    lock_path = arguments.output_root / "scaffold_ladder_suite_set_lock.json"
     previous_results: dict[str, dict[str, object]] = {}
     if lock_path.exists():
         previous_payload = json.loads(lock_path.read_text())
         previous_results = {str(item["suite_id"]): item for item in previous_payload["results"]}
-        new_suite_ids = [suite_id for suite_id in V040_SOL_ABLATION_SUITE_IDS if suite_id not in previous_results]
+        new_suite_ids = [suite_id for suite_id in V040_SCAFFOLD_LADDER_SUITE_IDS if suite_id not in previous_results]
         if not new_suite_ids:
-            raise SystemExit("v0.4.0 sol-ablation suite set already covers every preregistered suite id")
+            raise SystemExit("v0.4.0 scaffold-ladder suite set already covers every preregistered suite id")
     if not arguments.key_file.exists():
         raise SystemExit(f"expected an existing v0.4.0 controller key at {arguments.key_file}")
     key = arguments.key_file.read_bytes().strip()
     prompt_paths = {
         "p1": Path("prompts/generic_research_agent/v040_p1.md"),
         "p2": Path("prompts/generic_research_agent/v040_p2.md"),
+        "p3": Path("prompts/generic_research_agent/v040_p3.md"),
     }
     policy_contract = {
         "null_policy": {
@@ -76,7 +76,7 @@ def main() -> None:
     }
     contract = v040_submission_contract()
     results: list[dict[str, object]] = []
-    for suite_id in V040_SOL_ABLATION_SUITE_IDS:
+    for suite_id in V040_SCAFFOLD_LADDER_SUITE_IDS:
         if suite_id in previous_results:
             results.append(previous_results[suite_id])
             continue
@@ -88,10 +88,10 @@ def main() -> None:
             prompt_paths=prompt_paths,
             policy_contract=policy_contract,
             rows_per_context=arguments.rows_per_context,
-            suite_ids=V040_SOL_ABLATION_SUITE_IDS,
-            master_seed=V040_SOL_ABLATION_MASTER_SEED,
-            configs=V040_SOL_ABLATION_CONFIGS,
-            run_ids=V040_SOL_ABLATION_RUN_IDS,
+            suite_ids=V040_SCAFFOLD_LADDER_SUITE_IDS,
+            master_seed=V040_SCAFFOLD_LADDER_MASTER_SEED,
+            configs=V040_SCAFFOLD_LADDER_CONFIGS,
+            run_ids=V040_SCAFFOLD_LADDER_RUN_IDS,
         )
         for run_root in result.run_roots.values():
             path = Path(run_root) / "submission_contract.json"
@@ -99,12 +99,12 @@ def main() -> None:
         results.append(asdict(result))
     payload = {
         "version": "0.4.0",
-        "study": "sol-effort-ablation",
-        "suite_ids": list(V040_SOL_ABLATION_SUITE_IDS),
-        "execution_configurations": {run: dict(config) for run, config in V040_SOL_ABLATION_CONFIGS.items()},
-        "runs_per_suite": len(V040_SOL_ABLATION_RUN_IDS),
-        "total_runs": len(V040_SOL_ABLATION_SUITE_IDS) * len(V040_SOL_ABLATION_RUN_IDS),
-        "replicates_per_configuration": len(V040_SOL_ABLATION_SUITE_IDS),
+        "study": "scaffold-ladder-screen",
+        "suite_ids": list(V040_SCAFFOLD_LADDER_SUITE_IDS),
+        "execution_configurations": {run: dict(config) for run, config in V040_SCAFFOLD_LADDER_CONFIGS.items()},
+        "runs_per_suite": len(V040_SCAFFOLD_LADDER_RUN_IDS),
+        "total_runs": len(V040_SCAFFOLD_LADDER_SUITE_IDS) * len(V040_SCAFFOLD_LADDER_RUN_IDS),
+        "replicates_per_configuration": len(V040_SCAFFOLD_LADDER_SUITE_IDS),
         "fresh_llm_context_per_run": True,
         "prompts_frozen_before_generation": True,
         "prompt_hashes": {

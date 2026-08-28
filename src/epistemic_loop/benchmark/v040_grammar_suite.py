@@ -71,10 +71,12 @@ V040_GEN1_CONFIGS: Mapping[str, Mapping[str, str]] = {
 #: Independent side-probe: codex sol reasoning-effort ablation (deferred_to_generation_2 item
 #: in docs/v040_gen1_preregistration.json). Single-intervention design -- CLI, model, and
 #: prompt arm are held fixed at generation 1's C5 baseline; only reasoning_effort varies.
-#: New suite identities and master seed (generation 1's suites are already unblinded). Four
-#: suite instances (not three) because the shared v0.3.7-lineage evaluator requires exactly
-#: four distinct locked qualification suites (evaluate_v037_runs).
-V040_SOL_ABLATION_SUITE_IDS = tuple(f"v040-solE-b{index:02d}" for index in range(1, 5))
+#: New suite identities and master seed (generation 1's suites are already unblinded). Six
+#: suite instances: policy Sec 3.2's own "6-8 run" recommendation, now that
+#: evaluate_v037_runs's suite count is an explicit parameter rather than hardcoded to 4
+#: (see docs/v040_sol_effort_ablation_preregistration.json revision note; the first 4 were
+#: originally built and locked as 4-only, corrected before any truth was opened).
+V040_SOL_ABLATION_SUITE_IDS = tuple(f"v040-solE-b{index:02d}" for index in range(1, 7))
 V040_SOL_ABLATION_MASTER_SEED = 20260915
 V040_SOL_ABLATION_CONFIGS: Mapping[str, Mapping[str, str]] = {
     "agent-01-s17": {
@@ -107,6 +109,45 @@ V040_SOL_ABLATION_CONFIGS: Mapping[str, Mapping[str, str]] = {
     },
 }
 V040_SOL_ABLATION_RUN_IDS = tuple(V040_SOL_ABLATION_CONFIGS)
+
+#: Independent side-probe: Opus + Sol scaffold-ladder screen (Stage 1 of the "diversity from
+#: procedure, not architecture" design -- docs/v040_scaffold_ladder_preregistration.json).
+#: Single-intervention design -- CLI, model, reasoning effort, and cycle budget are held fixed
+#: (sol at xhigh, matching generation 1's C5 and this ablation's not-yet-concluded default);
+#: only the prompt scaffold (P1 baseline / P2 hypothesis-enumeration / P3 self-critique) varies,
+#: crossed with the two models. A screening stage (4 replicates): large, easily-detected effects
+#: are the target (e.g. P1->P2 already produced a 2.5x swing in generation 1), not precise
+#: estimation: this is intended to identify which scaffold(s) merit generation-2-scale (6-8
+#: replicate) follow-up, not to confirm one on its own.
+V040_SCAFFOLD_LADDER_SUITE_IDS = tuple(f"v040-scaf-c{index:02d}" for index in range(1, 5))
+V040_SCAFFOLD_LADDER_MASTER_SEED = 20260920
+V040_SCAFFOLD_LADDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    "agent-01-s17": {"config_id": "L-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1"},
+    "agent-01-s42": {"config_id": "L-opus-P2", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p2"},
+    "agent-01-s93": {"config_id": "L-opus-P3", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3"},
+    "agent-02-s17": {
+        "config_id": "L-sol-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "xhigh",
+    },
+    "agent-02-s42": {
+        "config_id": "L-sol-P2",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p2",
+        "reasoning_effort": "xhigh",
+    },
+    "agent-02-s93": {
+        "config_id": "L-sol-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "xhigh",
+    },
+}
+V040_SCAFFOLD_LADDER_RUN_IDS = tuple(V040_SCAFFOLD_LADDER_CONFIGS)
 
 GRAMMAR_MOTIFS = (
     "entity_effect",
@@ -340,8 +381,9 @@ def build_v040_suite(
     if output_root.exists() or (truth_root / f"{suite_id}.manifest.enc").exists():
         raise FileExistsError("v0.4.0 suites are immutable; use a new suite identity")
     Fernet(key)
-    if set(prompt_paths) != {"p1", "p2"}:
-        raise ValueError("v0.4.0 generation 1 requires frozen P1 and P2 prompts")
+    required_arms = {config["prompt_arm"] for config in configs.values()}
+    if not required_arms <= set(prompt_paths):
+        raise ValueError(f"prompt_paths is missing frozen prompts for arm(s): {required_arms - set(prompt_paths)}")
     prompt_hashes = {name: _sha256_file(path) for name, path in sorted(prompt_paths.items())}
     policy_hash = hashlib.sha256(json.dumps(policy_contract, sort_keys=True).encode()).hexdigest()
     if not policy_contract.get("null_policy", {}).get("provenance_required"):
