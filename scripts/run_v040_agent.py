@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Execute one fresh-context v0.4.0 Track-A run through the configured CLI.
+"""Execute one fresh-context v0.4.0 run through the configured CLI.
 
-One invocation = one (suite, run-slot) pair = one fresh LLM context, where the run
-slot maps to a preregistered execution configuration (CLI x model x prompt arm) from
-``V040_GEN1_CONFIGS``. Claude slots run through `claude -p` exactly as in v0.3.8/9;
-codex slots run through `codex exec` with the workspace-write sandbox. Contract
-repair feedback (never truth) is bounded; claude repairs continue the conversation,
-codex repairs start a fresh context over the same working directory.
+One invocation = one (suite, run-slot) pair = one fresh LLM context, where the run slot
+maps to a preregistered execution configuration (CLI x model x prompt arm x reasoning
+effort). Shared across every v0.4.0 study that reuses the grammar/pack-plan suite
+machinery (generation-1 Track A, the codex sol reasoning-effort ablation, ...); the
+configuration mapping is selected by suite id via ``_resolve_config``. Claude slots run
+through `claude -p` exactly as in v0.3.8/9; codex slots run through `codex exec` with
+`-s danger-full-access` (this container's bwrap dependency for `-s workspace-write` is
+broken) and an explicitly pinned `-c model_reasoning_effort`. Contract repair feedback
+(never truth) is bounded; claude repairs continue the conversation, codex repairs start a
+fresh context over the same working directory.
 """
 
 from __future__ import annotations
@@ -17,10 +21,35 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Mapping
 from pathlib import Path
 
-from epistemic_loop.benchmark.v040_grammar_suite import V040_GEN1_CONFIGS
+from epistemic_loop.benchmark.v040_grammar_suite import (
+    V040_GEN1_CONFIGS,
+    V040_GEN1_SUITE_IDS,
+    V040_SOL_ABLATION_CONFIGS,
+    V040_SOL_ABLATION_SUITE_IDS,
+)
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
+
+#: Each study (generation-1 Track A, the codex sol reasoning-effort ablation, ...) preregisters
+#: its own suite ids and execution-configuration mapping; this runner is shared across studies
+#: that reuse the same grammar/pack-plan machinery, so it selects the mapping by suite id.
+_CONFIG_REGISTRY: tuple[tuple[tuple[str, ...], Mapping[str, Mapping[str, str]]], ...] = (
+    (V040_GEN1_SUITE_IDS, V040_GEN1_CONFIGS),
+    (V040_SOL_ABLATION_SUITE_IDS, V040_SOL_ABLATION_CONFIGS),
+)
+
+
+def _resolve_config(suite_id: str, run_id: str) -> Mapping[str, str]:
+    for suite_ids, configs in _CONFIG_REGISTRY:
+        if suite_id in suite_ids:
+            config = configs.get(run_id)
+            if config is None:
+                raise SystemExit(f"run id {run_id!r} has no preregistered configuration for suite {suite_id!r}")
+            return config
+    raise SystemExit(f"suite id {suite_id!r} is not a preregistered v0.4.0 study suite")
+
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 
@@ -86,9 +115,7 @@ def main() -> None:
     parser.add_argument("--max-turns", type=int, default=1000)
     arguments = parser.parse_args()
 
-    config = V040_GEN1_CONFIGS.get(arguments.run_id)
-    if config is None:
-        raise SystemExit(f"run id {arguments.run_id} has no preregistered execution configuration")
+    config = _resolve_config(arguments.suite_id, arguments.run_id)
     view_root = arguments.suite_root / arguments.suite_id / "agent_views" / arguments.run_id
     if not (view_root / "agent_packet.json").exists():
         raise SystemExit(f"missing locked agent view: {view_root}")
@@ -164,7 +191,7 @@ def main() -> None:
 
 
 def _command(
-    config: dict[str, str],
+    config: Mapping[str, str],
     prompt: str,
     attempt: int,
     arguments: argparse.Namespace,
@@ -218,6 +245,25 @@ def _command(
             "danger-full-access",
             "-C",
             str(workdir),
+            prompt,
+        ]
+    if config["cli"] == "glm":
+        # The zai CLI (wrapped by /home/vscode/.local/bin/glm, which sources GLM_API_KEY from
+        # the project .env and sets ZAI_BASE_URL/ZAI_MODEL) has no OS-level sandbox at all
+        # (verified by reading its tool implementations: text-editor.js resolves paths with no
+        # confinement check, bash.js only sets cwd). Isolation here is workdir-copy +
+        # RUNNER.md instructions + transcript audit only -- the same posture already used for
+        # codex's danger-full-access. -d scopes the CLI's own notion of a working directory;
+        # -p is headless mode, which auto-approves every tool call (no interactive gate to
+        # bypass). Repairs are fresh -p invocations over the same workdir, matching codex's
+        # fresh-context repair semantics (no verified session-continuation flag for -p mode).
+        return [
+            "/home/vscode/.local/bin/glm",
+            "-d",
+            str(workdir),
+            "-m",
+            config["model"],
+            "-p",
             prompt,
         ]
     raise SystemExit(f"unknown cli {config['cli']!r}")

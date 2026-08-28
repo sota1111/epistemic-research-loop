@@ -36,10 +36,28 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   新しい contract-lever ボトルネックになっている疑いが強まった。旧(汚染)データは
   `.runs/v040/agent_outputs_pre_sandboxfix_backup/`(未 commit)に保全。
   詳細: [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md)
+- **codex sol reasoning-effort ablation を独立 side-probe として実行中。**
+  low/medium/high/xhigh × 4 replicate = 16 run(CLI/model/prompt-arm は世代 1 の C5 と同一、
+  reasoning effort のみ変える単一介入設計)。新 Suite(`v040-solE-b01..b04`、master seed
+  20260915、世代 1 の Suite は再利用しない)。評価器の 4-suite 固定要件(`evaluate_v037_runs`)に
+  合わせ replicate は 3 でなく 4 とした。予測は**単調増加を仮定しない**——「effort が高いほど
+  diversity(semantic_family_count 等)が下がる」narrowing 仮説も対等に検証対象とする。
+  Preregistration: [v040_sol_effort_ablation_preregistration.json](v040_sol_effort_ablation_preregistration.json)
+- **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
+  (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
+  **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで
+  ディレクトリ外読み書きを防がない)ため、隔離は claude/codex 同様 workdir コピー + prompt 指示 +
+  transcript 監査のみに依存する設計とした。`-p` headless モードは全 tool 操作を自動承認済み
+  (`confirmationService.setSessionFlag("allOperations", true)`)。restricted env
+  (`_environment()`と同一)下での smoke test で認証・ファイル書き込み・bash 実行・JSONL
+  transcript 出力を確認済み。`scripts/run_v040_agent.py` の `_command()` に `cli: "glm"` 分岐を
+  追加済み。**ただし実際の Suite・replicate 数を伴う正式な study はまだ preregister していない**
+  ——導入は完了したが、どの世代・どの config 数で投入するかは次の preregistration 時点で決める。
 - **v0.4 の旧 stash は指示により破棄済み**(復元不能)。
-- 完全自動ループは `claude -p` / `codex exec`(CLI 認証、API key 不使用)で実行。
-  累計 104 run(v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24 + codex 8 スロット再実行)が
-  人手ゼロで完走。
+- 完全自動ループは `claude -p` / `codex exec` / `glm -p`(いずれも CLI/wrapper 認証、provider
+  API key を agent プロセス環境には渡さない)で実行。累計 104+ run
+  (v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24 + codex 8 スロット再実行 + sol ablation 16)が
+  人手ゼロで完走(ablation は実行中)。
 
 ## 2. 最重要結果(v0.3.8)
 
@@ -155,24 +173,18 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    (claude・codex とも 0 件)と判明した**ため、implication provenance 契約(0.95 null 位置)が
    新しい contract-lever ボトルネックになっている疑いが強まった。世代 2 の新 Suite で再現するか
    どうかが最初の切り分け材料になる。
-3. **codex sol の reasoning-effort ablation を独立 side-probe として実行**(low/medium/high/xhigh
-   × 3 replicate、新 Suite、P1 固定、v0.4.0 の deferred_to_generation_2 に記載済み)。単に
-   discovery event 数だけでなく、semantic_family_count・effective_family_count・eecr・
-   deep_lineage_completion_rate 等の多様性指標も水準ごとに追跡し、「effort が高いほど良い」という
-   単調仮定を置かずに非単調な関係(発見率は上がるが多様性は下がる、等)の有無を検証する。
-   **必ず `-s danger-full-access` と `-c model_reasoning_effort` 明示指定を使うこと**
-   (`scripts/run_v040_agent.py` で修正済み、`~/.codex/config.toml` の既定値には依存しない)。
-4. GLM(zai CLI、`/home/vscode/.local/bin/glm`)は API key 導入済みだが利用制限中(2026-08-28
-   19:35:52 UTC 頃解除見込み)。`zai` は OS レベルのサンドボックス機構を一切持たない(ソース確認済み、
-   `path.resolve()` のみで作業ディレクトリ外への読み書きを防がない)ため、隔離は claude/codex 同様
-   workdir コピー+prompt 指示+transcript 監査のみに依存する設計とすること。制限解除後、まず
-   isolated scratch directory での smoke test(認証・出力形式・tool 実行確認)を先に行う。
-4. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
+3. **codex sol reasoning-effort ablation の完走・監査・Lock・開封**(実行中、16 run)。
+   `scripts/audit_v040_sol_ablation_blindness.py` → `lock_v040_sol_ablation_runs.py` →
+   `finalize_v040_sol_ablation.py` の順。結果(discovery event 数と diversity 指標の
+   effort 水準ごとの関係)は、世代 2 の codex sol 構成にどの reasoning effort を使うかを
+   決める材料として読み込む。ablation 自体は独立の停止規則を持たない(12→16 run 固定)。
+4. **GLM(zai)の正式な study 設計。** runner 統合・smoke test は完了しているが、
+   世代・config 数・replicate 数を伴う preregistration はまだない。次の preregistration
+   (世代 2、または独立 GLM probe)で候補プールに加える判断ポイント。GLM-5.3 のみが確認済みで、
+   Kimi K3 等の別系統は別途 CLI 導入・smoke test が必要。
+5. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
    へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
-5. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
-6. GLM-5.3・Kimi K3 等の追加モデル系統は世代 2 の preregistration 時点で候補プールに加える判断
-   ポイント(世代途中のモデル変更はしない)。導入前提:CLI 経路の確保・認証方針(API key 例外の
-   preregistration への明記)・claude/codex 相当の隔離パリティ・1 run のパイロット疎通確認。
+6. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
 
 ## 7. 再現・確認コマンド
 

@@ -1,0 +1,35 @@
+{
+  "version": "0.4.0",
+  "title": "Track A side-probe — codex sol reasoning-effort ablation",
+  "policy": "c_lite_v040_policy.md",
+  "parent_study": "v040_gen1_preregistration.json (deferred_to_generation_2 item: codex reasoning-effort ablation)",
+  "frozen_before_suite_generation": true,
+  "rationale": "Generation 1 fixed codex reasoning_effort at xhigh for every codex slot. This is a single-intervention side-probe (not folded into generation 2's claude-reproduction confirmatory track) that varies only reasoning_effort for gpt-5.6-sol, holding CLI/model/prompt-arm fixed at generation 1's C5 configuration. Run independently and first, per the user's explicit choice, so its result can inform (not gate) generation 2's design rather than expand generation 2's own budget and confound two different questions in one preregistration.",
+  "suite_ids": ["v040-solE-b01", "v040-solE-b02", "v040-solE-b03", "v040-solE-b04"],
+  "master_seed": 20260915,
+  "pack_plan": "identical to generation 1: 4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs). Reuses the same structure-grammar generator; new master seed means new grammar instances (generation 1's suites are already unblinded and cannot be reused).",
+  "execution_configurations": {
+    "S-low": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "low", "slot": "agent-01-s17"},
+    "S-medium": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "medium", "slot": "agent-01-s42"},
+    "S-high": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "high", "slot": "agent-02-s17"},
+    "S-xhigh": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "xhigh", "slot": "agent-02-s42"}
+  },
+  "held_fixed": "cli=codex, model=gpt-5.6-sol, prompt_arm=p1, lineage_policy=posterior_commit -- only reasoning_effort varies across the four configurations",
+  "replicates_per_configuration": 4,
+  "total_runs": 16,
+  "replicate_count_note": "four suite instances, not three, because the shared v0.3.7-lineage evaluator (evaluate_v037_runs) requires exactly four distinct locked qualification suites; kept rather than modifying that shared/locked evaluator code",
+  "lineage_policy": "posterior_commit for every slot",
+  "contract": "identical v0.4.0 contract as generation 1 (implication provenance, terminal-resolution consistency); no contract changes, since this probe targets a capability/scaffold lever (reasoning effort), not the contract",
+  "runner_correctness": "-s danger-full-access (not workspace-write, which depends on a bwrap mechanism this container blocks unconditionally) and -c model_reasoning_effort pinned explicitly per slot -- both fixed in scripts/run_v040_agent.py before generation 1 was corrected; this probe inherits the fix from the start",
+  "prompt_hashes": {
+    "p1": "a7829e6edcd497e2d96b360a1977d0857660f3c5962521e4d1835f0a8b2965a2"
+  },
+  "isolation": "workdir-copy + RUNNER.md instructions + transcript audit only, no OS sandbox (danger-full-access); same posture as generation 1's corrected codex configuration and as glm/zai",
+  "evaluation": "locked v0.3.7-lineage evaluator reused verbatim for discovery-event counting and false-promotion counting, identical to generation 1's finalize_v040.py logic. Additionally reports per-configuration diversity/exploration-breadth secondary metrics already computed by the evaluator but not previously highlighted: semantic_family_count, effective_family_count, eecr (early-exploit-conversion-rate), deep_lineage_completion_rate.",
+  "predictions": {
+    "primary": "no monotonic assumption: discovery-event count as a function of reasoning_effort is NOT assumed to be increasing. Two plausible directions are both live: (a) capacity hypothesis -- higher effort improves discovery because it enables deeper multi-context implication computation and null-refit rigor; (b) narrowing hypothesis -- higher effort induces earlier convergence on a single hypothesis path and stricter self-consistency pressure toward `inconclusive`, reducing both raw discovery and exploration breadth. This probe is designed to distinguish these, not to confirm (a).",
+    "secondary": "if the narrowing hypothesis holds, semantic_family_count / effective_family_count should be higher (more distinct hypothesis families attempted) at LOWER effort levels even if discovery events are comparable or lower, and the inconclusive/useful_encoding_unvalidated share of non-terminal resolutions should rise with effort."
+  },
+  "stopping_rule": "this is a fixed 12-run probe, not a generation with its own gate. Its result is read into generation 2's design (e.g. which effort level, if any, generation 2's codex sol slot should use) but does not itself trigger Track B or further generations.",
+  "post_registration_deviations": []
+}

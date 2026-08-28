@@ -341,3 +341,36 @@ hypothesis over a codex-specific explanation. Old (contaminated) raw data preser
 `.runs/v040/agent_outputs_pre_sandboxfix_backup/`. Full disclosure of the correction, made after the
 first report was already published, is in
 [v040_gen1_preregistration.json](v040_gen1_preregistration.json)'s `post_registration_deviations`.
+
+## 2026-08-28 — codex sol reasoning-effort ablation launched; GLM integrated and smoke-tested
+
+Two follow-ups from the sandbox-fix correction. First, `build_v040_suite` gained optional
+`suite_ids`/`master_seed`/`configs`/`run_ids` parameters (defaulting to the generation-1
+constants, so existing callers are unaffected) so a second study can reuse the same
+grammar/pack-plan machinery without duplicating it. `scripts/run_v040_agent.py` gained a
+small suite-id-keyed config registry (`_resolve_config`) so the same runner serves multiple
+studies. Preregistered
+([v040_sol_effort_ablation_preregistration.json](v040_sol_effort_ablation_preregistration.json))
+and launched a 16-run independent side-probe: codex sol at reasoning_effort
+low/medium/high/xhigh (CLI/model/prompt-arm held fixed at generation 1's C5), four replicates
+each on a new suite (new master seed; generation 1's suites stay unblinded and unreused). Four
+replicates rather than three because the shared v0.3.7-lineage evaluator hard-requires exactly
+four suites. The preregistered prediction explicitly does not assume higher effort is better:
+a "narrowing" hypothesis (higher effort converges faster, reducing hypothesis diversity even if
+discovery holds or improves) is tracked via secondary diversity metrics
+(semantic_family_count, effective_family_count, eecr, deep_lineage_completion_rate) alongside
+discovery-event counts, not just the headline number.
+
+Second, per the user's request to make the environment fair for codex and GLM, the GLM/zai CLI
+(`/home/vscode/.local/bin/glm`, GLM 5.3 via the Coding Plan endpoint, API key sourced from the
+project `.env` by the wrapper script itself) was integrated into the runner and smoke-tested.
+Reading zai's tool implementations found it has no OS-level sandbox whatsoever (its file-editor
+tool does `path.resolve()` with no confinement check), so isolation rests entirely on
+workdir-copy + prompt instructions + transcript audit -- the same posture already adopted for
+codex after the sandbox fix. Headless `-p` mode auto-approves all tool calls
+(`confirmationService.setSessionFlag("allOperations", true)`), so no permission-skip flag is
+needed. Verified under the exact restricted subprocess environment the runner actually uses
+(PATH/HOME/LANG/TERM/SHELL only): authentication, file writes, bash execution, and JSONL
+transcript output all work. No GLM study is preregistered yet -- integration is ready, but
+placement (which generation, how many configs/replicates) is a decision for the next
+preregistration.

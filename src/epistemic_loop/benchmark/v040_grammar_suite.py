@@ -68,6 +68,46 @@ V040_GEN1_CONFIGS: Mapping[str, Mapping[str, str]] = {
     "agent-03-s42": {"config_id": "C6", "cli": "codex", "model": "gpt-5.6-terra", "prompt_arm": "p1"},
 }
 
+#: Independent side-probe: codex sol reasoning-effort ablation (deferred_to_generation_2 item
+#: in docs/v040_gen1_preregistration.json). Single-intervention design -- CLI, model, and
+#: prompt arm are held fixed at generation 1's C5 baseline; only reasoning_effort varies.
+#: New suite identities and master seed (generation 1's suites are already unblinded). Four
+#: suite instances (not three) because the shared v0.3.7-lineage evaluator requires exactly
+#: four distinct locked qualification suites (evaluate_v037_runs).
+V040_SOL_ABLATION_SUITE_IDS = tuple(f"v040-solE-b{index:02d}" for index in range(1, 5))
+V040_SOL_ABLATION_MASTER_SEED = 20260915
+V040_SOL_ABLATION_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    "agent-01-s17": {
+        "config_id": "S-low",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "low",
+    },
+    "agent-01-s42": {
+        "config_id": "S-medium",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "medium",
+    },
+    "agent-02-s17": {
+        "config_id": "S-high",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "high",
+    },
+    "agent-02-s42": {
+        "config_id": "S-xhigh",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "xhigh",
+    },
+}
+V040_SOL_ABLATION_RUN_IDS = tuple(V040_SOL_ABLATION_CONFIGS)
+
 GRAMMAR_MOTIFS = (
     "entity_effect",
     "delayed_history",
@@ -280,11 +320,21 @@ def build_v040_suite(
     policy_contract: Mapping[str, Any],
     contexts_per_pack: int = 3,
     rows_per_context: int = 900,
+    suite_ids: Sequence[str] = V040_GEN1_SUITE_IDS,
+    master_seed: int = V040_GEN1_MASTER_SEED,
+    configs: Mapping[str, Mapping[str, str]] = V040_GEN1_CONFIGS,
+    run_ids: Sequence[str] = V040_RUN_IDS,
 ) -> V037SuiteBuildResult:
-    if suite_id not in V040_GEN1_SUITE_IDS:
-        raise ValueError("v0.4.0 requires a preregistered generation-1 suite identity")
-    suite_index = V040_GEN1_SUITE_IDS.index(suite_id) + 1
-    master_seed = V040_GEN1_MASTER_SEED
+    """Build one immutable, blind v0.4.0 suite instance.
+
+    ``suite_ids``/``master_seed``/``configs``/``run_ids`` default to the generation-1 Track A
+    design; a study reusing the same grammar/pack-plan machinery (e.g. the codex sol
+    reasoning-effort ablation) passes its own preregistered values for these instead of
+    duplicating this function.
+    """
+    if suite_id not in suite_ids:
+        raise ValueError("v0.4.0 requires a preregistered suite identity for this study")
+    suite_index = suite_ids.index(suite_id) + 1
     if contexts_per_pack < 3 or rows_per_context < 600:
         raise ValueError("aggregate promotion requires three contexts and at least 600 rows")
     if output_root.exists() or (truth_root / f"{suite_id}.manifest.enc").exists():
@@ -362,9 +412,9 @@ def build_v040_suite(
     truth_root.mkdir(parents=True, exist_ok=True)
     aliases: list[V037AliasTruth] = []
     public_hashes: list[str] = []
-    for run_id in V040_RUN_IDS:
+    for run_id in run_ids:
         agent_id, sampling_seed = _parse_run_id(run_id)
-        config = V040_GEN1_CONFIGS[run_id]
+        config = configs[run_id]
         prompt_arm = config["prompt_arm"]
         run_root = output_root / "agent_views" / run_id
         run_root.mkdir(parents=True)
@@ -486,7 +536,7 @@ def build_v040_suite(
     preflight = preflight_v037_suite(suite_truth)
     return V037SuiteBuildResult(
         suite_id=suite_id,
-        run_roots={run_id: str(output_root / "agent_views" / run_id) for run_id in V040_RUN_IDS},
+        run_roots={run_id: str(output_root / "agent_views" / run_id) for run_id in run_ids},
         encrypted_truth_path=str(encrypted_path),
         encrypted_truth_sha256=_sha256_file(encrypted_path),
         public_manifest_sha256=hashlib.sha256("".join(sorted(public_hashes)).encode()).hexdigest(),
