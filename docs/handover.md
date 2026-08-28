@@ -1,7 +1,7 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-28
-**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了(3 構成が世代 2 進出)
+**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了・修正済み(5 構成が世代 2 進出、codex sol 含む)
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -18,18 +18,28 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
 - **敵対的レビュー(2026-08-28)を実施し、[v0.4.0 方針](c_lite_v040_policy.md) へ転換。**
   Gate 数値の逐次改善を止め、「発見に至るエージェント構成の発生」(P1)と「IEEE-CIS 橋」(P2)を
   Primary に再定義。目標モデル=あるべき姿の 8 能力柱(重心は柱 2 構造仮説生成・柱 3 識別実験設計)。
-- **v0.4.0 Track A 世代 1 完了。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
-  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate を preregistration。うち 1 replicate
-  (codex sol、g04)はコンテナの user namespace 遮断による codex sandbox 恒久障害のため開封前に
-  preregistration deviation として除外し、23 run で確定・開封。**発見イベント数で 3 構成
-  (opus-5×P1=7、fable-5×P2=5、fable-5×P1=2)が世代 2 進出の閾値(>=2)を通過。**
-  structure-grammar family(machine-composed・未知構造)での発見が実際に発生(5/23・9/23)した
-  一方、persistent ラダー L1–L3 は 0/23 に退行(v0.3.9: 7・1・5/24)——新設の implication
-  provenance 契約が新しい contract-lever ボトルネックになっている可能性を含め未解明。
+- **v0.4.0 Track A 世代 1 完了・修正済み。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
+  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate = 24 run。当初 1 replicate
+  (codex sol、g04)をコンテナの user namespace 遮断による codex sandbox 障害で除外・23 run で
+  一度確定・開封したが、**ユーザー指摘を受けた session ログのフォレンジックで、この障害が
+  除外した 1 run に限らず codex 8 スロット全体に断続的な計算阻害を与えていたと判明**
+  (最終採用 attempt でもコマンド失敗率 38–45%・完走コマンド数わずか 8–17 件の重度汚染が
+  4 スロット)。原因(bwrap 依存の `workspace-write` サンドボックスがこのコンテナで恒久的に
+  機能しない)を `-s danger-full-access` への切替で修正し、reasoning effort の明示固定も併せて
+  行った上で codex 8 スロット全て(除外していた分を含む)を再実行、**24/24 で再確定・再開封**。
+  **codex sol の成績が発見イベント 1→4 件へ改善し世代 2 進出候補に浮上、terra も 0→2 件で
+  閾値を通過**——「codex は終端解決を回避する」という当初の解釈は主として環境障害由来だった。
+  世代 2 進出候補は **opus-5×P1(7)・fable-5×P2(5)・codex sol×P1(4)**。structure-grammar
+  family(machine-composed・未知構造)での発見(7/24・12/24)は claude・codex 双方の上位構成で
+  再現し CLI 非依存と確認。persistent ラダー L1–L3 は 0/24 のまま(v0.3.9: 7・1・5/24)——
+  sandbox 修正後も codex 側で 0 件のため CLI 非依存の現象と判明し、implication provenance 契約が
+  新しい contract-lever ボトルネックになっている疑いが強まった。旧(汚染)データは
+  `.runs/v040/agent_outputs_pre_sandboxfix_backup/`(未 commit)に保全。
   詳細: [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md)
 - **v0.4 の旧 stash は指示により破棄済み**(復元不能)。
 - 完全自動ループは `claude -p` / `codex exec`(CLI 認証、API key 不使用)で実行。
-  累計 101 run(v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24・評価対象 23)が人手ゼロで完走。
+  累計 104 run(v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24 + codex 8 スロット再実行)が
+  人手ゼロで完走。
 
 ## 2. 最重要結果(v0.3.8)
 
@@ -135,17 +145,28 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **v0.4.0 Track A 世代 2。** 上位 3 構成(C1 fable-5×P1・C2 fable-5×P2・C3 opus-5×P1 baseline)を
-   新規生成した別 Suite インスタンス(新 master seed、選抜に使った Suite は再利用しない)で
-   各 6–8 run 再現確認する(policy §3.2)。世代 2 を通過した構成のみ P1 判定(独立 2 run 再現)へ。
-2. **persistent L1–L3(clear/noisy_proxy/delayed_history)の 0/23 退行を transcript 差分診断で
-   切り分ける**(policy §3.3、構造語彙を足さない範囲)。候補要因:(a) implication provenance
-   契約(0.95 null 位置)自体が新しい contract-lever ボトルネックになっている、(b) Suite 内の
-   attention 配分が grammar-composed family 追加で変化した、(c) この世代の master seed 固有の
-   難度。世代 2 の新 Suite で再現するかどうかが最初の切り分け材料になる。
-3. codex(sol/terra)の終端解決回避パターンの定量化は継続。terra は世代 1 で 4 replicate 24 pack
-   全てが非終端。世代 2 では reasoning-effort ablation(sol/terra/luna 内の水準違い)を候補に含める
-   かを検討(v0.4.0 の deferred_to_generation_2 に記載済み)。
+1. **v0.4.0 Track A 世代 2。** 上位候補(C3 opus-5×P1 baseline・C2 fable-5×P2・**C5 codex sol×P1**、
+   tie-break 次第で C1 fable-5×P1 も検討)を新規生成した別 Suite インスタンス(新 master seed、
+   選抜に使った Suite は再利用しない)で各 6–8 run 再現確認する(policy §3.2)。terra(C6)は
+   false promotion 5 件(1 replicate 集中)を再現するか要観察——世代 2 で再現しなければ単発の
+   暴走と判断してよい。世代 2 を通過した構成のみ P1 判定(独立 2 run 再現)へ。
+2. **persistent L1–L3(clear/noisy_proxy/delayed_history)の 0/24 退行を transcript 差分診断で
+   切り分ける**(policy §3.3、構造語彙を足さない範囲)。sandbox 修正後のデータで **CLI 非依存
+   (claude・codex とも 0 件)と判明した**ため、implication provenance 契約(0.95 null 位置)が
+   新しい contract-lever ボトルネックになっている疑いが強まった。世代 2 の新 Suite で再現するか
+   どうかが最初の切り分け材料になる。
+3. **codex sol の reasoning-effort ablation を独立 side-probe として実行**(low/medium/high/xhigh
+   × 3 replicate、新 Suite、P1 固定、v0.4.0 の deferred_to_generation_2 に記載済み)。単に
+   discovery event 数だけでなく、semantic_family_count・effective_family_count・eecr・
+   deep_lineage_completion_rate 等の多様性指標も水準ごとに追跡し、「effort が高いほど良い」という
+   単調仮定を置かずに非単調な関係(発見率は上がるが多様性は下がる、等)の有無を検証する。
+   **必ず `-s danger-full-access` と `-c model_reasoning_effort` 明示指定を使うこと**
+   (`scripts/run_v040_agent.py` で修正済み、`~/.codex/config.toml` の既定値には依存しない)。
+4. GLM(zai CLI、`/home/vscode/.local/bin/glm`)は API key 導入済みだが利用制限中(2026-08-28
+   19:35:52 UTC 頃解除見込み)。`zai` は OS レベルのサンドボックス機構を一切持たない(ソース確認済み、
+   `path.resolve()` のみで作業ディレクトリ外への読み書きを防がない)ため、隔離は claude/codex 同様
+   workdir コピー+prompt 指示+transcript 監査のみに依存する設計とすること。制限解除後、まず
+   isolated scratch directory での smoke test(認証・出力形式・tool 実行確認)を先に行う。
 4. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
    へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
 5. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。

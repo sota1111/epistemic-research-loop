@@ -190,6 +190,21 @@ def _command(
     if config["cli"] == "codex":
         # Repairs start a fresh context over the same working directory; codex has no
         # equivalent of claude's --continue that we treat as validated for this harness.
+        # model_reasoning_effort is ALWAYS pinned explicitly here rather than left to
+        # ~/.codex/config.toml's ambient default: that file is shared across unrelated
+        # projects on this host and was observed to change mid-batch during generation 1
+        # (xhigh -> low), silently altering one accepted run's execution condition. See
+        # docs/v040_gen1_preregistration.json post_registration_deviations.
+        effort = config.get("reasoning_effort", "xhigh")
+        # -s workspace-write depends on bwrap (Linux user namespaces), which this
+        # container blocks unconditionally (verified: unshare returns EPERM even as
+        # root). That intermittently blocked real computation throughout generation 1
+        # (confirmed in accepted-attempt transcripts, not just the terminal g04/sol
+        # failure), confounding codex's measured discovery rate with an infrastructure
+        # defect. danger-full-access skips codex's own OS sandbox entirely; isolation
+        # then comes only from the workdir-copy + RUNNER.md instructions + transcript
+        # audit, matching the isolation this harness already relies on for claude
+        # (--dangerously-skip-permissions) and glm/zai (no OS sandbox at all).
         return [
             "codex",
             "exec",
@@ -197,8 +212,10 @@ def _command(
             "--json",
             "-m",
             config["model"],
+            "-c",
+            f'model_reasoning_effort="{effort}"',
             "-s",
-            "workspace-write",
+            "danger-full-access",
             "-C",
             str(workdir),
             prompt,

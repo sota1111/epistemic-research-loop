@@ -54,12 +54,7 @@ V040_LINEAGE_POLICY = "posterior_commit"
 #: ``docs/v040_gen1_preregistration.json``). Keys are (suite_id, run_id) pairs that the
 #: lock and finalize stages must treat as absent, with the recorded reason. The agent
 #: view of an excluded pair still exists and is still blindness-audited.
-V040_GEN1_EXCLUDED_RUNS: Mapping[tuple[str, str], str] = {
-    ("v040-genA-g04", "agent-03-s17"): (
-        "codex sandbox non-functional in container (bwrap userns EPERM); "
-        "infrastructure failure recorded before unblinding"
-    ),
-}
+V040_GEN1_EXCLUDED_RUNS: Mapping[tuple[str, str], str] = {}
 
 #: Generation-1 execution configurations, one per run-view slot. The slot ids reuse the
 #: v0.3.x run-id vocabulary so the locked evaluation (which aggregates per agent x seed)

@@ -84,49 +84,55 @@
       "verified_discovery_events": 1
     },
     "C5": {
-      "all_positive_tsdr": 0.047619047619047616,
+      "all_positive_tsdr": 0.14285714285714285,
       "cli": "codex",
       "discovered_families": [
+        "grammar_composed_a",
         "grammar_composed_b"
       ],
       "discovery_suites": [
-        "v040-genA-g02"
+        "v040-genA-g01",
+        "v040-genA-g02",
+        "v040-genA-g04"
       ],
-      "evidence_rejections": 3,
-      "false_promotions": 0,
+      "evidence_rejections": 7,
+      "false_promotions": 2,
       "model": "gpt-5.6-sol",
       "prompt_arm": "p1",
-      "replicates": 3,
+      "replicates": 4,
       "run_slot": "agent-03-s17",
-      "target_positive_packs": 18,
-      "verified_discovery_events": 1
+      "target_positive_packs": 24,
+      "verified_discovery_events": 4
     },
     "C6": {
-      "all_positive_tsdr": 0.0,
+      "all_positive_tsdr": 0.17857142857142858,
       "cli": "codex",
-      "discovered_families": [],
-      "discovery_suites": [],
-      "evidence_rejections": 0,
-      "false_promotions": 0,
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b"
+      ],
+      "discovery_suites": [
+        "v040-genA-g03"
+      ],
+      "evidence_rejections": 7,
+      "false_promotions": 5,
       "model": "gpt-5.6-terra",
       "prompt_arm": "p1",
       "replicates": 4,
       "run_slot": "agent-03-s42",
       "target_positive_packs": 24,
-      "verified_discovery_events": 0
+      "verified_discovery_events": 2
     }
   },
-  "excluded_runs": {
-    "v040-genA-g04/agent-03-s17": "codex sandbox non-functional in container (bwrap userns EPERM); infrastructure failure recorded before unblinding"
-  },
+  "excluded_runs": {},
   "generation": 1,
   "ranking": [
     "C3",
     "C2",
-    "C1",
-    "C4",
     "C5",
-    "C6"
+    "C1",
+    "C6",
+    "C4"
   ],
   "selection_metric": "verified discovery events on persistent/grammar families (matched-negative gate applied), tie-broken by fewer false promotions",
   "version": "0.4.0"

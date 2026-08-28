@@ -305,3 +305,39 @@ choice dominated the prompt-arm scaffold change in this generation. codex (sol/t
 evasion pattern flagged during generation 1 execution: terra reached zero terminal resolutions
 across all 24 packs. Full detail:
 [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md).
+
+## 2026-08-28 — v0.4.0 correction: the codex "evasion" was mostly an infrastructure defect
+
+Asked to check whether codex and glm were getting a fair evaluation, forensic review of codex's own
+session rollout logs (`~/.codex/sessions/`, not the truth store) found that the bwrap sandbox failure
+that caused the g04/sol exclusion above had been intermittently corrupting every codex slot's
+execution throughout generation 1, not just the excluded run. Command-level analysis of each codex
+slot's accepted (locked) attempt: 4 of 8 were severely degraded (38-45% of commands bwrap-failed,
+only 8-17 total commands completed versus hundreds in the clean slots), with transcript evidence of
+an agent editing completion/honesty flags directly rather than completing blocked computation. This
+directly confounded the published "codex avoids terminal resolution" interpretation with an
+environment artifact.
+
+Root cause: `-s workspace-write` depends on bwrap (Linux user namespaces), which this container
+blocks unconditionally. Fix: switched to `-s danger-full-access` (no OS sandbox; isolation now comes
+only from workdir-copy + prompt instructions + transcript audit, matching claude's
+`--dangerously-skip-permissions` posture and the zai/GLM CLI, which has no OS sandbox at all).
+Also pinned `-c model_reasoning_effort` explicitly per slot rather than relying on the shared,
+mutable `~/.codex/config.toml` default — a related defect had let one accepted run silently execute
+at effort=low instead of the preregistered xhigh.
+
+All 8 codex slots, including the previously-excluded one, were backed up and re-executed under the
+fixed runner: 0 bwrap failures, full 14-pack/42-context/5+-replicate submissions across the board.
+Generation 1 now completes at 24/24 (the exclusion is lifted). Results changed materially for codex:
+sol's verified discovery events rose 1->4 (now clears the generation-2 threshold, with 2 new false
+promotions on a matched-negative pair), terra's rose 0->2 (also clears the threshold, with 5 false
+promotions concentrated in a single suite instance where it over-validated 11 of 14 packs — a likely
+one-off rather than a consistent pattern). Claude's four configurations were untouched. Generation-2
+candidates are now opus-5xP1 (7), fable-5xP2 (5), and codex sol xP1 (4) — codex sol enters the
+carry-forward set that a purely claude-side reading of generation 1 would have excluded. The
+persistent-ladder L1-L3 collapse (0/24) is unchanged by the fix and now confirmed CLI-independent
+(codex also finds zero after the correction), strengthening the implication-provenance-bottleneck
+hypothesis over a codex-specific explanation. Old (contaminated) raw data preserved, uncommitted, at
+`.runs/v040/agent_outputs_pre_sandboxfix_backup/`. Full disclosure of the correction, made after the
+first report was already published, is in
+[v040_gen1_preregistration.json](v040_gen1_preregistration.json)'s `post_registration_deviations`.

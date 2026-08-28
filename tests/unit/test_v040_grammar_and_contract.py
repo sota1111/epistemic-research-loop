@@ -75,9 +75,13 @@ def test_grammar_acceptance_finds_identifiable_spec() -> None:
 def test_preregistered_exclusions_match_the_deviation_record() -> None:
     preregistration = json.loads(Path("docs/v040_gen1_preregistration.json").read_text())
     deviations = preregistration["post_registration_deviations"]
-    recorded = {f"{item['run'].split('/')[0]}/{item['run'].split('/')[1]}" for item in deviations}
-    assert recorded == {f"{suite}/{run}" for suite, run in V040_GEN1_EXCLUDED_RUNS}
-    assert preregistration["total_runs"] - len(V040_GEN1_EXCLUDED_RUNS) == deviations[0]["effective_run_count"]
+    active_exclusions = {
+        f"{item['run'].split('/')[0]}/{item['run'].split('/')[1]}"
+        for item in deviations
+        if "run" in item and item.get("status") != "SUPERSEDED by the entry below (root cause fixed, run reinstated)"
+    }
+    assert active_exclusions == {f"{suite}/{run}" for suite, run in V040_GEN1_EXCLUDED_RUNS}
+    assert deviations[-1]["effective_run_count"] == preregistration["total_runs"] - len(V040_GEN1_EXCLUDED_RUNS)
     for suite, run in V040_GEN1_EXCLUDED_RUNS:
         assert suite in V040_GEN1_SUITE_IDS
         assert run in V040_RUN_IDS

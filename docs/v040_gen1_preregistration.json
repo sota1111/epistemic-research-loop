@@ -47,7 +47,7 @@
   "old_gates_status": "diagnostic only per the v0.4.0 policy; FSPR <= 0.20 and evidence-based conditions remain internal requirements of discovery events",
   "isolation": {
     "claude": "workdir isolation + deny rules + transcript audit (as v0.3.8/9)",
-    "codex": "workspace-write sandbox (network disabled, writes confined to workdir) + transcript audit; read isolation is weaker than the claude deny rules and is recorded as a parity limitation",
+    "codex": "originally workspace-write sandbox; corrected to danger-full-access on 2026-08-28 (see post_registration_deviations) because the container's bwrap dependency is non-functional. Isolation is workdir-copy + RUNNER.md instructions + transcript audit only, with no OS-level enforcement; recorded as a parity limitation relative to claude's deny rules, same posture as glm/zai (which has no OS sandbox at all)",
     "container_isolation": false
   },
   "predictions": {
@@ -62,6 +62,7 @@
     {
       "recorded": "2026-08-28",
       "recorded_before_unblinding": true,
+      "status": "SUPERSEDED by the entry below (root cause fixed, run reinstated)",
       "kind": "excluded run (infrastructure failure, not agent behavior)",
       "run": "v040-genA-g04/agent-03-s17",
       "configuration": "C5 (codex gpt-5.6-sol, prompt p1)",
@@ -69,6 +70,18 @@
       "decision": "generation 1 completes with 23 of 24 runs; C5 is evaluated on 3 replicates, which still satisfies the P1 criterion (reproduction in >= 2 independent runs per configuration)",
       "rejected_alternatives": "running the slot with sandbox bypass (weakens read isolation and mixes sandbox regimes within one configuration); blocking the pipeline on a host-level container change",
       "effective_run_count": 23
+    },
+    {
+      "recorded": "2026-08-28",
+      "recorded_before_unblinding": false,
+      "recorded_after_unblinding_note": "This correction was made AFTER generation 1 was unblinded and its first report published (docs/verification/v040_gen1_track_a_qualification.md, committed). It is disclosed in full rather than silently revised. The finalize evaluator code and acceptance criteria were not changed; only the contaminated codex inputs were replaced with cleanly re-executed ones under an unchanged preregistered design (same suites, same configs, same replicate count).",
+      "kind": "systematic re-execution of all 8 codex slots (infrastructure defect discovered to be pervasive, not isolated to the excluded run)",
+      "trigger": "Forensic review of codex session rollout logs (~/.codex/sessions/) requested by the user to check whether codex/glm were being fairly evaluated. Found that the bwrap userns failure that caused the g04/agent-03-s17 exclusion had been intermittently corrupting EVERY codex slot's execution throughout generation 1 (2026-08-26 through 2026-08-28), not just the one excluded run. Command-level forensics on the accepted (locked) attempt for each of the other 7 codex slots: 2 slots had light contamination (2-5% of commands bwrap-failed, hundreds of commands still completed), but 4 slots were severely degraded (38-45% command failure, only 8-17 total commands in the accepted attempt, well short of a full 14-pack protocol) with transcript evidence of the agent editing completion/honesty flags directly rather than completing blocked computation. This confounds the 'codex avoids terminal resolution' interpretation already published: the effect may be substantially an infrastructure artifact rather than a model behavior.",
+      "fix": "scripts/run_v040_agent.py codex invocation changed from `-s workspace-write` (bwrap-dependent) to `-s danger-full-access` (no OS sandbox; matches claude and glm/zai, which also rely only on workdir-copy + prompt instructions + transcript audit in this container). Also pinned `-c model_reasoning_effort` explicitly per slot instead of relying on the shared, mutable ~/.codex/config.toml default (a related but separate defect: one accepted run had silently executed at effort=low instead of the preregistered xhigh, traced via the same session-log forensics).",
+      "verification_before_rerun": "smoke test in an isolated scratch directory confirmed danger-full-access executes shell and python3 without any bwrap error",
+      "action": "backed up the 8 original (contaminated) submissions, run_meta, and transcripts to .runs/v040/agent_outputs_pre_sandboxfix_backup/ (not committed; local only). Cleared the 8 slots' outputs and workdirs, including the previously-excluded g04/agent-03-s17. Re-ran all 8 through scripts/run_v040_batch.py under the fixed runner. All 8, including the previously-excluded slot, completed with 0 bwrap failures in their final attempt and full 14-pack/42-context/5+-replicate submissions.",
+      "outcome": "generation 1 now completes at 24 of 24 preregistered runs (the g04/agent-03-s17 exclusion above is lifted; V040_GEN1_EXCLUDED_RUNS is now empty). Selection results changed materially for the codex configurations: C5 (sol) verified discovery events 1 -> 4 (now clears the >=2 generation-2 threshold, with 2 new false promotions on a matched-negative grammar pair); C6 (terra) verified discovery events 0 -> 2 (now clears the threshold, with 5 false promotions concentrated entirely on one suite instance, v040-genA-g03, where it validated 11 of 14 packs -- a single over-promotion run rather than a consistent pattern across its other 3 replicates). Claude configurations (C1-C4) were untouched and unchanged. Full corrected results superseded docs/v040_gen1_selection.json, docs/v040_gen1_diagnostics.json, and docs/verification/v040_gen1_track_a_qualification.md.",
+      "effective_run_count": 24
     }
   ]
 }
