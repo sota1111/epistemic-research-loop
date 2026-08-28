@@ -130,15 +130,16 @@ def main() -> None:
                 env=_environment(),
                 check=False,
             )
+        errors = _validate(submission_path, packet)
         attempts.append(
             {
                 "attempt": attempt,
                 "returncode": completed.returncode,
                 "seconds": round(time.time() - started, 1),
                 "stderr_tail": (completed.stderr or "")[-2000:],
+                "contract_errors_after_attempt": list(errors)[:30],
             }
         )
-        errors = _validate(submission_path, packet)
         if not errors:
             break
 
