@@ -1,0 +1,61 @@
+{
+  "version": "0.4.0",
+  "title": "Track A Generation 1 — Emergence of Discovering Configurations",
+  "policy": "c_lite_v040_policy.md",
+  "frozen_before_suite_generation": true,
+  "primary_criteria": {
+    "P1": "some configuration achieves behavioral discovery of persistent/grammar structures with matched-negative rejection in at least two independent runs",
+    "selection_metric": "verified discovery events on persistent_/grammar_composed families per configuration, tie-broken by fewer false promotions"
+  },
+  "suite_ids": ["v040-genA-g01", "v040-genA-g02", "v040-genA-g03", "v040-genA-g04"],
+  "master_seed": 20260910,
+  "pack_plan": "4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs)",
+  "structure_grammar": {
+    "motifs": ["entity_effect", "delayed_history", "regime_flip", "cross_key_link", "path_decay", "routed_signal"],
+    "composition": "2-3 motifs sampled per matched pair from the suite master seed",
+    "acceptance": "deterministic resampling until the identifiability preflight passes; the designer does not hand-pick instances",
+    "note": "grammar instances are machine-composed; the suite designer knows the grammar, not the sampled structure"
+  },
+  "execution_configurations": {
+    "C1": {"cli": "claude", "model": "claude-fable-5", "prompt_arm": "p1", "slot": "agent-01-s17"},
+    "C2": {"cli": "claude", "model": "claude-fable-5", "prompt_arm": "p2", "slot": "agent-01-s42"},
+    "C3": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1", "slot": "agent-02-s17"},
+    "C4": {"cli": "claude", "model": "claude-sonnet-5", "prompt_arm": "p2", "slot": "agent-02-s42"},
+    "C5": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "slot": "agent-03-s17"},
+    "C6": {"cli": "codex", "model": "gpt-5.6-terra", "prompt_arm": "p1", "slot": "agent-03-s42"}
+  },
+  "replicates_per_configuration": 4,
+  "total_runs": 24,
+  "deferred_to_generation_2": [
+    "claude-haiku-4-5",
+    "gpt-5.6-luna",
+    "P3 self-critique scaffold",
+    "codex reasoning-effort ablation (default xhigh in generation 1)",
+    "8-cycle exploration budget"
+  ],
+  "lineage_policy": "posterior_commit for every slot",
+  "contract_additions_over_v039": {
+    "implication_provenance": "per-context {statistic, held_out=true, null_reference_position, computation_hash} required for terminal resolutions",
+    "consistency": "falsified: at most one context with position >= 0.95; validated: at least two"
+  },
+  "prompt_hashes": {
+    "p1": "a7829e6edcd497e2d96b360a1977d0857660f3c5962521e4d1835f0a8b2965a2",
+    "p2": "ecb593b172dbf4cbe1792aa8aa196b2c793c12148bb10ab215e73ba52a62af5f"
+  },
+  "prompt_policy": "P1 adds only the null-referenced implication requirement; P2 additionally mandates enumeration of competing task formulations on the four generic assumption axes. No structure-specific vocabulary.",
+  "evaluation": "locked v0.3.7-lineage evaluator reused verbatim; per-configuration aggregates are the agent-by-seed aggregates; selection table computed from evaluated packs",
+  "old_gates_status": "diagnostic only per the v0.4.0 policy; FSPR <= 0.20 and evidence-based conditions remain internal requirements of discovery events",
+  "isolation": {
+    "claude": "workdir isolation + deny rules + transcript audit (as v0.3.8/9)",
+    "codex": "workspace-write sandbox (network disabled, writes confined to workdir) + transcript audit; read isolation is weaker than the claude deny rules and is recorded as a parity limitation",
+    "container_isolation": false
+  },
+  "predictions": {
+    "primary": "at least one configuration separates from the baseline (C3) on persistent/grammar discovery events; if none does, the bottleneck is not addressable by model/scaffold variation at this budget and stopping rule 1 fires",
+    "secondary": "cross-model populations show lower shared-blind-spot overlap than same-model populations (diagnostic)"
+  },
+  "stopping_rules": [
+    "generation 2 proceeds only with configurations showing >= 2 verified discovery events",
+    "if no configuration reaches 2 events, synthetic search stops and the best configuration proceeds to the IEEE-CIS bridge (policy stopping rule 1)"
+  ]
+}

@@ -100,9 +100,12 @@ LLM は目標モデル(§2)ではなく、**変異の素材**である。ある�
    (sol / terra / luna)を変異軸に置く。codex 側は**モデルとリーズニング努力量が独立の
    2 副軸**である(sol の中にも複数のリーズニング水準がある)。全組合せは張らず、世代 1 では
    「モデル間比較(既定リーズニング)」を先に行い、有望モデルに対してのみリーズニング水準の
-   ablation を世代 2 で行う。`claude -p --model claude-fable-5` は実機確認済み(2026-08-28)。
-   codex は `codex exec -m <model>` とリーズニング設定を Track A 世代 1 のセットアップ時に
-   スモークテストし、利用可能な組合せのみ preregistration に固定する。
+   ablation を世代 2 で行う。実機確認(2026-08-28):`claude -p --model claude-fable-5` 動作、
+   codex は `codex exec -m gpt-5.6-sol / gpt-5.6-terra / gpt-5.6-luna` の 3 モデルとも動作
+   (既定 reasoning effort は xhigh、`-c model_reasoning_effort` で切替可能)。
+   世代 1 の 6 構成:fable-5×P1 / fable-5×P2 / opus-5×P1(基準線)/ sonnet-5×P2 /
+   sol×P1 / terra×P1。haiku-4-5・luna・P3・リーズニング ablation・cycle 8 予算は世代 2 の
+   候補プールへ(6 slot × 4 replicate の設計上の制約による preregistered 順延)。
 2. **基準線の並走。** claude-opus-5 arm(v0.3.x と同一基盤)を必ず含め、「基盤効果」と
    「足場効果」を分離できる比較設計を保つ。
 3. **混成集団の意味。** SBR・相補性は同一モデルでは頭打ちの公算(敵対的レビュー攻撃 4)。
