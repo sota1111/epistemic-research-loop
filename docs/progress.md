@@ -520,3 +520,28 @@ at least once, none more than 6 times out of 102 runs.
 This closes out v0.4.0's generation-1 side-probe program (sol-effort ablation, scaffold-ladder
 Stage 1/2, cycle-budget ablation all complete). Next: synthesize all of it into a v0.4.1
 specification.
+
+## 2026-08-29 — v0.4.1 policy: P1 declared achieved, pivot to Track B
+
+Synthesized all five completed v0.4.0 studies (78 side-probe runs plus generation 1) into
+[c_lite_v041_policy.md](c_lite_v041_policy.md). The headline finding, checked precisely against
+the diagnostics data rather than asserted: the single execution configuration opus x P1 x cycle=4
+achieved genuine persistent-ladder discovery with zero false promotions across three independent
+studies and 14 total replicates (generation 1's C3: persistent_compositional in one suite; Stage
+1's L-opus-P1: persistent_compositional and persistent_clear together in one suite; Stage 2's
+T2-opus-P1: persistent_delayed_history in one suite) -- three different persistent families, three
+different suite instances (different master seeds, none reused), zero contamination. This meets
+v0.4.0 policy's stated P1 bar (persistent-family discovery in >= 2 independent runs of the same
+configuration with clean matched-negative rejection) with room to spare, and triggers that policy's
+own stopping rule 2: "once a configuration achieves P1, move immediately to Track B."
+
+v0.4.1 therefore does not chase a further Track A generation. It consolidates what Track A
+established (reasoning effort raises both discovery and diversity; cycle budget raises neither and
+lowers diversity -- the two are not interchangeable "evidentiary capacity" levers; scaffold P3 is
+the strongest cross-model lever found; P2 is model-dependent and does not help opus; a recurring
+single-suite-instance false-promotion pattern has now appeared four times independently and
+warrants its own investigation) and sets three configurations (opus x P1, opus x P3, sol x P3 x
+xhigh) to carry into Track B, the IEEE-CIS blind bridge that has been designed but not built since
+v0.4.0's original policy. Track B's suite build touches real data and is flagged in the policy
+document itself as requiring explicit user confirmation before execution, consistent with this
+project's practice of pausing at the synthetic-to-real-data boundary.
