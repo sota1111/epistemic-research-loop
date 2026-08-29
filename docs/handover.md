@@ -238,15 +238,16 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-0. **【最優先・ユーザーアクション必要】Kaggle コンペ規約への同意。** Rossmann・Santander の
-   データ取得が `403 Forbidden` でブロック中(API はコンペ規約同意済みのアカウントにしか
-   ダウンロードを許可しない仕様——ブラウザでの「I Understand and Accept」クリックが必要、
-   API 経由での代替手段は無い)。IEEE-CIS は同意済みのため取得できている。同意後は
-   `kaggle competitions download -c rossmann-store-sales -p .data/rossmann-store-sales`
-   (Santander も同様)を実行し、`uv run python scripts/build_v042_suite.py --competition-id
-   santander-customer-transaction-prediction --suite-id v042-mc-santander-01` で Suite 構築に
-   進められる(Rossmann は回帰対応が未実装のため見送り、[v0.4.2 方針§3](c_lite_v042_policy.md)
-   参照)。
+0. **Kaggle コンペ規約への同意——2026-08-29 ユーザーが Rossmann・Santander 両方で完了、
+   データ取得済み。** (以前このブロッカーで停止していたが解消。)Santander は
+   `v042-mc-b01` として Suite 構築済み(§1b 参照)。**重要な事故と修正:** 初回ビルドで
+   `--suite-id v042-mc-santander-01` を使ったところ、盲検監査(`audit_v042_blindness.py`)が
+   全 12 view で `santander` 文字列の混入を検出——**suite_id は `agent_packet.json` に
+   そのまま書き込まれる**ため、コンペ名を suite_id に含めるとエージェントへ直接データセット
+   識別情報が漏れる。該当 Suite は削除・再構築し、以後の suite_id はコンペ名を含まない
+   opaque な命名(`v042-mc-a01`・`v042-mc-b01`)に統一した
+   (`v042_multi_competition_suite.py` の `V042_MC_SUITE_IDS` にコメントで明記)。
+   Rossmann は回帰対応が未実装のため見送りのまま(`[v0.4.2 方針§3](c_lite_v042_policy.md)`)。
 1. **Track B(IEEE-CIS blind bridge)——起動・実行済み、Matched Negative 設計の修正が必要
    (2026-08-29)。** 1 Suite(`v041-trackb-01`)・12 run(opus×P1/P3・sol×P3×xhigh 各 4 replicate)
    を実行、契約エラー 0・盲検監査クリーンだったが、**P2 再現要件は 3 構成とも不成立**——

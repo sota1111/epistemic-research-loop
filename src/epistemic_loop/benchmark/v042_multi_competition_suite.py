@@ -120,9 +120,16 @@ V042_RUN_IDS = tuple(V042_EXECUTION_CONFIGS)
 #: ids are appended here, never reused (matches the project's discard-and-rebuild
 #: discipline) and must be kept in sync with scripts/run_v040_agent.py's _CONFIG_REGISTRY
 #: before any run through that runner (not required for a build-only preflight check).
+#:
+#: Suite ids MUST NOT contain a competition-identifying string: ``suite_id`` is written
+#: verbatim into the agent-visible packet (``agent_packet.json``'s ``suite_id`` field), so
+#: a name like ``v042-mc-santander-01`` would leak the dataset identity straight into the
+#: agent's context -- exactly the blindness violation audit_v042_blindness.py exists to
+#: catch (and did, on the first Santander build attempt, 2026-08-29). Use opaque letters
+#: (a, b, c, ...) for competition order instead.
 V042_MC_SUITE_IDS: tuple[str, ...] = (
-    "v042-mc-ieee-cis-regcheck-01",
-    "v042-mc-santander-01",
+    "v042-mc-a01",  # IEEE-CIS, build-only regression check for the generalized builder
+    "v042-mc-b01",  # Santander Customer Transaction Prediction
 )
 
 _CANDIDATE_PACK_COUNT = 4
