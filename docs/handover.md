@@ -6,7 +6,20 @@
 [v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動・実行(12 run)。**P2 再現要件は
 3 構成とも不成立——ただし主因は Track B 自身の Matched Negative 構築方法の統計的な甘さの疑いが強く、
 「合成が実データへ転移しなかった」と結論するのは時期尚早。** 詳細:
-[Track B qualification](verification/v041_track_b_qualification.md)。次の Suite 再構築はユーザー確認待ち。
+[Track B qualification](verification/v041_track_b_qualification.md)。
+
+**v0.4.2 進行中(2026-08-29)。** 目標を「Kaggle 金メダル」から「複数コンペでの best-of-population
+近傍到達 + 未知構造発見の検証」に修正([v0.4.2 方針](c_lite_v042_policy.md)、改訂メモ参照)。
+Matched Negative 修正版(`v041-trackb-02`)の再検証バッチを実行中、builder を
+`v042_multi_competition_suite.py` としてコンペ非依存に一般化済み(IEEE-CIS で回帰テスト
+済み・[詳細](../src/epistemic_loop/benchmark/v042_multi_competition_suite.py))。
+**⚠️ ブロッカー:Rossmann・Santander のデータ取得は Kaggle 側のコンペ規約同意
+(ブラウザでのログイン・クリック操作)が必要で、API 経由では実行不可(`403 Forbidden`)。**
+ユーザーが `kaggle.com/competitions/rossmann-store-sales/rules` と
+`kaggle.com/competitions/santander-customer-transaction-prediction/rules` で規約に同意すれば
+即座に `kaggle competitions download` が通り、`scripts/build_v042_suite.py` で Suite 構築に進める
+(CompetitionSpec は `v042_competitions.py` に定義済み、technique taxonomy も
+`docs/controller_reference/` に作成済み)。
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -225,6 +238,15 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
+0. **【最優先・ユーザーアクション必要】Kaggle コンペ規約への同意。** Rossmann・Santander の
+   データ取得が `403 Forbidden` でブロック中(API はコンペ規約同意済みのアカウントにしか
+   ダウンロードを許可しない仕様——ブラウザでの「I Understand and Accept」クリックが必要、
+   API 経由での代替手段は無い)。IEEE-CIS は同意済みのため取得できている。同意後は
+   `kaggle competitions download -c rossmann-store-sales -p .data/rossmann-store-sales`
+   (Santander も同様)を実行し、`uv run python scripts/build_v042_suite.py --competition-id
+   santander-customer-transaction-prediction --suite-id v042-mc-santander-01` で Suite 構築に
+   進められる(Rossmann は回帰対応が未実装のため見送り、[v0.4.2 方針§3](c_lite_v042_policy.md)
+   参照)。
 1. **Track B(IEEE-CIS blind bridge)——起動・実行済み、Matched Negative 設計の修正が必要
    (2026-08-29)。** 1 Suite(`v041-trackb-01`)・12 run(opus×P1/P3・sol×P3×xhigh 各 4 replicate)
    を実行、契約エラー 0・盲検監査クリーンだったが、**P2 再現要件は 3 構成とも不成立**——
@@ -238,6 +260,20 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    **次のステップ:** baseline モデルをより表現力の高いものに変える等で Matched Negative
    構築を強化し、新 Suite で再試行する。実データを再び扱う判断のため、**実行前にユーザー
    確認を取ること**。
+   **2026-08-29 追記:** ユーザー承認を得て baseline を `HistGradientBoostingClassifier` に
+   変更した新 Suite(`v041-trackb-02`)を construct(全 4 候補パックが 1 回の試行で
+   identifiability preflight 通過、research gain 0.03〜0.2 → 0.40〜0.49 に改善)、
+   12-run 再検証バッチを実行中(進行状況はこのセッションのバックグラウンドタスクで監視中)。
+   完了後 `scripts/audit_v041_track_b_blindness.py --suite-id v041-trackb-02` →
+   `lock_v041_track_b_runs.py` → `finalize_v041_track_b.py` の順で開封・判定すること
+   (一次判定基準:Matched Negative の agent 申告 transfer AUC が chance 水準に戻ったか、
+   [事前登録](v042_trackb_matched_negative_fix_preregistration.json))。
+   並行して builder を `v042_multi_competition_suite.py` としてコンペ非依存に一般化し
+   (IEEE-CIS で回帰テスト済み)、v041-trackb-01 の FSPR-clean な 2 run(Matched Negative
+   汚染の影響を受けていない)に対して修正後の best-of-population 指標を遡及適用した——
+   構造面は taxonomy 6 クラスと 0/6 一致(匿名化データでは列意味論依存の技術クラスに
+   到達しにくい可能性)、性能面は population 最大 +0.21 AUC(baseline比)。詳細:
+   [遡及分析](verification/v042_best_of_population_ieee_cis_retrospective.md)。
 2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
    read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
    Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、
@@ -315,7 +351,16 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [検証](verification/v040_cycle_budget_ablation_qualification.md) /
   [Selection Table](v040_cycle8_selection.json) / [Diagnostics](v040_cycle8_diagnostics.json)
 - [累積発見台帳](v040_discovery_ledger.md)(102 run、study 完了ごとに更新)
-- **[v0.4.1 方針](c_lite_v041_policy.md)** — 現行の正本。P1 達成の宣言、Track B 起動計画
+- [v0.4.1 方針](c_lite_v041_policy.md) — P1 達成の宣言、Track B 起動計画
+- [Track B 初回 qualification](verification/v041_track_b_qualification.md) /
+  [Matched Negative 修正 Preregistration](v042_trackb_matched_negative_fix_preregistration.json)
+- **[v0.4.2 方針](c_lite_v042_policy.md)** — 現行の正本。best-of-population + 未知構造発見の
+  複数コンペ検証、計算量フィルタ
+- [best-of-population 遡及分析(IEEE-CIS)](verification/v042_best_of_population_ieee_cis_retrospective.md)
+- Controller専有 technique taxonomy:
+  [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
+  [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
+  [Santander](controller_reference/santander_technique_taxonomy.md)
 - [進捗ログ](progress.md)
 
 ## 9. Git 状態
