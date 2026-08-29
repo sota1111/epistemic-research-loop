@@ -9,6 +9,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+#: Ceiling on cycles per pack. v0.3.7 through v0.4.0 generation 1 preregistered a 4-cycle
+#: budget; the v0.4.0 cycle-budget ablation (deferred_to_generation_2) preregisters 8. Raising
+#: this ceiling is backward compatible: nothing that validated under the old cap can newly fail,
+#: since fewer cycles than the ceiling has always been allowed.
+MAX_CYCLES_PER_PACK = 8
+
 
 class V037ResearchMode(StrEnum):
     EXPLOIT = "exploit"
@@ -148,8 +154,8 @@ class V037CycleRecord:
     lineage_explicitly_closed: bool
 
     def __post_init__(self) -> None:
-        if not 1 <= self.cycle <= 4 or len(self.proposals) < 3:
-            raise ValueError("each cycle requires three proposals and a cycle in [1,4]")
+        if not 1 <= self.cycle <= MAX_CYCLES_PER_PACK or len(self.proposals) < 3:
+            raise ValueError(f"each cycle requires three proposals and a cycle in [1,{MAX_CYCLES_PER_PACK}]")
         if {item.mode for item in self.proposals} != set(V037ResearchMode):
             raise ValueError("each cycle requires exploit, explore, and epistemic proposals")
         selected = [item for item in self.proposals if item.lineage_id == self.selected_lineage_id]
@@ -255,10 +261,10 @@ class V037PackSubmission:
     def __post_init__(self) -> None:
         if not self.opaque_pack_id.strip() or not self.claim.strip() or not self.selected_translation_id.strip():
             raise ValueError("pack, claim, and selected translation identities are required")
-        if not 1 <= len(self.cycles) <= 4 or tuple(item.cycle for item in self.cycles) != tuple(
+        if not 1 <= len(self.cycles) <= MAX_CYCLES_PER_PACK or tuple(item.cycle for item in self.cycles) != tuple(
             range(1, len(self.cycles) + 1)
         ):
-            raise ValueError("cycles must be consecutive and limited to four")
+            raise ValueError(f"cycles must be consecutive and limited to {MAX_CYCLES_PER_PACK}")
         if len(self.contexts) < 3 or len({item.opaque_context_id for item in self.contexts}) != len(self.contexts):
             raise ValueError("aggregate evaluation requires three unique contexts")
         promoted = self.resolution in {

@@ -44,6 +44,7 @@ from epistemic_loop.benchmark.v037_repro_suite import (
     _write_json,
     preflight_v037_suite,
 )
+from epistemic_loop.controller.v037_agent import MAX_CYCLES_PER_PACK
 
 V040_GEN1_SUITE_IDS = tuple(f"v040-genA-g{index:02d}" for index in range(1, 5))
 V040_GEN1_MASTER_SEED = 20260910
@@ -170,6 +171,26 @@ V040_SCAFFOLD_STAGE2_CONFIGS: Mapping[str, Mapping[str, str]] = {
     },
 }
 V040_SCAFFOLD_STAGE2_RUN_IDS = tuple(V040_SCAFFOLD_STAGE2_CONFIGS)
+
+#: Independent side-probe: cycle-budget ablation (4 -> 8), targeting persistent_delayed_history
+#: (0/88 discoveries across every prior v0.4.0 study, docs/v040_discovery_ledger.md). Only the
+#: cycle=8 arm is executed; each configuration's cycle=4 baseline is read from prior studies
+#: (generation 1 + Stage 1 for opus x P1, the sol-effort ablation's xhigh for sol x P1 x xhigh).
+#: See docs/v040_cycle_budget_ablation_preregistration.json.
+V040_CYCLE8_SUITE_IDS = tuple(f"v040-cyc8-e{index:02d}" for index in range(1, 7))
+V040_CYCLE8_MASTER_SEED = 20260929101
+V040_CYCLE8_MAX_CYCLES_PER_PACK = 8
+V040_CYCLE8_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    "agent-01-s17": {"config_id": "K8-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1c8"},
+    "agent-02-s17": {
+        "config_id": "K8-sol-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1c8",
+        "reasoning_effort": "xhigh",
+    },
+}
+V040_CYCLE8_RUN_IDS = tuple(V040_CYCLE8_CONFIGS)
 
 GRAMMAR_MOTIFS = (
     "entity_effect",
@@ -387,6 +408,7 @@ def build_v040_suite(
     master_seed: int = V040_GEN1_MASTER_SEED,
     configs: Mapping[str, Mapping[str, str]] = V040_GEN1_CONFIGS,
     run_ids: Sequence[str] = V040_RUN_IDS,
+    max_cycles_per_pack: int = 4,
 ) -> V037SuiteBuildResult:
     """Build one immutable, blind v0.4.0 suite instance.
 
@@ -400,6 +422,8 @@ def build_v040_suite(
     suite_index = suite_ids.index(suite_id) + 1
     if contexts_per_pack < 3 or rows_per_context < 600:
         raise ValueError("aggregate promotion requires three contexts and at least 600 rows")
+    if not 1 <= max_cycles_per_pack <= MAX_CYCLES_PER_PACK:
+        raise ValueError(f"max_cycles_per_pack must be in [1,{MAX_CYCLES_PER_PACK}] to match the agent contract")
     if output_root.exists() or (truth_root / f"{suite_id}.manifest.enc").exists():
         raise FileExistsError("v0.4.0 suites are immutable; use a new suite identity")
     Fernet(key)
@@ -572,7 +596,7 @@ def build_v040_suite(
             "policy_contract_hash": policy_hash,
             "cross_run_information": "none",
             "fresh_context_required": True,
-            "max_cycles_per_pack": 4,
+            "max_cycles_per_pack": max_cycles_per_pack,
             "null_policy": policy_contract["null_policy"],
             "confidence_fields": policy_contract["confidence_fields"],
             "null_provenance_fields": policy_contract["null_policy"].get("provenance_fields", []),
