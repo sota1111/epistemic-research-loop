@@ -42,10 +42,13 @@ persistent ラダー全 4 段階が、複数の study にまたがって独立�
 5. **Stage 1(n=4)→ Stage 2(n=6)で opus×P3 の多様性ブーストが 8.75→4.33 に縮小した。**
    小 n のスクリーニング推定値は効果量を過大評価しうるという教訓——本台帳の「累積発見回数」も
    同じ注意が必要:1〜3 回の発見は「再現性が確認された」ことを意味しない。
-6. **単発の suite instance が false promotion を集中的に生む現象が繰り返し観測されている**
-   (gen1 terra/g03、sol ablation high/b05、Stage1 sol×P3、cycle8 sol×cycle8/e05)。特定モデル・
-   scaffold・effort に依存せず、ある種の suite instance が「過剰確信を誘発しやすい」性質を
-   持つ可能性があり、今後の調査対象になりうる。
+6. **false promotion は codex 系(sol・terra)に完全に限定される。** 全 5 study・102 run を
+   精査した結果、**claude 系(fable・opus・sonnet)は false promotion が一度もゼロから
+   外れていない**(0/50+ replicate)。false promotion 26 件は全て sol か terra から発生し、
+   うち 4 件が単一 suite instance に集中する「暴走」型(gen1 terra/v040-genA-g03=5、
+   sol ablation high/v040-solE-b05=5、Stage1 sol×P3/v040-scaf-c04=7、
+   cycle8 sol/v040-cyc8-e05=4)、残りは散発的。suite instance の性質ではなく、**codex 系
+   モデルの calibration に固有の問題**である可能性が高い(v0.4.1 方針§4.1 の保留課題)。
 
 ## 次の評価基準
 

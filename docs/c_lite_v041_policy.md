@@ -59,9 +59,17 @@ effort=xhigh(sol)・cycle=4(両モデル)・scaffold=P3 優先** を既定とす
   102 run 中 6 件 ≈ 5.9%)。
 - grammar-composed 系・observation_routing は「解けた」(50+ 回発見)。今後は主指標から
   外し、false promotion 0 の確認程度に格下げする。
-- **単発の suite instance が false promotion を集中的に生む現象が 4 回独立に観測された**
-  (gen1 terra/g01、sol ablation high/b05、Stage1 sol×P3/c04、cycle8 sol/e05)。モデル・
-  scaffold・effort に依存しない再現パターンであり、v0.4.1 の診断項目に追加する(§5)。
+- **false promotion は codex 系(sol・terra)に完全に限定される。** 全 5 study・102 run を
+  精査した結果、**claude 系(fable・opus・sonnet)は scaffold・study を問わず false promotion
+  が一度もゼロから外れていない**(0/50+ replicate)。false promotion 26 件は全て sol か
+  terra から発生しており、うち 4 件が単一 suite instance に集中する「暴走」型
+  (gen1 terra/v040-genA-g03=5、sol ablation high/v040-solE-b05=5、Stage1 sol×P3/
+  v040-scaf-c04=7、cycle8 sol/v040-cyc8-e05=4)、残りは散発的(sol ablation medium/xhigh
+  で各 1 件など)。**「特定 suite instance が過剰確信を誘発する」のではなく「codex 系モデルに
+  時折 matched-negative の判別を丸ごと外す run が起きる」という、モデル挙動の問題**である。
+  v0.4.1 の診断項目に追加する(§5)。Track B に codex 構成(sol×P3×xhigh)を含める以上、
+  実データでもこのリスクを監視する必要がある(§3.1 の投入構成選定はこの事実を踏まえて
+  再検討の余地がある)。
 
 ### 2.3 効果量推定の教訓(スクリーニング設計の限界)
 
@@ -81,7 +89,7 @@ v0.4.0 方針§4 の設計をそのまま引き継ぐ(受け入れ基準は変�
 | --- | --- |
 | **opus×P1(cycle=4)** | P1 を達成した実績構成。基準線として必須。 |
 | **opus×P3(cycle=4)** | Stage2 で opus×P1 と同点最高の発見イベント数、かつ多様性で上回る。persistent_clear も発見済み。 |
-| **sol×P3×xhigh(cycle=4)** | codex 系で唯一 persistent 系を複数発見(compositional・noisy_proxy)。false promotion は単発の暴走であり Stage2 で 0/36 に消失済み。 |
+| **sol×P3×xhigh(cycle=4)** | codex 系で唯一 persistent 系を複数発見(compositional・noisy_proxy)。false promotion は Stage2 で 0/36 に消失したが、**codex 系は claude 系と異なり false promotion が構造的にゼロではない**(§2.2)。実データでは FSPR を個別に注視すること。 |
 
 sol×P1×xhigh(effort ablation の主力構成)は Track B には含めない——sol×P3 が同じ effort
 条件でより多くの persistent family を発見しており、information的に優位。fable・terra・GLM
@@ -109,8 +117,10 @@ v0.4.1-c  開封・P2 判定。達成すれば「上位解法級・未知構造�
 
 ## 4. 保留にする項目(Track A 側の未消化課題)
 
-1. **単発 suite instance の false promotion 集中現象。** 4 回独立観測されたが未調査。
-   Track B と並行して、該当 suite instance の transcript 差分分析を行う価値がある。
+1. **codex 系(sol/terra)限定の false promotion 現象。** 全 26 件の発生源を transcript
+   差分分析する価値がある——「なぜ claude 系は一度も間違えないのに codex 系は時折 matched
+   negative の判別を丸ごと外すのか」は、モデルの calibration・確信度較正メカニズムの違いを
+   示唆しており、Track B の設計判断(§3.1)にも影響しうる重要な未解決問題。
 2. **GLM(zai)の正式 study。** runner 統合・smoke test 済みだが実 study 未実施。v0.4.1 では
    Track B を優先し、GLM は Track B 完了後(または並行する余力があれば)独立 side-probe として
    投入する。
@@ -123,9 +133,9 @@ v0.4.1-c  開封・P2 判定。達成すれば「上位解法級・未知構造�
 
 1. **累積発見台帳を正本の一部にする。** 各 study の finalize は、単体の discovery event 数
    だけでなく「この発見は台帳に対して新規か」を明示する。
-2. **suite-instance レベルの false promotion 集中を診断指標にする。** 1 replicate に
-   false promotion が 3 件以上集中した場合、その suite instance を「要注意」として記録し、
-   将来の transcript 差分分析の対象リストに追加する。
+2. **false promotion をモデル系統別に必ず報告する。** 全体合算ではなく claude 系/codex 系を
+   分けて示す(claude 系は 0/50+ replicate という強い基準線であり、これを埋没させない)。
+   1 replicate に false promotion が 3 件以上集中した場合は「暴走」として個別に記録する。
 3. **スクリーニング段階(n≤4)の効果量は「方向」のみ報告し、確定的な倍率として引用しない。**
    確認段階(n≥6)の数字のみを policy 判断に使う。
 4. **evidentiary capacity を単一指標として扱わない。** reasoning effort と cycle 予算を
@@ -150,4 +160,4 @@ v0.4.0 方針§7 の Blindness 原則をそのまま維持する:
 | P2 はモデル依存で opus に効かない | Track B には P2 を含めない |
 | cycle 予算は逆効果 | Track B は cycle=4 を維持 |
 | n=4 スクリーニングは効果量を過大評価 | Track B の判定は「独立 2 run 以上」の再現要件を維持 |
-| suite instance 依存の false promotion 集中 | 診断指標として正式に追加(§5.2)、Track B でも監視 |
+| codex 系限定の false promotion(claude 系は 0/50+) | モデル系統別報告を必須化(§5.2)、Track B の sol 構成で FSPR を個別監視、原因は保留課題として調査対象に(§4.1) |

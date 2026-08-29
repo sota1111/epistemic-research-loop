@@ -230,10 +230,12 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    opaque 化・実データ Matched Negative の生成)は実データを扱うため、実行前にユーザー確認を
    取ること**(v0.4.1 方針§3.3 に明記)。受け入れ基準は v0.4.0 方針§4.2 のまま(隠し transfer
    gain・構造破壊プローブ・実データ Matched Negative 非昇格・evidence bundle 有効)。
-2. **単発 suite instance に false promotion が集中する現象の調査(保留、優先度は Track B より
-   低い)。** gen1 terra/g01・sol ablation high/b05・Stage1 sol×P3/c04・cycle8 sol/e05 の
-   4 件が独立に観測されており、モデル・scaffold・effort に依存しない再現パターンの可能性が
-   ある。transcript 差分分析が有効な手法(v0.4.0 方針§3.3 参照)。
+2. **codex 系(sol/terra)限定の false promotion 現象の調査(保留、優先度は Track B より
+   低い)。** 全 5 study・102 run を精査した結果、**claude 系は false promotion が一度も
+   ゼロから外れていない**(0/50+ replicate)一方、codex 系は 26 件発生(うち 4 件は単一 suite
+   instance に集中する暴走型:gen1 terra/g03・sol ablation high/b05・Stage1 sol×P3/c04・
+   cycle8 sol/e05)。suite instance の性質ではなく codex 系モデルの calibration に固有の
+   問題である可能性が高い。transcript 差分分析が有効な手法(v0.4.0 方針§3.3 参照)。
 3. **GLM(zai)の正式な study はまだ実施していない。** runner 統合・smoke test 済み。
    Track B 完了後、または並行する余力があれば独立 side-probe として投入する
    (v0.4.1 方針§4.2)。なお `Dockerfile`/`scripts/glm-cli` として GLM/codex/claude CLI を
