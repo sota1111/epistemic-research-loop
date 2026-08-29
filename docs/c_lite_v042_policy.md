@@ -143,10 +143,25 @@ v0.4.2-e  複数コンペでの Suite build → 実行 → 開封 → 世界モ�
 
 ## 7. ユーザー確認が必要な事項
 
-1. **追加するコンペの選定。** §3 の基準(closed・ラベル完全公開・write-up 複数・テーブル
-   データ・扱いやすいサイズ)を満たす候補として、Home Credit Default Risk・Santander
-   Customer Transaction Prediction・TalkingData AdTracking Fraud Detection 等が考えられるが、
-   最終選定はユーザーの判断を仰ぐ。
+1. **追加するコンペの選定。** ユーザーから以下の候補一覧を受領した(2026-08-29)。
+   最終的な具体名は今後の相談で確定する——ここでは候補と初期評価を記録するに留める。
+
+   | コンペ | epistemic challenge | 計算負荷 | discovery の明確さ | 総合 |
+   | --- | --- | --- | --- | --- |
+   | IEEE-CIS Fraud Detection | time, entity, shift, adversarial validation | 中 | 非常に高 | 第一候補(実施済み) |
+   | Rossmann Store Sales | future holdout, store/time structure | 低〜中 | 非常に高 | 低コスト pilot に最良 |
+   | Santander Customer Transaction | synthetic/fake test structure, transductive statistics | 低〜中 | 非常に高 | 強い stress test |
+   | Airbus Ship Detection | overlap, CV reliability, problem decomposition | 中〜高 | 高 | CV modality 追加に良い |
+   | Riiid Answer Correctness | online temporal protocol, lag, sequence/entity | 高 | 高 | 強いが再現が難しい |
+   | H&M Recommendation | candidate generation, time, ranking | 高 | 高 | recommendation 代表 |
+   | M5 Forecasting | hierarchy, metric, future horizon | 高 | 高 | validation 研究に優秀 |
+   | Jigsaw Unintended Bias | subgroup metric/error understanding | 中 | 高 | error-state 検証に良い |
+
+   Rossmann(低コスト pilot)と Santander(強い stress test)が、§5 の v0.4.2-d(追加コンペ)着手時の
+   最有力候補として挙がっている。ただし §3 の基準(closed・ラベル完全公開・write-up 複数・テーブル
+   データ)との適合を個別に確認してから正式決定する——特に Airbus(画像)・Riiid/H&M(現行の
+   agent プロトコルが表形式データ前提のため大幅な契約変更が要る可能性)は、現行アーキテクチャへの
+   適合コストを先に見積もる必要がある。
 2. **Kaggle API を使った新規データ取得の実行タイミング。** 既存の `.kaggle/` 認証情報が
    使えることを確認済みだが、外部サービスへのアクセス・帯域を伴うため、v0.4.2-d の実行前に
    改めて確認を取る。
