@@ -67,6 +67,8 @@ module = [
   "catboost.*",
   "lightgbm",
   "lightgbm.*",
+  "pandas",
+  "pandas.*",
   "pyarrow",
   "pyarrow.*",
   "sklearn",

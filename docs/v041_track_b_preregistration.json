@@ -1,0 +1,72 @@
+{
+  "version": "0.4.1",
+  "study": "track-b-ieee-cis-blind-bridge",
+  "frozen_before_suite_generation": true,
+  "purpose": "Test whether opus x P1 (the P1-achieving configuration) and two runner-up configurations (opus x P3, sol x P3 x xhigh) transfer their synthetic-data discovery behavior to a single real dataset, under the same fresh-context / opaque-view / encrypted-truth / transcript-audit / output-lock discipline as Track A. Acceptance is NOT judged by matching a known real solution; it is judged by whether a locked candidate's hidden transfer-region gain survives a controller-side structure-destruction probe and beats a controller-side capacity-matched baseline, while controller-known matched-negative packs are not promoted.",
+  "data_source": {
+    "path": ".data/ieee-cis/train_transaction.csv",
+    "note": "train_identity.csv, test_transaction.csv and test_identity.csv are NOT used -- test_transaction.csv has no isFraud label, so it cannot serve as ground truth for the accept criteria. Only the labelled training file is used.",
+    "row_count": 590540,
+    "raw_fraud_rate": 0.03499
+  },
+  "time_split": {
+    "method": "sort by TransactionDT ascending; cut at the 60th and 80th percentile of row index",
+    "segments": {
+      "research": {"rows": 354324, "fraud_rate": 0.033833},
+      "confirmation": {"rows": 118108, "fraud_rate": 0.039041},
+      "transfer": {"rows": 118108, "fraud_rate": 0.034409}
+    },
+    "note": "Each pack draws its own independently-seeded row sample from within these three fixed real time segments (not from a shared row pool), so the four candidate packs see different real rows, not the same rows re-labelled."
+  },
+  "feature_exposure_design": {
+    "method": "generic, not hand-picked: take every numeric (non-string) column in train_transaction.csv excluding TransactionID/isFraud/TransactionDT with under 2% missingness (106 columns), sort the names alphabetically for determinism, shuffle with a fixed master seed, and partition into 4 disjoint groups of 10 columns -- one group per candidate pack.",
+    "why_generic_selection": "Policy invariant 5 (docs/c_lite_v041_policy.md SS6 / c_lite_v040_policy.md SS7) forbids recording known-solution column choices at recipe level. A seeded random partition of the low-missingness numeric pool means the suite designer does not choose which columns look promising.",
+    "excluded_column_types": "All string/categorical columns (ProductCD, card4, card6, P_emaildomain, R_emaildomain, M1-M9, etc.) are excluded. Raw category values (e.g. an email domain string) are far more likely to let a model recognize this as the public IEEE-CIS Kaggle dataset than an anonymized numeric value; restricting exposure to numeric columns is a partial mitigation, not a guarantee -- recorded as a known risk below.",
+    "derived_feature": "one additional derived feature per row, relative time position within its own segment ((TransactionDT - segment_min) / (segment_max - segment_min)), filling the role CANONICAL_FEATURES.sequence_coordinate already plays in the Track A synthetic packs.",
+    "canonical_slot_reuse": "The 11 real/derived quantities are mapped onto the existing v037_repro_suite.CANONICAL_FEATURES key set unchanged, so the existing _agent_rows/_visible_column_map/packet-writing code is reused without modification -- column names are hashed before being shown to any agent exactly as in Track A."
+  },
+  "pack_design": {
+    "candidate_packs": 4,
+    "matched_negative_packs": 4,
+    "pairing": "each matched-negative pack reuses its candidate pack's exact sampled rows and feature columns, per context; only the target is replaced by a decile-stratified permutation of that context's own controller-fitted baseline risk score, computed independently within each of the research/confirmation/transfer segments -- this preserves the marginal fraud rate and the feature/risk correlation structure while destroying the actual label linkage, matching v0.4.0 SS4.1's 'preserve marginal distribution and time correlation' requirement.",
+    "contexts_per_pack": 3,
+    "context_independence": "each of a pack's 3 contexts is its own independently-seeded row sample and its own independently-fit controller baseline (same feature columns, same pack identity) -- matching Track A's requirement that discovery hold across independent context replicates, not just one draw.",
+    "rows_per_context_per_segment": {"research": 1080, "confirmation": 360, "transfer": 360},
+    "controller_baseline_model": "sklearn Pipeline(SimpleImputer(strategy=median) -> StandardScaler -> LogisticRegression(C=0.5, max_iter=4000)), fit once per candidate pack on that pack's own research rows/target, then scored on research (in-sample, controller sanity check only) / confirmation / transfer (out-of-sample, the actual comparison substrate). This mirrors the model class opus's own protocol code independently chose for its structural candidate (LogisticRegression(max_iter=4000, C=0.5)) in the Track A transcripts examined during the false-promotion investigation (docs/v040_discovery_ledger.md SS7), so the baseline is capacity-matched to what agents themselves typically deploy rather than an artificially weak strawman.",
+    "oracle_vs_control_fields": "For candidate packs, oracle_*_predictions = the fitted capacity-matched baseline's own predictions (this IS the P2 accept-criterion #1 bar agents must beat on the hidden transfer region); control_*_predictions = a constant array of the pack's own research-segment realized fraud rate (a no-feature floor, used only for the existing identifiability-preflight gain math, not the accept bar). For matched-negative packs, oracle_*_predictions and control_*_predictions are set identical (both the constant floor), which trivially satisfies preflight_v037_suite's exact-zero-gain check for structure_present=False/predictive_utility=False packs.",
+    "independent_identifiability": "fixed placeholder 0.24 for candidate packs / 0.0 for matched-negative packs, matching the existing Track A convention (v040_grammar_suite.py uses the same 0.24/0.0 split) -- Controller-internal preflight bookkeeping only, never shown to agents.",
+    "family_labels": ["real_candidate_01..04", "real_matched_negative_01..04"],
+    "ladder_level": null
+  },
+  "suite_instancing": {
+    "suite_count": 1,
+    "suite_id": "v041-trackb-01",
+    "reason": "Unlike Track A's synthetic side, only one real dataset exists -- there is no way to draw multiple independent master-seeded instances of it the way synthetic suites are drawn. The replicate dimension (4 runs per configuration) is therefore expressed as 4 distinct run_id slots per configuration inside a single suite build, each independently opaque-salted (different HMAC-derived column-name hashes, opaque pack/context ids, and row shuffle order per run_id), not as 4 separate suite instances."
+  },
+  "execution_configurations": {
+    "opus_p1": {"config_id": "TB-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1", "reason": "the P1-achieving baseline configuration; mandatory reference line"},
+    "opus_p3": {"config_id": "TB-opus-P3", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3", "reason": "Stage2's joint-highest discovery-event configuration with higher diversity"},
+    "sol_p3_xhigh": {"config_id": "TB-sol-P3", "cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p3", "reasoning_effort": "xhigh", "reason": "the only codex configuration to discover persistent structure more than once in Track A; FSPR monitored individually per the codex false-promotion investigation (docs/v040_discovery_ledger.md SS7)"},
+    "replicates_per_configuration": 4,
+    "total_runs": 12,
+    "max_cycles_per_pack": 4,
+    "lineage_policy": "posterior_commit"
+  },
+  "accept_criteria_p2": {
+    "source": "docs/c_lite_v040_policy.md SS4.2, unchanged",
+    "conditions": [
+      "1. locked translation's hidden transfer-region gain beats the controller capacity-matched baseline (oracle_transfer_predictions), threshold fixed at suite-build time, oracle-free",
+      "2. structure-destruction probe: on the matched-negative twin of a promoted candidate pack, the agent's own reported transfer gain must not also promote (gain must not survive under the destroyed-linkage decoy)",
+      "3. no real-data matched-negative pack promoted (FSPR control)",
+      "4. evidence bundle (null provenance, implication provenance, LOCO) valid under the same v037 contract as Track A"
+    ],
+    "reproducibility_requirement": "independent >=2-of-4 runs of the same execution configuration, matching the synthetic-side P1 reproducibility bar (docs/c_lite_v041_policy.md SS3.2)"
+  },
+  "known_risks_disclosed_before_unblinding": [
+    "Model memorization: IEEE-CIS is a well-known public Kaggle dataset; a model may recognize numeric value ranges/distributions even with hashed column names and no category strings. This cannot be fully ruled out and is disclosed here rather than assumed away.",
+    "Single dataset: unlike Track A's many independently-seeded suite instances, all 12 runs share one real data draw region (though each pack independently samples its own rows within the fixed time segments) -- generalization claims from Track B are weaker than from Track A's multi-instance design.",
+    "Unlike Track A, Controller genuinely does not know whether real structure exists in any given candidate pack's feature subset -- the P2 criteria are the entire basis for judging discovery, not a comparison to a known label.",
+    "Small effective positive count: at ~3.4-3.9% fraud rate and 360 confirmation/transfer rows per context, each hidden region carries only on the order of 12-14 fraud rows per context (aggregated across the pack's 3 contexts, roughly 36-40) -- AUC estimates will be noisier than the synthetic side's typically larger effective counts, partially offset by requiring cross-context agreement."
+  ],
+  "post_registration_deviations": []
+}
