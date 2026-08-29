@@ -3,9 +3,12 @@
 **更新日:** 2026-08-29
 **現在の基準:** v0.4.0 Track A 世代 1 + 4 つの side-probe 全て完了(78 run)。**opus×P1(cycle=4)が
 3 study・14 replicate を通じて false promotion ゼロのまま P1 達成基準を満たしたと判定。**
-[v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動・実行(12 run)。**P2 再現要件は
-3 構成とも不成立——ただし主因は Track B 自身の Matched Negative 構築方法の統計的な甘さの疑いが強く、
-「合成が実データへ転移しなかった」と結論するのは時期尚早。** 詳細:
+[v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動。**Matched Negative
+構築法の根本的な設計欠陥(decile-stratified permutation)を特定・修正した後の再々検証
+(`v041-trackb-03`)で、opus×P3・sol×P3×xhigh の 2 構成が P2 再現要件を達成——Track B(実データ
+blind bridge)が初めて確認された(2026-08-29)。** Matched Negative 48 パック中 0 件昇格、
+agent 申告 AUC が chance 水準(中央値 0.522)へ復帰。opus×P1(合成側 P1 達成構成)は実データでは
+1/4 のみで非達成——P3 scaffold の追加が実データ transfer に重要という新知見。詳細:
 [Track B qualification](verification/v041_track_b_qualification.md)。
 
 **v0.4.2 進行中(2026-08-29)。** 目標を「Kaggle 金メダル」から「複数コンペでの best-of-population
@@ -13,18 +16,21 @@
 Rossmann・Santander は同日中にユーザーが Kaggle コンペ規約に同意しデータ取得済み(旧
 ブロッカー解消)。builder を `v042_multi_competition_suite.py` としてコンペ非依存に一般化済み。
 
-**Matched Negative 構築法に 2 段階の欠陥修正を実施済み(2026-08-29)。**
+**Matched Negative 構築法に 2 段階の欠陥修正を実施(2026-08-29、2 段目で成功)。**
 1 段目(baseline model を線形→`HistGradientBoostingClassifier`)は**効果なし**と判明
 (`v041-trackb-02`:P2 再現要件 3 構成とも 0/4、negative パック AUC 0.48〜0.73 で初回から
 不変)。根本原因を数学的・実験的に特定——**`decile-stratified permutation` は decile 間の
-陽性率相関を完全に温存する設計欠陥**(baseline の表現力とは無関係)。`_destroy_target_structure`
-(完全ランダム permutation、stratification 廃止)へ 2 段目の修正を実施し、`v041-trackb-03`
-(IEEE-CIS 再々検証)・`v042-mc-b02`(Santander、修正版)を construct・実行中。
-詳細:[Track B qualification](verification/v041_track_b_qualification.md)。
+陽性率相関を完全に温存する設計欠陥**(baseline の表現力とは無関係、合成データでの再現実験で
+`AUC(risk, decile-permuted target)=0.988` を確認)。`_destroy_target_structure`
+(完全ランダム permutation、stratification 廃止)へ 2 段目の修正を実施した `v041-trackb-03`
+で **P2 再現要件を opus×P3(3/4)・sol×P3×xhigh(4/4)の 2 構成が達成、Matched Negative は
+48 パック中 0 件昇格**——修正が機能したことを確認した。詳細:
+[Track B qualification](verification/v041_track_b_qualification.md)。
 
 **Santander は 1 回目(`v042-mc-b01`)を旧 permutation のまま実行済み(結果は参考情報のみ、
-FSPR/negative 側は信頼できない)。** 修正版 `v042-mc-b02` が完了・開封され次第、正式な結果と
-する。Rossmann は回帰対応が未実装のため引き続き見送り([v0.4.2 方針§3](c_lite_v042_policy.md))。
+FSPR/negative 側は信頼できない——[記録](verification/v042_santander_v1_informal_note.md))。**
+修正版 `v042-mc-b02` を construct・実行中、完了・開封され次第正式な結果とする。Rossmann は
+回帰対応が未実装のため引き続き見送り([v0.4.2 方針§3](c_lite_v042_policy.md))。
 
 **suite_id 命名の教訓:** `v042-mc-santander-01` のように suite_id にコンペ名を含めると
 `agent_packet.json` へそのまま書き込まれエージェントへ漏洩する(盲検監査が検出・修正済み)。
@@ -291,12 +297,16 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    `AUC(risk, decile-permuted target)=0.988`、`AUC(held-out独立モデル, 同target)=0.700`
    (実測レンジ 0.55〜0.73 と整合)を確認、baseline の表現力とは無関係と証明した。
    **修正:** `_decile_stratified_permutation` → `_destroy_target_structure`(完全ランダム
-   permutation、stratification 廃止)。`v041-trackb-03`(IEEE-CIS 再々検証)・
-   `v042-mc-b02`(Santander、修正版)を construct・実行中。**suite_id 命名の教訓も同時に
-   発見:** `v042-mc-santander-01` は suite_id が `agent_packet.json` に書き込まれるため
-   コンペ名の漏洩になる(盲検監査が検出)——以後 opaque 命名(`v042-mc-a01`/`b01`/`b02`)に
-   統一。詳細:[Track B qualification](verification/v041_track_b_qualification.md)
-   (「再検証 v1」「根本原因の特定」節)。
+   permutation、stratification 廃止)。**suite_id 命名の教訓も同時に発見:**
+   `v042-mc-santander-01` は suite_id が `agent_packet.json` に書き込まれるためコンペ名の
+   漏洩になる(盲検監査が検出)——以後 opaque 命名(`v042-mc-a01`/`b01`/`b02`)に統一。
+   **2026-08-29 追記3(修正の成功を確認):** `v041-trackb-03`(修正版)12 run 完了・盲検
+   監査クリーン・開封。**Matched Negative は 48 パック中 0 件昇格(v1:11/48、v2:12/48から
+   ゼロへ)、agent 申告 AUC 中央値 0.522(chance 水準へ復帰)。P2 再現要件を TB-opus-P3
+   (3/4)・TB-sol-P3(4/4)の 2 構成が達成——Track B が実データで初めて成立した。**
+   TB-opus-P1(合成側 P1 達成構成そのもの)は 1/4 のみで非達成——P3(自己批判 scaffold)の
+   追加が実データ transfer に重要という新知見。詳細:
+   [Track B qualification](verification/v041_track_b_qualification.md)。
 2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
    read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
    Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、

@@ -82,20 +82,47 @@ permutation、stratificationなし)に置き換えた。区間全体の陽性率
 新 Suite `v041-trackb-03` を construct・再検証中([修正コミット](../../src/epistemic_loop/benchmark/v042_multi_competition_suite.py)、
 `_destroy_target_structure` のdocstringに数学的根拠を記載)。
 
+## 再検証 v2(v041-trackb-03、full random permutation)——2026-08-29、成功
+
+12 run 完了・盲検監査クリーン・Lock 済み・開封。
+
+**Matched Negative:48 パック中 0 件が昇格(v1:11/48、v2(decile修正のみ):12/48 から
+ゼロへ)。agent 申告 transfer AUC は 0.438〜0.652(中央値 0.522、平均 0.527)**——初回
+(0.55〜0.71)・baseline強化版(0.48〜0.73)から明確に chance 水準へ改善した。**一次判定
+基準(matched negative AUC が chance に戻ること)を満たした。**
+
+**P2 再現要件:**
+
+| 構成 | P2満足run | 再現(≥2/4) |
+| --- | ---: | --- |
+| TB-opus-P1 | 1/4 | 不成立 |
+| TB-opus-P3 | 3/4 | **成立** |
+| TB-sol-P3 | 4/4 | **成立** |
+
+**opus×P3・sol×P3×xhigh の 2 構成で P2 再現要件を達成した——Track B(IEEE-CIS への
+blind bridge)が、正しく構築された Suite のもとで初めて確認された。** sol×P3 は 4/4 全run
+で候補パック(pack-c01・c02・c04、一部run では c03 も)が昇格し、baseline を上回る
+transfer AUC を示した。opus×P1(合成 Track A の P1 達成構成そのもの)は 1/4 のみで、
+合成側で確立した構成が実データへそのまま最良の形で転移するわけではないと判明——
+P3(自己批判 scaffold)の追加が実データでの成功に重要という、合成側 Stage1/Stage2 の
+知見(P3 が opus の多様性を押し上げる)と整合する結果になった。
+
 ## 判定(2026-08-29 時点の最終)
 
-- **P2 再現要件は v041-trackb-01・02 とも 3 構成全て不成立。ただし主因は Controller 側の
-  Matched Negative 構築(decile-stratified permutation)の設計欠陥であり、「合成が実データへ
-  転移しなかった」という結論の根拠にはならない。** 欠陥の根本原因を数学的・実験的に特定し、
-  修正を実装済み。
-- **次のステップ:** `v041-trackb-03`(full random permutation)の 12 run 再検証完了後、
-  Matched Negative の agent 申告 transfer AUC が chance 水準(~0.5)に戻ったかを一次判定
-  基準として再評価する。
+- **v041-trackb-01・02(旧 permutation)は 3 構成全て不成立だったが、主因は Controller 側
+  の Matched Negative 構築(decile-stratified permutation)の設計欠陥であり、「合成が
+  実データへ転移しなかった」根拠にはならなかった——欠陥を修正した v041-trackb-03 で
+  opus×P3・sol×P3×xhigh の 2 構成が P2 再現要件を達成し、これを実証した。**
+- **opus×P1(合成側 P1 達成構成)は実データで再現しなかった(1/4)。** P3 scaffold の
+  追加が実データ transfer に重要という新しい知見。
+- **今後の方針への含意:** v0.4.2 の複数コンペ検証(Santander 等)は、この修正済み
+  permutation 設計(`_destroy_target_structure`)を前提に進める。
 
 ## 正本
 
 - [事前登録](../v041_track_b_preregistration.json)
 - [Diagnostics(v041-trackb-01)](../v041_track_b_diagnostics.json)
-- [Diagnostics(v041-trackb-02)](../v041_trackb_02_diagnostics.json)
+- [Diagnostics(v041-trackb-02、baseline強化のみ・不十分)](../v041_trackb_02_diagnostics.json)
+- [Diagnostics(v041-trackb-03、permutation修正・成功)](../v041_trackb_03_diagnostics.json)
 - [Matched Negative 修正 v1 事前登録(baseline強化のみ、不十分と判明)](../v042_trackb_matched_negative_fix_preregistration.json)
 - Suite/Lock/Submission: `.runs/v041/`(gitignore対象、ローカル実行物)
