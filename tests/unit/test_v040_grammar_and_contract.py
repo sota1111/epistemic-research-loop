@@ -87,6 +87,36 @@ def test_preregistered_exclusions_match_the_deviation_record() -> None:
         assert run in V040_RUN_IDS
 
 
+def test_run_v040_agent_registers_every_study_suite_id_set() -> None:
+    """Regression test: forgetting to add a new study's suite ids to
+    scripts/run_v040_agent.py's _CONFIG_REGISTRY has happened twice (Stage 2, then the
+    cycle-budget ablation) -- caught only because every launched run fails instantly with
+    no wasted compute. This fails fast at test time instead.
+    """
+    import importlib.util
+
+    from epistemic_loop.benchmark import v040_grammar_suite as suite_module
+
+    script_path = Path("scripts/run_v040_agent.py")
+    spec = importlib.util.spec_from_file_location("run_v040_agent", script_path)
+    assert spec is not None and spec.loader is not None
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+
+    registered_suite_ids: set[str] = set()
+    for suite_ids, _configs in runner._CONFIG_REGISTRY:
+        registered_suite_ids |= set(suite_ids)
+
+    declared_suite_id_constants = [
+        name for name in dir(suite_module) if name.startswith("V040_") and name.endswith("_SUITE_IDS")
+    ]
+    assert declared_suite_id_constants, "expected at least one V040_*_SUITE_IDS constant"
+    for name in declared_suite_id_constants:
+        declared = set(getattr(suite_module, name))
+        missing = declared - registered_suite_ids
+        assert not missing, f"{name} has suite ids not registered in run_v040_agent.py's _CONFIG_REGISTRY: {missing}"
+
+
 def test_v040_suite_build_assigns_per_slot_prompts(tmp_path: Path) -> None:
     key = Fernet.generate_key()
     p1 = tmp_path / "p1.md"

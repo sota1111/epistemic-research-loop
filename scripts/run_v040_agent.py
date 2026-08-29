@@ -25,6 +25,8 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from epistemic_loop.benchmark.v040_grammar_suite import (
+    V040_CYCLE8_CONFIGS,
+    V040_CYCLE8_SUITE_IDS,
     V040_GEN1_CONFIGS,
     V040_GEN1_SUITE_IDS,
     V040_SCAFFOLD_LADDER_CONFIGS,
@@ -39,11 +41,16 @@ from epistemic_loop.controller.v040_agent import load_v040_submission, validate_
 #: Each study (generation-1 Track A, the codex sol reasoning-effort ablation, the Opus+Sol
 #: scaffold-ladder screen, ...) preregisters its own suite ids and execution-configuration
 #: mapping; this runner is shared across studies that reuse the same grammar/pack-plan
-#: machinery, so it selects the mapping by suite id.
+#: machinery, so it selects the mapping by suite id. A new study MUST be added here -- this
+#: has already been forgotten twice (Stage 2, then this cycle-budget ablation) and caught only
+#: because every launched run fails instantly with no wasted compute; see
+#: tests/unit/test_v040_grammar_and_contract.py's registry-completeness test, which now fails
+#: fast if a new V040_*_SUITE_IDS constant is added without a matching registry entry.
 _CONFIG_REGISTRY: tuple[tuple[tuple[str, ...], Mapping[str, Mapping[str, str]]], ...] = (
     (V040_GEN1_SUITE_IDS, V040_GEN1_CONFIGS),
     (V040_SOL_ABLATION_SUITE_IDS, V040_SOL_ABLATION_CONFIGS),
     (V040_SCAFFOLD_LADDER_SUITE_IDS, V040_SCAFFOLD_LADDER_CONFIGS),
+    (V040_CYCLE8_SUITE_IDS, V040_CYCLE8_CONFIGS),
     (V040_SCAFFOLD_STAGE2_SUITE_IDS, V040_SCAFFOLD_STAGE2_CONFIGS),
 )
 
