@@ -239,10 +239,15 @@ def evaluate_v037_runs(
         _agent_aggregate(agent_id, submissions, evaluated)
         for agent_id in sorted({submission.agent_id for submission in submissions})
     )
+    # Computed over (agent_id, sampling_seed) pairs that actually occur in submissions, not the
+    # full cross product of observed agent ids x observed seeds: a study whose run-id slots are
+    # not a full factorial grid (e.g. an asymmetric configuration screen where not every
+    # "agent" label is paired with every "seed" label) would otherwise divide by zero over an
+    # empty positives/negatives set for a combination nothing submitted. For every study to date
+    # where the slot design IS a full grid, this is identical to the old cross product.
     agent_seed_aggregates = tuple(
         _agent_aggregate(agent_id, submissions, evaluated, sampling_seed)
-        for agent_id in sorted({submission.agent_id for submission in submissions})
-        for sampling_seed in sorted({submission.sampling_seed for submission in submissions})
+        for agent_id, sampling_seed in sorted({(item.agent_id, item.sampling_seed) for item in submissions})
     )
     blocks = tuple(
         _population_block(suite_id, sampling_seed, evaluated, truth)

@@ -444,3 +444,40 @@ low-probability event that several different capacity-increasing levers (high re
 P1 or P3 scaffolds on a strong model) can each occasionally cross, while low effort and P2
 specifically do not. Full detail:
 [verification/v040_scaffold_ladder_qualification.md](verification/v040_scaffold_ladder_qualification.md).
+
+## 2026-08-29 — Stage 2 confirms: persistent_delayed_history breaks for the first time, evaluator bug found and fixed
+
+All 18 Stage 2 runs (Opus x P1, Opus x P3, Sol x P3 x xhigh, 6 replicates each) completed cleanly
+in one pass -- no contract repairs needed, blindness audit clean. Unblinding first hit a genuine
+latent bug: `evaluate_v037_runs`'s `agent_seed_aggregates` computed the full cross product of
+observed agent ids x observed sampling seeds, which every prior study's symmetric run-id grid
+happened to make identical to the actual submitted pairs, but Stage 2's asymmetric slot usage (no
+agent-02-s17 configured) produced an empty group and a ZeroDivisionError. Fixed by iterating the
+actual (agent_id, sampling_seed) pairs present in submissions instead of the cross product.
+Verified empirically, not just argued: re-ran finalize on all three already-locked full-grid
+studies (generation 1, Stage 1, the sol-effort ablation) and diffed their output JSON against what
+was already committed -- byte-for-byte identical in all three cases -- before trusting the fix on
+Stage 2's asymmetric data.
+
+The headline result: `persistent_delayed_history` -- the only family with a 0/88 discovery base
+rate across every prior v0.4.0 study -- was genuinely discovered twice, by both Opus x P1 and
+Opus x P3. Every persistent-ladder family has now been discovered at least once (the cumulative
+discovery ledger no longer has a family stuck at zero). Opus x P3 additionally discovered
+persistent_clear in the same 6 replicates -- the first instance of one configuration finding two
+distinct persistent families. Sol x P3's false-promotion count, which spiked to 7 (concentrated in
+one suite instance) in Stage 1's n=4 screen, dropped to 0/36 at n=6, confirming it was the
+single-outlier fluke suspected rather than a systemic P3-plus-sol calibration problem. But Opus x
+P3's headline diversity effect did NOT fully reproduce: mean semantic_family_count fell from 8.75
+(Stage 1, n=4) to 4.33 (Stage 2, n=6, all six replicates tightly in the 3-6 range) -- the direction
+held but the earlier screening estimate substantially overstated the effect size, a textbook
+illustration of why the screen-then-confirm design matters. Full detail:
+[verification/v040_scaffold_ladder_stage2_qualification.md](verification/v040_scaffold_ladder_stage2_qualification.md),
+updated ledger: [v040_discovery_ledger.md](v040_discovery_ledger.md).
+
+Separately, preregistered and prepared (suites built, not yet run) a cycle-budget ablation raising
+`max_cycles_per_pack` from 4 to 8 for Opus x P1 and Sol x P1 x xhigh, 6 replicates each. Required
+widening two hardcoded contract ceilings in `v037_agent.py` (previously fixed at 4 since v0.3.7) to
+a new `MAX_CYCLES_PER_PACK = 8` module constant -- backward compatible by construction, and the
+full 395-test suite passes unchanged. New prompt `v040_p1_c8.md` is P1 with exactly one word
+changed ('four' -> 'eight'). Only the cycle=8 arm will be executed as new runs; each
+configuration's cycle=4 baseline is read from already-unblinded prior studies rather than re-run.

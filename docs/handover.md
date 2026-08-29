@@ -1,9 +1,9 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-29
-**現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了・修正済み(5 構成が世代 2 進出)/
-sol reasoning-effort ablation 完了(xhigh 最良、persistent_clear 初発見)/
-scaffold-ladder screen(Stage 1)完了(P3 が opus の多様性を 3 倍に、claude 側で persistent 系初発見)
+**現在の基準:** v0.4.0 Track A 世代 1 完了・修正済み/ sol reasoning-effort ablation 完了/
+scaffold-ladder Stage 1・Stage 2 完了(**persistent ラダー全 4 段階が history 上初めて破られた**)/
+cycle-budget ablation 準備完了・起動待ち
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -63,6 +63,25 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   詳細: [verification/v040_scaffold_ladder_qualification.md](verification/v040_scaffold_ladder_qualification.md)
   Preregistration: [v040_scaffold_ladder_preregistration.json](v040_scaffold_ladder_preregistration.json)
   新規プロンプト: [v040_p3.md](../prompts/generic_research_agent/v040_p3.md)
+- **Stage 2(確認世代、opus×P1・opus×P3・sol×P3×xhigh、各 6 replicate = 18 run)完了。**
+  **`persistent_delayed_history`(累積発見台帳で 88 run を通じて 0 件だった唯一の family)が
+  opus×P1・opus×P3 の両方で史上初めて真に発見された。** これで **persistent ラダー全 4 段階が
+  少なくとも一度は破られた。** opus×P3 は同一 6 replicate 内で persistent_clear も発見(1 構成
+  2 family 同時発見は初)。sol×P3 の false promotion は Stage 1 の 7 件→**0/36 に消失**(単発の
+  暴走だったと確認)。一方 **opus×P3 の多様性ブーストは 8.75→4.33 に縮小**——n=4 のスクリーニング
+  推定値は効果量を過大評価していたことが判明(方向は再現、規模は再現せず)。
+  開封時に評価器の潜在バグ(`agent_seed_aggregates` が agent×seed の全直積を仮定しゼロ除算)を
+  発見・修正——既存 3 study(gen1・Stage1・sol ablation)で再実行し bit-for-bit 完全一致を実測
+  確認した上で適用。
+  詳細: [verification/v040_scaffold_ladder_stage2_qualification.md](verification/v040_scaffold_ladder_stage2_qualification.md)
+  累積発見台帳: [v040_discovery_ledger.md](v040_discovery_ledger.md)
+- **cycle-budget ablation(4→8 cycle、opus×P1×cycle8・sol×P1×xhigh×cycle8、各 6 replicate =
+  12 run)を preregister・suite build 済み、実行待ち。** `MAX_CYCLES_PER_PACK` を 4→8 に拡張
+  (`src/epistemic_loop/controller/v037_agent.py`、後方互換——既存 395 test 全通過確認済み)。
+  新プロンプト [v040_p1_c8.md](../prompts/generic_research_agent/v040_p1_c8.md)(P1 の「four」を
+  「eight」に変えただけの単一差分)。cycle=4 の baseline は既存 study(gen1+Stage1 の opus×P1、
+  sol ablation の xhigh)を再利用し、cycle=8 のみ新規実行。
+  Preregistration: [v040_cycle_budget_ablation_preregistration.json](v040_cycle_budget_ablation_preregistration.json)
 - **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
   (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
   **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで
