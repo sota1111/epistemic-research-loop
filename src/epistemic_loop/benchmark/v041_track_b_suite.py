@@ -480,9 +480,7 @@ def build_v041_track_b_suite(
                         confirmation_targets_in_view_order=tuple(
                             target_by_row[int(row["row_id"])] for row in confirmation
                         ),
-                        transfer_targets_in_view_order=tuple(
-                            target_by_row[int(row["row_id"])] for row in transfer
-                        ),
+                        transfer_targets_in_view_order=tuple(target_by_row[int(row["row_id"])] for row in transfer),
                     )
                 )
                 context_entries.append(
