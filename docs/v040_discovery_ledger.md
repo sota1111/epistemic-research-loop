@@ -50,6 +50,51 @@ persistent ラダー全 4 段階が、複数の study にまたがって独立�
    cycle8 sol/v040-cyc8-e05=4)、残りは散発的。suite instance の性質ではなく、**codex 系
    モデルの calibration に固有の問題**である可能性が高い(v0.4.1 方針§4.1 の保留課題)。
 
+## 7. codex 系 false promotion の機序調査(2026-08-29、read-only transcript/コード分析)
+
+項目 6 で確定した「false promotion は codex 系(sol/terra)に完全に限定される」という事実の
+**機序**を、4 件の「暴走」replicate(gen1 terra/g03=5 件、sol ablation high/b05=5 件、
+Stage1 sol×P3/c04=7 件、cycle8 sol/e05=4 件)が実際に書いた `run_protocol.py` を直接読んで
+調査した(新規 run は実行していない、既存 transcript・作業ディレクトリの read-only 分析)。
+
+**確認できたこと:**
+
+- **4 件全てが、null 分布を `N_NULL = 5`(5 回の permutation replicate)で推定していた。**
+  promotion 判定は `position = (1 + #null <= observed) / (N_NULL + 1)` を計算し
+  `position >= 0.95` を要求する設計だが、N_NULL=5 では position が取りうる値は
+  {1/6, 2/6, ..., 6/6} の 6 通りしかなく、**`>=0.95` を満たすには position=1.0(5 個の
+  null を全て上回る)以外に達成手段がない**。純粋に構造が存在しない場合でも、observed が
+  5 個の null 中で最大になる確率は理論上 1/6 ≈ 16.7%(2/3 コンテキストで要求される
+  validated 条件を含めるとさらに変動)——意図された ~5% 水準よりかなり緩い、解像度の粗い
+  棄却検定になっている。
+- 対照的に、**opus(claude 系)が自ら書いたプロトコルコードは一貫して null replicate 数が
+  多い**(直接確認できた範囲で 200・200・300・400・500)。閾値も `np.quantile(draws, 0.95)`
+  のような連続分布からの分位点で計算しており、5 replicate のような粗い離散化は見られない。
+- ただし、**N_NULL=5 は codex 系の全 run に共通する固定値ではなく、run ごとにばらつく**
+  (5・10・20・30 などを確認)。さらに、N_NULL=5 を使った codex run の中には false
+  promotion が 0 件のものも多数ある(例:gen1 terra g01 の 2 replicate、sol ablation の
+  複数 replicate)。自動 grep によるプロパティ横断の定量相関チェック(52 codex run 中 27 件で
+  N_NULL を検出)では、N_NULL<=5 群(12 run, 平均 fspr 0.107)と N_NULL>5 群(15 run, 平均
+  fspr 0.133)で明確な差は出なかった——**ただし grep ベースの検出はスクリプト構成が
+  run ごとに大きく異なるため精度が低く、この定量比較自体の信頼性は高くない**(手動で
+  精読した 4 件の「暴走」replicate は全て N_NULL=5 だったという事実の方が確度が高い)。
+
+**現時点の解釈(確定ではない):** codex 系モデルは、run ごとに自分でプロトコルコード
+(null replicate 数を含む)を一から書き直しており、**claude 系のように一貫して過剰な
+null replicate 数(200+)を割り当てる習慣がない。** 「暴走」した 4 件は、たまたま
+N_NULL=5 という粗い検定を選び、かつ observed 統計量がその粗い閾値を(真の構造の有無に
+関わらず)超えてしまった run である可能性が高い。N_NULL=5 自体は false promotion の
+**十分条件ではない**(多くの N_NULL=5 run は 0 件のまま)が、**必要条件に近い共通点**
+ではある(4/4 の暴走 run が該当)。「codex 系モデルの確信度較正が本質的に甘い」という
+より強い主張は、この調査だけでは立証できない——「自己記述する統計プロトコルの厳密さに
+run 間でばらつきがあり、claude 系ほど一貫して保守的でない」という、より限定的な主張が
+現時点で言えることの上限。
+
+**Track B への含意:** sol×P3×xhigh を投入する以上、この脆弱性を個別 run で監視する
+価値がある。プロンプト側で null replicate 数の最低限(例:N>=50)を明示的に要求する介入は
+検討に値するが、v0.4.0 の「解法・構造を教えない」原則(証拠手続きの指定は可、答えの指定は
+不可)との整合性を検討してから導入すべきであり、**未実施**(v0.4.1 の判断課題として保留)。
+
 ## 次の評価基準
 
 - persistent 系は「発見したかどうか」の二値ではなく、**累積発見回数と母数(何 run 試したか)**

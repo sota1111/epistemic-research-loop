@@ -230,12 +230,18 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    opaque 化・実データ Matched Negative の生成)は実データを扱うため、実行前にユーザー確認を
    取ること**(v0.4.1 方針§3.3 に明記)。受け入れ基準は v0.4.0 方針§4.2 のまま(隠し transfer
    gain・構造破壊プローブ・実データ Matched Negative 非昇格・evidence bundle 有効)。
-2. **codex 系(sol/terra)限定の false promotion 現象の調査(保留、優先度は Track B より
-   低い)。** 全 5 study・102 run を精査した結果、**claude 系は false promotion が一度も
-   ゼロから外れていない**(0/50+ replicate)一方、codex 系は 26 件発生(うち 4 件は単一 suite
-   instance に集中する暴走型:gen1 terra/g03・sol ablation high/b05・Stage1 sol×P3/c04・
-   cycle8 sol/e05)。suite instance の性質ではなく codex 系モデルの calibration に固有の
-   問題である可能性が高い。transcript 差分分析が有効な手法(v0.4.0 方針§3.3 参照)。
+2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
+   read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
+   Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、
+   **4 件全てが null 分布を `N_NULL=5` replicate で推定していた**(promotion 判定
+   `position>=0.95` が理論上 ~16.7% の確率でノイズでも棄却域に入る粗い検定になる)。
+   対照 opus は一貫して 200〜500 replicate。ただし N_NULL=5 は codex の固定習慣ではなく
+   run ごとにばらつき、false promotion 0 件の N_NULL=5 run も多数あるため、**必要条件に
+   近いが十分条件ではない**——「codex 系は自己記述する統計プロトコルの厳密さが run 間で
+   ばらつく」という限定的な主張までが現時点の到達点(詳細:
+   [累積発見台帳§7](v040_discovery_ledger.md)、[v0.4.1 方針§4.1](c_lite_v041_policy.md))。
+   これ以上の深掘り(null replicate 数の下限をプロンプトで指定する介入の是非など)は
+   Track B より優先度低。
 3. **GLM(zai)の正式な study はまだ実施していない。** runner 統合・smoke test 済み。
    Track B 完了後、または並行する余力があれば独立 side-probe として投入する
    (v0.4.1 方針§4.2)。なお `Dockerfile`/`scripts/glm-cli` として GLM/codex/claude CLI を

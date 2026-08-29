@@ -117,10 +117,23 @@ v0.4.1-c  開封・P2 判定。達成すれば「上位解法級・未知構造�
 
 ## 4. 保留にする項目(Track A 側の未消化課題)
 
-1. **codex 系(sol/terra)限定の false promotion 現象。** 全 26 件の発生源を transcript
-   差分分析する価値がある——「なぜ claude 系は一度も間違えないのに codex 系は時折 matched
-   negative の判別を丸ごと外すのか」は、モデルの calibration・確信度較正メカニズムの違いを
-   示唆しており、Track B の設計判断(§3.1)にも影響しうる重要な未解決問題。
+1. **codex 系(sol/terra)限定の false promotion 現象——部分的に機序を特定(2026-08-29)。**
+   「暴走」型 4 件(gen1 terra/g03・sol ablation high/b05・Stage1 sol×P3/c04・
+   cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだところ、**4 件全てが
+   null 分布を `N_NULL = 5` replicate で推定していた**。promotion 判定
+   (`position >= 0.95`)は N_NULL=5 では position=1.0(5 個の null を全て上回る)以外に
+   到達手段がなく、理論上 ~16.7% の確率で純粋なノイズでも棄却域に入る、解像度の粗い検定に
+   なっている。対照的に opus が自ら書くプロトコルは一貫して null replicate 数が多い
+   (確認できた範囲で 200〜500)。ただし N_NULL=5 は codex 系の固定習慣ではなく run ごとに
+   ばらつき(5〜30)、false promotion 0 件の N_NULL=5 run も多数ある——**N_NULL=5 は
+   false promotion の必要条件に近いが十分条件ではない**。「codex 系は自己記述する統計
+   プロトコルの厳密さが run 間でばらつき、claude 系ほど一貫して保守的でない」という
+   限定的な主張までは立証できたが、「codex 系モデルの確信度較正が本質的に甘い」という
+   より強い主張はこの調査だけでは立証できていない(詳細:[累積発見台帳§7](v040_discovery_ledger.md)、
+   read-only 分析のみ、新規 run は実行していない)。Track B の sol×P3×xhigh 構成では
+   FSPR を個別監視する(§3.1 で既に方針化済み)。null replicate 数の最低限をプロンプトで
+   明示する介入は「証拠手続きの指定」の範囲内で検討可能だが未実施——v0.4.1 の判断課題として
+   保留する。
 2. **GLM(zai)の正式 study。** runner 統合・smoke test 済みだが実 study 未実施。v0.4.1 では
    Track B を優先し、GLM は Track B 完了後(または並行する余力があれば)独立 side-probe として
    投入する。
