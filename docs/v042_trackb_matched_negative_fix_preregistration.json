@@ -1,0 +1,29 @@
+{
+  "version": "0.4.2",
+  "study": "track-b-matched-negative-fix-reverification",
+  "frozen_before_suite_generation": true,
+  "purpose": "Re-verify Track B on IEEE-CIS with a strengthened matched-negative construction, before extending the design to additional competitions (v0.4.2 policy SS4/SS5's v0.4.2-b step). Not a new competition, not a design change to the suite's pack/context/opaque-view structure -- the only intervention is the controller baseline model used both (a) as the risk score for decile-stratified permutation on matched-negative packs and (b) as the capacity-matched baseline candidate packs must beat.",
+  "prior_result_being_corrected": {
+    "source": "docs/verification/v041_track_b_qualification.md",
+    "finding": "In the original suite (v041-trackb-01), matched-negative packs were promoted in 9 of 12 runs. Splitting by the agent's own submitted transfer AUC showed two patterns: pack-n01 sat at chance (~0.5, promoted anyway -- agent-side threshold laxity, not a suite defect) while pack-n02/03/04 showed a real, multi-run, multi-model-reproducible AUC of 0.55-0.71 -- evidence the original linear logistic-regression baseline's decile-stratified permutation did not destroy nonlinear residual structure."
+  },
+  "single_intervention": {
+    "what_changed": "The controller baseline model in _fit_capacity_matched_baseline changes from sklearn Pipeline(SimpleImputer(median) -> StandardScaler -> LogisticRegression(C=0.5, max_iter=4000)) to a bare sklearn HistGradientBoostingClassifier (native NaN handling, no imputation/scaling needed, nonlinear/interaction-capable).",
+    "why_this_lever": "Gradient-boosted trees are the dominant real-world top-solution model class for tabular Kaggle competitions (also directly motivated by the v0.4.2 policy's 'world model' framing: a capacity-matched baseline for a Kaggle-caliber evaluation should itself be Kaggle-caliber, not a bare linear model). A more expressive risk-score model captures more of the genuinely learnable nonlinear signal, so decile-stratifying the matched-negative permutation against it destroys more of what a downstream nonlinear agent model could otherwise recover. The same upgrade also strengthens P2 criterion 1 (beats capacity-matched baseline) for candidate packs, addressing the qualification doc's separately-noted limitation that a linear baseline was too easy to beat by construction.",
+    "what_did_not_change": "Pack/context/segment row counts (1080/360/360 per context), 4 candidate + 4 matched-negative pack design, 3 contexts per pack, decile count (10) for the stratified permutation, feature-column selection method (generic seeded shuffle over the low-missingness numeric pool), opaque-view mechanism, execution configurations (opus x P1/P3, sol x P3 x xhigh, 4 replicates each), P2 accept criteria, reproducibility bar. Isolating the baseline-model change lets the re-verification attribute any FSPR improvement to this one lever, not a bundle of changes."
+  },
+  "suite_instancing": {
+    "suite_id": "v041-trackb-02",
+    "reason": "A new suite id per the project's established discard-and-rebuild discipline (v0.3.6 Trial 0) -- v041-trackb-01 is kept as a documented historical artifact of the flawed matched-negative construction, not reused or overwritten. Feature-column groups are independently reselected under the same master-seed/retry-until-identifiable procedure as before (docs/v041_track_b_preregistration.json's feature_exposure_design), so the specific columns in v041-trackb-02 may differ from v041-trackb-01 -- this is expected and not itself a deviation."
+  },
+  "reverification_criterion": {
+    "primary": "For each of the 4 matched-negative packs, the agent-submitted transfer-region AUC (independently recomputed by the controller from the agent's own predictions, as in the original finalize script) should sit at chance level (no longer reproducibly 0.55-0.71 across independent runs/models) -- checked directly from docs/v042_trackb_matched_negative_fix_diagnostics.json before drawing any conclusion about P1-configuration transfer.",
+    "secondary": "Full P2/reproducibility scoring (>=2-of-4 runs per configuration) is still computed and reported, but is read in light of the primary criterion above -- if matched-negative AUCs are now at chance and FSPR clears, a P2 pass or fail is informative about the P1 configuration; if matched-negative AUCs are still elevated, the suite still needs further design work before any P1-configuration conclusion is drawn."
+  },
+  "execution_configurations": {
+    "unchanged_from": "docs/v041_track_b_preregistration.json execution_configurations",
+    "replicates_per_configuration": 4,
+    "total_runs": 12
+  },
+  "post_registration_deviations": []
+}

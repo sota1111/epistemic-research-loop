@@ -15,17 +15,18 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_ID
+from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_IDS
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
     parser.add_argument("--parallel", type=int, default=3)
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v041"))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v041/agent_outputs"))
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    pairs = [(V041_TRACKB_SUITE_ID, run) for run in V041_TRACKB_RUN_IDS]
+    pairs = [(arguments.suite_id, run) for run in V041_TRACKB_RUN_IDS]
     pending = [
         (suite, run)
         for suite, run in pairs

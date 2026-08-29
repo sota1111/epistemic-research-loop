@@ -36,7 +36,7 @@ from epistemic_loop.benchmark.v040_grammar_suite import (
     V040_SOL_ABLATION_CONFIGS,
     V040_SOL_ABLATION_SUITE_IDS,
 )
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_CONFIGS, V041_TRACKB_SUITE_ID
+from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_CONFIGS, V041_TRACKB_SUITE_IDS
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
 
 #: Each study (generation-1 Track A, the codex sol reasoning-effort ablation, the Opus+Sol
@@ -53,7 +53,7 @@ _CONFIG_REGISTRY: tuple[tuple[tuple[str, ...], Mapping[str, Mapping[str, str]]],
     (V040_SCAFFOLD_LADDER_SUITE_IDS, V040_SCAFFOLD_LADDER_CONFIGS),
     (V040_CYCLE8_SUITE_IDS, V040_CYCLE8_CONFIGS),
     (V040_SCAFFOLD_STAGE2_SUITE_IDS, V040_SCAFFOLD_STAGE2_CONFIGS),
-    ((V041_TRACKB_SUITE_ID,), V041_TRACKB_CONFIGS),
+    (V041_TRACKB_SUITE_IDS, V041_TRACKB_CONFIGS),
 )
 
 

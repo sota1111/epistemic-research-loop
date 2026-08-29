@@ -23,7 +23,7 @@ from pathlib import Path
 from statistics import median
 
 from epistemic_loop.benchmark.v037_repro_suite import V037AliasTruth, _auc, decrypt_v037_suite
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_CONFIGS, V041_TRACKB_SUITE_ID
+from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_CONFIGS, V041_TRACKB_SUITE_IDS
 from epistemic_loop.controller.v037_agent import V037Resolution
 from epistemic_loop.controller.v040_agent import load_v040_submission
 
@@ -36,13 +36,19 @@ _PROMOTED = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    default_manifest = Path(".controller_truth/v041/v041-trackb-01.manifest.enc")
-    parser.add_argument("--truth-manifest", type=Path, default=default_manifest)
+    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
+    parser.add_argument("--truth-manifest", type=Path, default=None)
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
-    parser.add_argument("--lock-file", type=Path, default=Path(".runs/v041/trackb_agent_runs.lock.json"))
+    parser.add_argument("--lock-file", type=Path, default=None)
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v041/agent_outputs"))
-    parser.add_argument("--output", type=Path, default=Path("docs/v041_track_b_diagnostics.json"))
+    parser.add_argument("--output", type=Path, default=None)
     arguments = parser.parse_args()
+    if arguments.truth_manifest is None:
+        arguments.truth_manifest = Path(f".controller_truth/v041/{arguments.suite_id}.manifest.enc")
+    if arguments.lock_file is None:
+        arguments.lock_file = Path(f".runs/v041/{arguments.suite_id}_agent_runs.lock.json")
+    if arguments.output is None:
+        arguments.output = Path(f"docs/{arguments.suite_id.replace('-', '_')}_diagnostics.json")
     if not arguments.lock_file.exists():
         raise SystemExit("Track B outputs must be locked (scripts/lock_v041_track_b_runs.py) before opening truth")
 
@@ -55,7 +61,7 @@ def main() -> None:
 
     per_run: list[dict[str, object]] = []
     for run_id in V041_TRACKB_CONFIGS:
-        submission_path = arguments.submission_root / V041_TRACKB_SUITE_ID / run_id / "agent_submission.json"
+        submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         loaded = load_v040_submission(submission_path)
         alias_by_pack_context = {(a.opaque_pack_id, a.opaque_context_id): a for a in aliases_by_run[run_id]}
         pack_records: list[dict[str, object]] = []
@@ -64,26 +70,27 @@ def main() -> None:
             canonical_pack_id = first_alias.canonical_pack_id
             first_truth = next(t for (p, _c), t in context_truth_by_key.items() if p == canonical_pack_id)
             promoted = pack.resolution in _PROMOTED
+            # Computed for every pack (candidate and matched-negative alike): the agent's own
+            # submitted transfer-region AUC, independently recomputed from their predictions vs
+            # the true hidden labels. For matched-negative packs this is the primary signal for
+            # whether the v0.4.2 baseline-model fix actually destroyed learnable structure (it
+            # should sit at chance, ~0.5) -- see docs/v042_trackb_matched_negative_fix_preregistration.json.
+            agent_aucs: list[float] = []
+            baseline_aucs: list[float] = []
+            for context in pack.contexts:
+                alias = alias_by_pack_context[(pack.opaque_pack_id, context.opaque_context_id)]
+                context_truth = context_truth_by_key[(canonical_pack_id, alias.canonical_context_id)]
+                translation = next(
+                    item for item in context.translations if item.candidate_id == pack.selected_translation_id
+                )
+                agent_aucs.append(_auc(alias.transfer_targets_in_view_order, translation.transfer_predictions))
+                baseline_aucs.append(_auc(context_truth.transfer_targets, context_truth.oracle_transfer_predictions))
+            agent_median = median(agent_aucs)
             beats_baseline: bool | None = None
-            agent_median: float | None
-            baseline_median: float | None
+            baseline_median: float | None = None
             if first_truth.structure_present:
-                agent_aucs: list[float] = []
-                baseline_aucs: list[float] = []
-                for context in pack.contexts:
-                    alias = alias_by_pack_context[(pack.opaque_pack_id, context.opaque_context_id)]
-                    context_truth = context_truth_by_key[(canonical_pack_id, alias.canonical_context_id)]
-                    translation = next(
-                        item for item in context.translations if item.candidate_id == pack.selected_translation_id
-                    )
-                    agent_aucs.append(_auc(alias.transfer_targets_in_view_order, translation.transfer_predictions))
-                    baseline_aucs.append(
-                        _auc(context_truth.transfer_targets, context_truth.oracle_transfer_predictions)
-                    )
-                beats_baseline = median(agent_aucs) > median(baseline_aucs)
-                agent_median, baseline_median = median(agent_aucs), median(baseline_aucs)
-            else:
-                agent_median = baseline_median = None
+                baseline_median = median(baseline_aucs)
+                beats_baseline = agent_median > baseline_median
             pack_records.append(
                 {
                     "opaque_pack_id": pack.opaque_pack_id,
@@ -146,9 +153,9 @@ def main() -> None:
         for config_id, records in by_config.items()
     }
     payload = {
-        "version": "0.4.1",
+        "version": "0.4.2",
         "study": "track-b-ieee-cis-blind-bridge",
-        "suite_id": V041_TRACKB_SUITE_ID,
+        "suite_id": arguments.suite_id,
         "per_run": per_run,
         "per_config": config_summary,
         "any_configuration_reproducibility_met": any(item["reproducibility_met"] for item in config_summary.values()),

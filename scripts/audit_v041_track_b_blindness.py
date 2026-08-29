@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from epistemic_loop.benchmark.v037_repro_suite import audit_v037_agent_view
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_ID
+from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_IDS
 
 FORBIDDEN_TOKENS = (
     ".controller_truth",
@@ -42,13 +42,14 @@ FORBIDDEN_TOKENS = (
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v041"))
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v041/agent_outputs"))
     arguments = parser.parse_args()
     view_findings: list[str] = []
     audited_views = 0
     for run_id in V041_TRACKB_RUN_IDS:
-        root = arguments.suite_root / V041_TRACKB_SUITE_ID / "agent_views" / run_id
+        root = arguments.suite_root / arguments.suite_id / "agent_views" / run_id
         if not root.exists():
             continue
         audited_views += 1
@@ -60,7 +61,7 @@ def main() -> None:
                 view_findings.append(f"{run_id}: {token} x{count}")
     transcript_findings: list[str] = []
     audited_transcripts = 0
-    transcript_root = arguments.submission_root / V041_TRACKB_SUITE_ID
+    transcript_root = arguments.submission_root / arguments.suite_id
     for transcript in sorted(transcript_root.rglob("transcript-attempt-*.stream.jsonl")):
         audited_transcripts += 1
         text = transcript.read_text(errors="ignore")

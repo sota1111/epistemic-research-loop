@@ -20,7 +20,7 @@ from epistemic_loop.benchmark.v041_track_b_suite import (
     V041_TRACKB_MASTER_SEED,
     V041_TRACKB_MAX_CYCLES_PER_PACK,
     V041_TRACKB_RUN_IDS,
-    V041_TRACKB_SUITE_ID,
+    V041_TRACKB_SUITE_IDS,
     build_v041_track_b_suite,
 )
 from epistemic_loop.controller.v040_agent import v040_submission_contract
@@ -28,12 +28,15 @@ from epistemic_loop.controller.v040_agent import v040_submission_contract
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
     parser.add_argument("--data-root", type=Path, default=Path(".data/ieee-cis"))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v041"))
     parser.add_argument("--truth-root", type=Path, default=Path(".controller_truth/v041"))
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
-    parser.add_argument("--lock-file", type=Path, default=Path(".runs/v041/trackb_suite_lock.json"))
+    parser.add_argument("--lock-file", type=Path, default=None)
     arguments = parser.parse_args()
+    if arguments.lock_file is None:
+        arguments.lock_file = arguments.output_root / f"{arguments.suite_id}_suite_lock.json"
     if arguments.lock_file.exists():
         raise SystemExit(f"Track B suite already locked at {arguments.lock_file}; delete deliberately to rebuild")
     if not arguments.key_file.exists():
@@ -66,7 +69,7 @@ def main() -> None:
         "terminal_resolution_consistency_enforced": True,
         "implication_provenance_required": True,
     }
-    output_root = arguments.output_root / V041_TRACKB_SUITE_ID
+    output_root = arguments.output_root / arguments.suite_id
     result = build_v041_track_b_suite(
         data_root=arguments.data_root,
         output_root=output_root,
@@ -74,7 +77,7 @@ def main() -> None:
         key=key,
         prompt_paths=prompt_paths,
         policy_contract=policy_contract,
-        suite_id=V041_TRACKB_SUITE_ID,
+        suite_id=arguments.suite_id,
         master_seed=V041_TRACKB_MASTER_SEED,
         configs=V041_TRACKB_CONFIGS,
         run_ids=V041_TRACKB_RUN_IDS,
@@ -87,7 +90,7 @@ def main() -> None:
     payload = {
         "version": "0.4.1",
         "study": "track-b-ieee-cis-blind-bridge",
-        "suite_id": V041_TRACKB_SUITE_ID,
+        "suite_id": arguments.suite_id,
         "max_cycles_per_pack": V041_TRACKB_MAX_CYCLES_PER_PACK,
         "execution_configurations": {run: dict(config) for run, config in V041_TRACKB_CONFIGS.items()},
         "total_runs": len(V041_TRACKB_RUN_IDS),
@@ -105,7 +108,7 @@ def main() -> None:
         json.dumps(
             {
                 "locked": True,
-                "suite_id": V041_TRACKB_SUITE_ID,
+                "suite_id": arguments.suite_id,
                 "runs": len(V041_TRACKB_RUN_IDS),
                 "preflight_passed": result.preflight_passed,
                 "preflight": [

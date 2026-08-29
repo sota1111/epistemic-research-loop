@@ -12,11 +12,14 @@ independently-sampled real-data draw (its own baseline fit, its own research/con
 transfer rows), and cross-context agreement is what an agent's own protocol tests for
 generalization -- only the row source differs from synthetic.
 
-There is exactly one suite instance (``V041_TRACKB_SUITE_ID``): unlike the synthetic side,
-only one real dataset exists, so the replicate dimension lives in the run_id slots of this
-one suite rather than in multiple master-seeded suite instances. See
-docs/v041_track_b_preregistration.json for the full design rationale, frozen before this
-suite was generated.
+Each suite id in ``V041_TRACKB_SUITE_IDS`` is a full, independent re-verification (not a
+Track-A-style parallel replicate): unlike the synthetic side, only one real dataset exists,
+so the replicate dimension within a single suite lives in its run_id slots. A new suite id
+is only minted to re-verify a corrected design (e.g. v041-trackb-02 after the matched-
+negative construction fix), never reused, matching the project's discard-and-rebuild
+discipline. See docs/v041_track_b_preregistration.json (v041-trackb-01) and
+docs/v042_trackb_matched_negative_fix_preregistration.json (v041-trackb-02) for the design
+rationale, each frozen before its suite was generated.
 """
 
 from __future__ import annotations
@@ -32,10 +35,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from cryptography.fernet import Fernet
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 from epistemic_loop.benchmark.v037_repro_suite import (
     CANONICAL_FEATURES,
@@ -56,6 +56,12 @@ from epistemic_loop.benchmark.v037_repro_suite import (
 from epistemic_loop.controller.v037_agent import MAX_CYCLES_PER_PACK
 
 V041_TRACKB_SUITE_ID = "v041-trackb-01"
+#: v041-trackb-01 is the original (flawed matched-negative construction, see
+#: docs/verification/v041_track_b_qualification.md) suite, kept as a historical artifact.
+#: v041-trackb-02 is the re-verification suite with a strengthened baseline model (see
+#: docs/v042_trackb_matched_negative_fix_preregistration.json). New suite ids are appended
+#: here, never reused, matching the project's discard-and-rebuild discipline.
+V041_TRACKB_SUITE_IDS = ("v041-trackb-01", "v041-trackb-02")
 V041_TRACKB_MASTER_SEED = 20261001
 V041_TRACKB_MAX_CYCLES_PER_PACK = 4
 V041_TRACKB_CONTEXTS_PER_PACK = 3
@@ -90,7 +96,7 @@ _ROWS_PER_CONTEXT_SEGMENT = {"research": 1080, "confirmation": 360, "transfer": 
 _INDEPENDENT_IDENTIFIABILITY = {True: 0.24, False: 0.0}
 
 
-def select_generic_feature_groups(data_root: Path, *, master_seed: int) -> list[list[str]]:
+def select_generic_feature_groups(data_root: Path, *, master_seed: int, suite_id: str) -> list[list[str]]:
     """Partition the low-missingness numeric column pool into disjoint groups, one per attempt.
 
     Selection is generic (dtype + missingness threshold, then a seeded shuffle) rather
@@ -109,7 +115,7 @@ def select_generic_feature_groups(data_root: Path, *, master_seed: int) -> list[
     missingness = pd.read_csv(data_root / "train_transaction.csv", usecols=numeric_columns).isna().mean()
     pool = sorted(column for column in numeric_columns if missingness[column] < _MISSINGNESS_THRESHOLD)
     order = list(pool)
-    random.Random(_derive_int(master_seed, "feature-pool-shuffle")).shuffle(order)
+    random.Random(_derive_int(master_seed, suite_id, "feature-pool-shuffle")).shuffle(order)
     group_count = len(order) // _COLUMNS_PER_PACK
     if group_count < _CANDIDATE_PACK_COUNT:
         raise ValueError(f"expected at least {_CANDIDATE_PACK_COUNT} disjoint column groups, found {group_count}")
@@ -163,16 +169,15 @@ def _sample_segment(segment: pd.DataFrame, *, count: int, seed: int) -> pd.DataF
     return segment.sample(n=count, random_state=seed).sort_values("row_id").reset_index(drop=True)
 
 
-def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) -> Pipeline:
-    pipeline = Pipeline(
-        steps=[
-            ("impute", SimpleImputer(strategy="median")),
-            ("scale", StandardScaler()),
-            ("model", LogisticRegression(C=0.5, max_iter=4000)),
-        ]
-    )
-    pipeline.fit(features, target)
-    return pipeline
+def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) -> HistGradientBoostingClassifier:
+    # Gradient-boosted trees are the dominant real-world top-solution model class for tabular
+    # Kaggle competitions; native NaN handling means no imputer/scaler is needed. Swapped in
+    # after the original linear LogisticRegression baseline's decile-stratified permutation was
+    # found to leave nonlinear residual structure in matched-negative packs -- see
+    # docs/v042_trackb_matched_negative_fix_preregistration.json.
+    model = HistGradientBoostingClassifier(random_state=0)
+    model.fit(features, target)
+    return model
 
 
 def _decile_stratified_permutation(risk: np.ndarray, target: np.ndarray, *, seed: int) -> np.ndarray:
@@ -324,14 +329,15 @@ def build_v041_track_b_suite(
     prompt_paths: Mapping[str, Path],
     policy_contract: Mapping[str, Any],
     suite_id: str = V041_TRACKB_SUITE_ID,
+    suite_ids: Sequence[str] = V041_TRACKB_SUITE_IDS,
     master_seed: int = V041_TRACKB_MASTER_SEED,
     configs: Mapping[str, Mapping[str, str]] = V041_TRACKB_CONFIGS,
     run_ids: Sequence[str] = V041_TRACKB_RUN_IDS,
     max_cycles_per_pack: int = V041_TRACKB_MAX_CYCLES_PER_PACK,
     contexts_per_pack: int = V041_TRACKB_CONTEXTS_PER_PACK,
 ) -> V037SuiteBuildResult:
-    if suite_id != V041_TRACKB_SUITE_ID:
-        raise ValueError("Track B has exactly one preregistered suite identity")
+    if suite_id not in suite_ids:
+        raise ValueError("Track B requires a preregistered suite identity")
     if contexts_per_pack < 3:
         raise ValueError("aggregate promotion requires at least three independent contexts per pack")
     if not 1 <= max_cycles_per_pack <= MAX_CYCLES_PER_PACK:
@@ -347,7 +353,7 @@ def build_v041_track_b_suite(
     if not policy_contract.get("null_policy", {}).get("provenance_required"):
         raise ValueError("Track B requires per-replicate null provenance in the locked policy contract")
 
-    feature_groups = select_generic_feature_groups(data_root, master_seed=master_seed)
+    feature_groups = select_generic_feature_groups(data_root, master_seed=master_seed, suite_id=suite_id)
     pack_defs = _pack_definitions()
     canonical: dict[str, list[tuple[str, list[dict[str, Any]], V037ContextTruth]]] = {}
     attempts: list[dict[str, Any]] = []
