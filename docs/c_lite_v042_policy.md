@@ -109,33 +109,52 @@ v042_multi_competition_suite.py
 5. テーブルデータであること(現行の agent プロトコル・契約が表形式データ前提のため)
 6. データサイズが扱いやすいこと
 
-## 4. Track B 初回の技術的負債——修正済み(2026-08-29)
+## 4. Track B 初回の技術的負債——2 段階の修正を経て解決(2026-08-29)
 
 [qualification](verification/v041_track_b_qualification.md) で確認した通り、初回 Suite は
-Matched Negative パックが 12 run 中 9 run で昇格した。原因:一部(`pack-n01`)はエージェント
-側の判定閾値の甘さだが、残り(`pack-n02/03/04`)は Controller 側の permutation 設計(decile
-分割 10・baseline が線形ロジスティック回帰)が非線形残差構造を破壊しきれていないことが
-複数 run・複数モデルで再現して示唆された。
+Matched Negative パックが 12 run 中 9 run で昇格した。
 
-**修正済み:** baseline モデルを `HistGradientBoostingClassifier` に変更し、新 suite
-(`v041-trackb-02`)を construct(全 4 候補パックが 1 回の試行で識別可能性 preflight を通過、
-research gain が 0.03〜0.2 → 0.40〜0.49 に上昇)。**再検証バッチ(12 run)を実行中——
-matched-negative の agent 申告 transfer AUC が chance 水準に戻ったかを一次判定基準とする**
-([v042 修正事前登録](v042_trackb_matched_negative_fix_preregistration.json))。
+**1 段目の修正(baseline model 強化)は効果なしと判明。** baseline を
+`HistGradientBoostingClassifier` に変更した `v041-trackb-02` を再検証したところ、**P2 再現
+要件は 3 構成とも 0/4 で初回より悪化**、negative パックの agent 申告 AUC も 0.48〜0.73
+(中央値 0.602)と初回からほぼ不変だった。
 
-複数コンペへの展開は、この再検証が完了し、matched-negative の AUC が chance 水準に戻った
-ことを確認してから進める。
+**根本原因を特定:** `decile-stratified permutation`(risk decile 内でのみラベルをシャッフル)
+は decile **間**の陽性率相関を完全に温存する設計欠陥だった——bucket 内シャッフルは bucket の
+陽性件数を不変に保つため、AUC(順位統計量)は decile 間の粗い相関だけで chance を大きく
+超えるスコアを出せる。合成データでの再現実験で `AUC(risk, decile-permuted target)=0.988`
+を確認し、baseline の表現力とは無関係と証明した。
 
-## 5. 実行順序
+**2 段目の修正で解決:** `_decile_stratified_permutation` を `_destroy_target_structure`
+(stratification なしの完全ランダム permutation)へ置き換え、IEEE-CIS(`v041-trackb-03`)・
+Santander(`v042-mc-b02`)の両方で再検証した。**両コンペで P2 が独立に成立した**
+(IEEE-CIS:opus×P3・sol×P3×xhigh の 2/3 構成、Santander:**3/3 構成全て**、negative
+promotion はほぼゼロに)。詳細:
+[Track B qualification](verification/v041_track_b_qualification.md) /
+[Santander qualification](verification/v042_santander_qualification.md)。
+
+**2 つのコンペで独立に成立したことにより、v0.4.2 の 2 claim(best-of-population 近傍到達・
+未知構造発見)は単一コンペの偶然という懸念を脱した。**
+
+## 5. 実行順序(2026-08-29 更新:a〜e、Rossmann 除き完了)
 
 ```text
-v0.4.2-a  Matched Negative 構築法の修正 + IEEE-CIS での再検証(§4)。実施中、結果待ち。
-v0.4.2-b  汎用 builder(v042_multi_competition_suite.py)への一般化。
-v0.4.2-c  低計算量コンペの選定確定(§3・§7)、技術クラス参照物の構築。
-v0.4.2-d  追加コンペのデータ取得(Kaggle API 経由、ネットワーク・アカウントを使う操作の
-          ため実行前にユーザー確認を取る)。
+v0.4.2-a  Matched Negative 構築法の修正 + IEEE-CIS での再検証(§4)。完了(2段階の修正を経て)。
+v0.4.2-b  汎用 builder(v042_multi_competition_suite.py)への一般化。完了。
+v0.4.2-c  低計算量コンペの選定確定(§3・§7)、技術クラス参照物の構築。完了
+          (IEEE-CIS・Rossmann・Santander の taxonomy を docs/controller_reference/ に作成)。
+v0.4.2-d  追加コンペのデータ取得。完了——2026-08-29、ユーザーが Rossmann・Santander の
+          Kaggle コンペ規約に同意、データ取得済み。
 v0.4.2-e  複数コンペでの Suite build → 実行 → 開封 → best-of-population 近似度・
-          未知構造発見の評価。
+          未知構造発見の評価。**IEEE-CIS・Santander で完了、両方で claim 1・2 を確認。**
+v0.4.2-f  (新規)Rossmann への回帰対応。§3 に記載の通り、target が連続値(Sales)のため
+          現行の AUC ベース pipeline(preflight・decile系→修正後は完全ランダム permutation
+          による matched negative)をそのまま適用できない。回帰用の oracle(回帰モデル)・
+          識別可能性指標(例:Spearman相関やR² gain)・matched negative 構築(完全ランダム
+          permutation は連続値にもそのまま適用可能、修正済みのため流用できる)を設計する
+          必要がある。IEEE-CIS・Santander で確立した 2 段階検証(build-only regression
+          check → 実 agent batch)を踏襲すること。優先度は IEEE-CIS/Santander の結果が
+          確定した後——未着手。
 ```
 
 ## 6. 不変条件(v0.4.0/v0.4.1 から継続)
@@ -150,27 +169,34 @@ v0.4.2-e  複数コンペでの Suite build → 実行 → 開封 → best-of-po
 6. 新規コンペのデータ取得・Suite build は実データ・外部サービス(Kaggle API)を伴うため、
    実行前にユーザー確認を取る
 
-## 7. ユーザー確認が必要な事項(計算量フィルタ適用後)
+## 7. コンペ選定の結果(2026-08-29 更新:第一ラウンド完了)
 
 ユーザーから受領したコンペ候補一覧(2026-08-29)を、**計算量が少ないこと**という新しい
-必須基準(§3)で並べ直す:
+必須基準(§3)で並べ直し、Rossmann・Santander を第一候補として確定(ユーザー承認済み、
+2026-08-29:「7時間離席するので、今後は承認なしで全て実行すること」の指示のもと
+実施)。データ取得も同日中にユーザーがコンペ規約に同意し完了。
 
 | コンペ | 計算負荷 | discovery の明確さ | v0.4.2 での扱い |
 | --- | --- | --- | --- |
-| IEEE-CIS Fraud Detection | 中 | 非常に高 | 実施済み(v041-trackb-01/02) |
-| Rossmann Store Sales | 低〜中 | 非常に高 | **最有力候補(低コスト pilot)** |
-| Santander Customer Transaction | 低〜中 | 非常に高 | **最有力候補(強い stress test)** |
-| Jigsaw Unintended Bias | 中 | 高 | 次点(要個別確認) |
-| Airbus Ship Detection | 中〜高 | 高 | **今回は見送り**(画像データ、計算量・契約変更コスト大) |
-| Riiid Answer Correctness | 高 | 高 | **今回は見送り**(計算量大、再現性の懸念も既に指摘あり) |
-| H&M Recommendation | 高 | 高 | **今回は見送り**(計算量大) |
-| M5 Forecasting | 高 | 高 | **今回は見送り**(計算量大) |
+| IEEE-CIS Fraud Detection | 中 | 非常に高 | **完了(P2 2/3 構成達成)** |
+| Santander Customer Transaction | 低〜中 | 非常に高 | **完了(P2 3/3 構成達成、IEEE-CISより強い結果)** |
+| Rossmann Store Sales | 低〜中 | 非常に高 | **データ取得済み、回帰対応が未実装のため見送り(§5 v0.4.2-f)** |
+| Jigsaw Unintended Bias | 中 | 高 | 次点(未着手) |
+| Airbus Ship Detection | 中〜高 | 高 | 見送り(画像データ、計算量・契約変更コスト大) |
+| Riiid Answer Correctness | 高 | 高 | 見送り(計算量大、再現性の懸念も既に指摘あり) |
+| H&M Recommendation | 高 | 高 | 見送り(計算量大) |
+| M5 Forecasting | 高 | 高 | 見送り(計算量大) |
 
-**Rossmann と Santander を v0.4.2-c/d の第一候補として進めてよいか、確認したい。** 両方とも
-低〜中計算量・discovery の明確さが非常に高いとユーザー自身が評価しており、§3 の基準にも
-適合する見込みが高い。IEEE-CIS を含めて 3 コンペでの検証を最初のラウンドとして想定する。
+**第一ラウンド(IEEE-CIS + Santander)の結果、v0.4.2 の 2 claim(best-of-population 近傍
+到達・未知構造発見)が 2 コンペで独立に確認された。** 詳細:
+[Track B qualification](verification/v041_track_b_qualification.md) /
+[Santander qualification](verification/v042_santander_qualification.md)。
 
-1. **Rossmann・Santander を次の 2 コンペとして確定してよいか。**
-2. **Kaggle API を使った新規データ取得の実行タイミング。** 既存の `.kaggle/` 認証情報が
-   使えることを確認済みだが、外部サービスへのアクセス・帯域を伴うため、v0.4.2-d の実行前に
-   改めて確認を取る。
+**次に確認すべき事項(ユーザー向け):**
+
+1. **Jigsaw を第 3 コンペとして追加するか。** テーブルデータではなくテキスト分類コンペ
+   (subgroup metric/error 理解が discovery 対象)——現行 pipeline がテーブル形式・数値列を
+   前提にしているため、Jigsaw を追加するには特徴抽出(埋め込み or TF-IDF 等)の設計が別途
+   必要になる。追加コストと discovery 価値のトレードオフを判断されたい。
+2. **Rossmann の回帰対応(v0.4.2-f)に着手するか。** データは既に取得済みで、いつでも
+   着手できる状態。
