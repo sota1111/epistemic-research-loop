@@ -1,59 +1,67 @@
-# C-lite v0.4.2 方針 — Kaggle 金メダルを北極星に、世界モデルへの接近を測る
+# C-lite v0.4.2 方針 — 解法多様性による上位解法近傍到達と未知構造発見の複数コンペ検証
 
-**作成日:** 2026-08-29
-**status:** 方針草案(Track B 初回実行の結果と、目標の明示的な再定義を踏まえて策定)
+**作成日:** 2026-08-29(2026-08-29 改訂:目標設定を修正)
+**status:** 方針草案(Track B 初回実行の結果、Matched Negative 修正の完了、および目標の
+再設定を踏まえて策定)
 **前提:** [v0.4.0 方針](c_lite_v040_policy.md)、[v0.4.1 方針](c_lite_v041_policy.md)、
 [累積発見台帳](v040_discovery_ledger.md)、[Track B 初回 qualification](verification/v041_track_b_qualification.md)
 
-## 0. 目標の再定義
+**改訂メモ:** 初版は「Kaggle 金メダルを北極星に」という枠組みで書いたが、**現時点でそれを
+目標に据えるのは時期尚早**と判断し、修正した。今の目的はもっと限定的で検証可能な 2 つの
+主張に絞る(§0)。金メダルは、この 2 つが複数コンペで実証された**後**に検討すべき、
+さらに先のマイルストーンとして完全に切り離す。
 
-これまでの v0.4.0/v0.4.1 は「エージェントに構造・解法を教えないまま、未知構造の発見に至る
-構成(モデル・プロンプト・パラメータ)を探索する」ことを目的としてきた。この目的自体は
-変えないが、**その先に何を置くかを、ここで明示的に定義し直す**:
+## 0. 目標の再定義(修正版)
 
-> **北極星は Kaggle で金メダルを取ることである。** そこへ至る経路は、(a) 解法の多様性——
-> 複数のモデル・scaffold・独立試行を通じて多様な発見を積み上げ、その集合が「Kaggle 上位解法を
-> ベースに作成した世界モデル」に近づいていくこと、(b) **終了した(closed)複数のコンペティション**
-> を使って「未知の構造を盲検で発見できるか」を検証すること、の 2 本柱で構成される。
+v0.4.2 で検証する主張は次の**2 つだけ**である:
 
-これまで単一コンペ(IEEE-CIS)だけで検証してきたが、v0.4.2 では**複数コンペへ拡張する**。
-単一コンペでの結果は、そのコンペ固有の統計的偶然や suite 設計の欠陥と区別がつきにくい
-(実際、Track B 初回はこの問題に直面した——§4 参照)。合成側 Track A が複数の master-seed
-suite instance で再現性を確認したのと同じ理由で、Track B も複数の独立したコンペで再現性を
-確認する必要がある。
+1. **解法の多様性から、上位解法に近い解法が(集合の中に)存在すること。** 複数のモデル・
+   scaffold・独立試行によって多様な解法群を生成したとき、**その中の少なくとも 1 つ**が
+   実際の上位解法に近い(構造・性能の両面で)ことを検証する。population 全体が世界モデルの
+   技術クラスを網羅する「カバレッジ」ではなく、**「populationの中にベストな1つが存在するか」
+   という best-of-population の存在命題**として操作化する(旧版の「世界モデルカバレッジ」
+   という population union の枠組みから変更——§1)。
+2. **未知の構造を発見できること。** v0.4.0/v0.4.1 で確立した blind discovery の枠組み
+   (エージェントに構造・解法を一切教えない、事後にのみ真値を開封する)をそのまま維持する。
 
-**段階付け:** closed competition は「金メダルを取る」ための**練習・検証環境**であり、
-金メダルそのものではない(終了したコンペでは新たに順位はつかない)。v0.4.2 の射程は
-「closed competition 群で、盲検のまま世界モデルに近い解法を発見できる構成を確立し、
-その発見率・再現性を検証すること」まで。live competition への実際の参加は、この能力が
-十分検証された後の、さらに先のマイルストーンとして明示的に切り分ける。
+この 2 つを、**複数の終了済み(closed)コンペティションで検証する。** 単一コンペ(IEEE-CIS)
+だけでは、コンペ固有の統計的偶然や suite 設計の欠陥と区別がつかない(実際、Track B 初回は
+この問題に直面した——§4)。
 
-## 1. 「世界モデル」の操作的定義(Blindness 原則との整合)
+**コンペ選定の追加制約:解法の計算量が少ないコンペを選ぶこと。** これは新しい必須基準であり
+(§3)、GPU 学習や大規模モデルが前提の上位解法を持つコンペ(画像・NLP の深層学習コンペ等)を
+この段階では避ける——エージェントは sandboxed な CPU 環境で fresh context ごとに完結する
+必要があり、計算量の大きい解法は「多様な独立試行を数多く回す」という戦略(§2)自体を
+不可能にする。
 
-「Kaggle 上位解法をベースに作成した世界モデル」を、エージェントに見せずに評価基準として
-使うには、次のように役割を分離する:
+**Kaggle 金メダルへの言及について:** 遠い将来の方向性としては残すが、v0.4.2 の目標・
+成功基準・実行計画のいずれにも組み込まない。上記 2 つの主張が複数コンペで実証されて
+初めて、その先を検討する。
 
-1. **世界モデルは Controller 専有の評価用参照物であり、エージェントへのプロンプト・契約・
-   データには一切現れない。** これは v0.4.0 方針§7 の Blindness 原則(「エージェントに
-   構造 family・解法・真値・生成コード・本方針書を見せない」)をそのまま Track B/世界モデルへ
-   拡張したものである。
-2. **世界モデルの構築方法:** 対象コンペごとに、公開されている上位解法の write-up・公開
-   kernel の要約から、「その解法が使っている技術クラス」の一覧(タクソノミー)を作る——
-   例:「エンティティ/UID 復元によるグループ化」「イベント間時間差特徴」「適切な CV を伴う
-   ターゲットエンコーディング」「train/test 分布ずれの adversarial validation」「複数モデルの
-   stacking/blending」等、**個別の列名・パイプラインコードではなく技術クラスの水準**で記述する。
-   このタクソノミー自体は Controller 側の非公開ドキュメントとして保持し、エージェント成果物
-   の post-hoc 分類にのみ使う(合成側の family ラベルと同じ扱い)。
-3. **測る指標(世界モデル距離):** 複数の独立した diverse な agent run(モデル・scaffold・
-   seed を変えた集合)が発見した構造を、Controller が世界モデルのタクソノミーに post-hoc で
-   照合し、(a) **カバレッジ**——世界モデルの技術クラスのうち、population 全体で少なくとも
-   一度発見されたものの割合、(b) **新規性**——世界モデルに載っていない、しかし transfer
-   region で本物のgainを示した発見(あれば追加の知見)、の 2 軸で記録する。単一 run の
-   成否ではなく、**累積発見台帳と同じ「population union」の考え方**を世界モデルに対しても
-   適用する。
-4. **この指標は「解法を教える」ことにはならない。** タクソノミーはエージェントに一切見せず、
-   discovery が起きた**後に**しか参照しない——v0.3.6 以来一貫している「事後に真値を開封する」
-   設計と同型である。
+## 1. 「上位解法への近さ」の操作的定義(Blindness 原則との整合)
+
+エージェントには一切見せずに、「発見した解法が上位解法にどれだけ近いか」を事後評価する
+ため、次のように役割を分離する:
+
+1. **参照物(旧称「世界モデル」)は Controller 専有であり、プロンプト・契約・データには
+   一切現れない。** 対象コンペごとに、公開されている上位解法の write-up・公開 kernel から
+   「その解法が使っている技術クラス」の一覧を作る——例:「エンティティ/UID 復元による
+   グループ化」「イベント間時間差特徴」「適切な CV を伴うターゲットエンコーディング」
+   「train/test 分布ずれの adversarial validation」等、**個別の列名・パイプラインコードでは
+   なく技術クラスの水準**で記述する。discovery が起きた**後**にのみ参照する(v0.3.6 以来の
+   「事後に真値を開封する」設計と同型)。
+2. **測る指標(best-of-population 近似度):**
+   - **構造面:** population(複数の diverse な run)が発見した各構造を、技術クラス参照物に
+     post-hoc で照合する。population の中で**技術クラスの一致数が最大の 1 run**を採用し、
+     その一致度を報告する——population 全体のカバレッジではなく、**最良の 1 件**を見る。
+   - **性能面:** 各候補の transfer 区間 gain(既存の Track B 契約で自己申告・Controller
+     再計算済み)のうち、**population 中の最大値**が、capacity-matched baseline と
+     (公開情報から見積もった)上位解法相当の性能との差の何割を埋めたかを見る。この
+     「上位解法相当の性能」は、コンペの評価指標が Track B の内部時間分離評価と完全一致
+     しないため厳密な換算ではなく、**方向感を見るための参考値**として preregister 時に
+     記録する(倍率を確定値として引用しない、という v0.4.1 方針§5.3 の教訓をここでも守る)。
+3. **これは「解法を教える」ことにはならない。** 参照物はエージェントに一切見せず、
+   discovery 後にのみ使う。
 
 ## 2. 解法の多様性戦略(Track A で確立したレバーの活用)
 
@@ -64,11 +72,12 @@ v0.4.0/v0.4.1 の side-probe が特定した知見をそのまま踏襲する([v
 - **cycle 予算を増やすのは逆効果**(深さに振れ多様性が下がる)。cycle=4 を維持する。
 - **P2(仮説列挙強制)は opus に効かない。** 投入しない。
 
-v0.4.2 で新たに追加する軸:**独立 run 数そのものを増やし、population の多様性で世界モデルの
-カバレッジを稼ぐ。** 1 run が単独で世界モデル全体を再現することは期待しない——「多数の
-diverse な run の和集合が世界モデルに近づく」という前提(§0)を、replicate 数の設計に
-直接反映する。具体的な replicate 数は、コンペごとの世界モデルタクソノミーの技術クラス数
-(概算)を見てから preregister する(タクソノミー構築が数値設計に先行する)。
+**best-of-population という評価枠組みに変わっても、「独立 run 数を増やす」という戦略の
+価値は変わらない**——むしろ「populationの中にベストな1つが存在するか」を問うなら、
+本数を増やすほど当たりを引く確率が上がる(ただし false positive のリスクも増えるため、
+FSPR・destruction probe による棄却は従来通り厳密に維持する)。計算量の少ないコンペを選ぶ
+という新制約(§0)は、この「本数を増やす」戦略の実行可能性を直接支える——1 run あたりの
+計算コストが低いほど、同じ予算でより多くの diverse run を回せる。
 
 ## 3. 複数コンペ検証設計(Track B の汎化)
 
@@ -80,88 +89,88 @@ Track B 初回(`v041_track_b_suite.py`)は IEEE-CIS 専用にハードコード�
 v042_multi_competition_suite.py
   CompetitionSpec(
     competition_id, data_path, time_column, target_column,
-    excluded_raw_columns, missingness_threshold, world_model_taxonomy_path,
+    excluded_raw_columns, missingness_threshold, technique_taxonomy_path,
   )
   build_v042_suite(spec, ...)  # v041 の設計(4候補+4 matched-negative、3 context/pack、
-                                 # opaque view、encrypted truth)をそのまま踏襲、
+                                 # opaque view、encrypted truth、HistGradientBoosting
+                                 # capacity-matched baseline)をそのまま踏襲、
                                  # データソースだけ spec 経由で差し替える
 ```
 
-**候補コンペの選定基準**(ユーザー確認が必要——§7):
-- 終了済み(closed)であること
-- ラベル付き訓練データが完全公開されていること(test 側にラベルが無いコンペは Track A の
-  ような時間分離 3 区間を作れない——IEEE-CIS で `test_transaction.csv` を使わなかったのと
-  同じ理由)
-- 上位解法の write-up が複数公開されていること(世界モデルタクソノミーを作れること)
-- テーブルデータであること(現行の agent プロトコル・契約が表形式データ前提のため)
-- データサイズが扱いやすいこと(IEEE-CIS は ~650MB、同程度〜数 GB を想定)
+**候補コンペの選定基準(必須、優先順位順):**
+1. **解法の計算量が少ないこと(新規・最優先)。** 深層学習や大規模モデルを前提とする上位
+   解法を持つコンペは避ける——GBM/線形モデル/軽量な特徴量エンジニアリングで上位に届く
+   構造のコンペを優先する。
+2. 終了済み(closed)であること
+3. ラベル付き訓練データが完全公開されていること(test 側にラベルが無いコンペは Track A の
+   ような時間分離 3 区間を作れない——IEEE-CIS で `test_transaction.csv` を使わなかったのと
+   同じ理由)
+4. 上位解法の write-up が複数公開されていること(技術クラス参照物を作れること)
+5. テーブルデータであること(現行の agent プロトコル・契約が表形式データ前提のため)
+6. データサイズが扱いやすいこと
 
-## 4. Track B 初回の技術的負債——複数コンペ展開の前に必ず直す
+## 4. Track B 初回の技術的負債——修正済み(2026-08-29)
 
 [qualification](verification/v041_track_b_qualification.md) で確認した通り、初回 Suite は
-Matched Negative パックが 12 run 中 9 run で昇格した。原因分析:一部(`pack-n01`)は
-エージェント側の判定閾値の甘さだが、残り(`pack-n02/03/04`)は**Controller 側の permutation
-設計(decile 分割 10・baseline が線形ロジスティック回帰)が非線形残差構造を破壊しきれて
-いない**ことが複数 run・複数モデルで再現して示唆された。
+Matched Negative パックが 12 run 中 9 run で昇格した。原因:一部(`pack-n01`)はエージェント
+側の判定閾値の甘さだが、残り(`pack-n02/03/04`)は Controller 側の permutation 設計(decile
+分割 10・baseline が線形ロジスティック回帰)が非線形残差構造を破壊しきれていないことが
+複数 run・複数モデルで再現して示唆された。
 
-この欠陥を複数コンペへ複製すると、v0.4.2 全体の FSPR 指標が汚染される。**多コンペ展開の
-前に、汎用 builder(`v042_multi_competition_suite.py`)側で以下を修正する:**
+**修正済み:** baseline モデルを `HistGradientBoostingClassifier` に変更し、新 suite
+(`v041-trackb-02`)を construct(全 4 候補パックが 1 回の試行で識別可能性 preflight を通過、
+research gain が 0.03〜0.2 → 0.40〜0.49 に上昇)。**再検証バッチ(12 run)を実行中——
+matched-negative の agent 申告 transfer AUC が chance 水準に戻ったかを一次判定基準とする**
+([v042 修正事前登録](v042_trackb_matched_negative_fix_preregistration.json))。
 
-1. **baseline モデルをより表現力の高いものに変更する。** 線形ロジスティック回帰では捉え
-   られない非線形残差が生き残っていた可能性が高い——木ベースモデル(ExtraTrees/
-   HistGradientBoosting 等、sklearn の範囲内で capacity をコンペごとに揃える)へ変更を検討。
-2. **decile 分割の粒度を上げる、またはより厳密な conditional permutation(risk score の
-   連続値に対する kernel-based / nearest-neighbor マッチング等)を検討する。**
-3. **修正後、IEEE-CIS で再検証してから他コンペへ展開する。** 新しい permutation 設計が
-   IEEE-CIS の preflight で `abs(gain)` が実質ゼロになることを確認するまで、他コンペの
-   Suite は build しない。
+複数コンペへの展開は、この再検証が完了し、matched-negative の AUC が chance 水準に戻った
+ことを確認してから進める。
 
 ## 5. 実行順序
 
 ```text
-v0.4.2-a  世界モデルタクソノミー構築(Controller 専有、公開 write-up の技術クラス要約)。
-          対象コンペをユーザーと確定してから着手(§7)。
-v0.4.2-b  Matched Negative 構築法の修正 + IEEE-CIS での再検証(§4)。実データ操作だが
-          既存 Suite の再構築であり、新規コンペのデータ取得は伴わない。
-v0.4.2-c  汎用 builder(v042_multi_competition_suite.py)への一般化。
+v0.4.2-a  Matched Negative 構築法の修正 + IEEE-CIS での再検証(§4)。実施中、結果待ち。
+v0.4.2-b  汎用 builder(v042_multi_competition_suite.py)への一般化。
+v0.4.2-c  低計算量コンペの選定確定(§3・§7)、技術クラス参照物の構築。
 v0.4.2-d  追加コンペのデータ取得(Kaggle API 経由、ネットワーク・アカウントを使う操作の
           ため実行前にユーザー確認を取る)。
-v0.4.2-e  複数コンペでの Suite build → 実行 → 開封 → 世界モデルカバレッジ評価。
+v0.4.2-e  複数コンペでの Suite build → 実行 → 開封 → best-of-population 近似度・
+          未知構造発見の評価。
 ```
 
-## 6. 不変条件(v0.4.0/v0.4.1 から継続、世界モデルへ拡張)
+## 6. 不変条件(v0.4.0/v0.4.1 から継続)
 
-1. エージェントに構造 family・解法・真値・生成コード・本方針書・**世界モデルタクソノミー**を
+1. エージェントに構造 family・解法・真値・生成コード・本方針書・**技術クラス参照物**を
    見せない
 2. プロンプト・契約への追加は「仮定の抽象軸」「証拠手続き」のみ
 3. fresh context / opaque view / 暗号化 Truth / transcript 監査 / 出力 Lock 後開封は全 run 維持
 4. repair feedback はエージェント自身の数値のみ参照
 5. 各コンペの既知解法情報(列名・レシピ水準)は Controller 文書にも記載しない——
-   世界モデルタクソノミーは「技術クラス」水準に留め、コンペ固有の具体的実装は記述しない
+   技術クラス参照物は「技術クラス」水準に留め、コンペ固有の具体的実装は記述しない
 6. 新規コンペのデータ取得・Suite build は実データ・外部サービス(Kaggle API)を伴うため、
    実行前にユーザー確認を取る
 
-## 7. ユーザー確認が必要な事項
+## 7. ユーザー確認が必要な事項(計算量フィルタ適用後)
 
-1. **追加するコンペの選定。** ユーザーから以下の候補一覧を受領した(2026-08-29)。
-   最終的な具体名は今後の相談で確定する——ここでは候補と初期評価を記録するに留める。
+ユーザーから受領したコンペ候補一覧(2026-08-29)を、**計算量が少ないこと**という新しい
+必須基準(§3)で並べ直す:
 
-   | コンペ | epistemic challenge | 計算負荷 | discovery の明確さ | 総合 |
-   | --- | --- | --- | --- | --- |
-   | IEEE-CIS Fraud Detection | time, entity, shift, adversarial validation | 中 | 非常に高 | 第一候補(実施済み) |
-   | Rossmann Store Sales | future holdout, store/time structure | 低〜中 | 非常に高 | 低コスト pilot に最良 |
-   | Santander Customer Transaction | synthetic/fake test structure, transductive statistics | 低〜中 | 非常に高 | 強い stress test |
-   | Airbus Ship Detection | overlap, CV reliability, problem decomposition | 中〜高 | 高 | CV modality 追加に良い |
-   | Riiid Answer Correctness | online temporal protocol, lag, sequence/entity | 高 | 高 | 強いが再現が難しい |
-   | H&M Recommendation | candidate generation, time, ranking | 高 | 高 | recommendation 代表 |
-   | M5 Forecasting | hierarchy, metric, future horizon | 高 | 高 | validation 研究に優秀 |
-   | Jigsaw Unintended Bias | subgroup metric/error understanding | 中 | 高 | error-state 検証に良い |
+| コンペ | 計算負荷 | discovery の明確さ | v0.4.2 での扱い |
+| --- | --- | --- | --- |
+| IEEE-CIS Fraud Detection | 中 | 非常に高 | 実施済み(v041-trackb-01/02) |
+| Rossmann Store Sales | 低〜中 | 非常に高 | **最有力候補(低コスト pilot)** |
+| Santander Customer Transaction | 低〜中 | 非常に高 | **最有力候補(強い stress test)** |
+| Jigsaw Unintended Bias | 中 | 高 | 次点(要個別確認) |
+| Airbus Ship Detection | 中〜高 | 高 | **今回は見送り**(画像データ、計算量・契約変更コスト大) |
+| Riiid Answer Correctness | 高 | 高 | **今回は見送り**(計算量大、再現性の懸念も既に指摘あり) |
+| H&M Recommendation | 高 | 高 | **今回は見送り**(計算量大) |
+| M5 Forecasting | 高 | 高 | **今回は見送り**(計算量大) |
 
-   Rossmann(低コスト pilot)と Santander(強い stress test)が、§5 の v0.4.2-d(追加コンペ)着手時の
-   最有力候補として挙がっている。ただし §3 の基準(closed・ラベル完全公開・write-up 複数・テーブル
-   データ)との適合を個別に確認してから正式決定する——特に Airbus(画像)・Riiid/H&M(現行の
-   agent プロトコルが表形式データ前提のため大幅な契約変更が要る可能性)は、現行アーキテクチャへの
-   適合コストを先に見積もる必要がある。
+**Rossmann と Santander を v0.4.2-c/d の第一候補として進めてよいか、確認したい。** 両方とも
+低〜中計算量・discovery の明確さが非常に高いとユーザー自身が評価しており、§3 の基準にも
+適合する見込みが高い。IEEE-CIS を含めて 3 コンペでの検証を最初のラウンドとして想定する。
+
+1. **Rossmann・Santander を次の 2 コンペとして確定してよいか。**
 2. **Kaggle API を使った新規データ取得の実行タイミング。** 既存の `.kaggle/` 認証情報が
    使えることを確認済みだが、外部サービスへのアクセス・帯域を伴うため、v0.4.2-d の実行前に
    改めて確認を取る。
