@@ -1,7 +1,12 @@
 # C-lite v0.4.3 方針(案)— 複数コンペ検証の頑健化と回帰対応への拡張
 
 **作成日:** 2026-08-29
-**status:** 方針草案(v0.4.2 の 2 コンペ確認完了を受けて起案。ユーザー確認前)
+**status:** ユーザーが優先順位を承認し、検証・追加実験を承認なしで進めることも許可
+(2026-08-29)。v0.4.3-a(pooling 由来検証)・v0.4.3-b(taxonomy 2層化)・v0.4.3-d
+(P3 系既定化)は完了。v0.4.3-c(Rossmann 回帰対応)は metric・oracle・permutation・
+agent 提出契約の実装/単体テストまで完了したが、Rossmann の実データ実行は共有基盤の
+再設計が必要なブロッカーにより次ラウンドへ持ち越し——詳細は
+[preregistration doc](verification/v043_rossmann_regression_preregistration.md) §7。
 **前提:** [v0.4.2 方針](c_lite_v042_policy.md)、
 [クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)、
 [IEEE-CIS qualification](verification/v041_track_b_qualification.md)、
@@ -141,11 +146,26 @@ v0.4.3-e  (優先度低)Jigsaw 追加の検討。
 7. suite_id にコンペ名を含めない(v0.4.2 で発見・修正済みの盲検リーク——opaque 命名を
    維持)
 
-## 8. ユーザーへの確認事項
+## 8. ユーザーへの確認事項(2026-08-29、回答済み)
 
-1. **この v0.4.3-a〜e の順序・優先度でよいか。** 特に v0.4.3-a(pooling artifact 検証)
-   を最優先に置いたのは、これを未検証のまま taxonomy 2層化や新規コンペ追加を進めると、
-   誤った基盤の上に積み上げるリスクがあるため。
+1. **この v0.4.3-a〜e の順序・優先度でよいか。** → 承認("この優先度で進めて良い")。
 2. **v0.4.3-c(Rossmann 回帰対応)は、設計・preregister までは承認なしで進めてよいか。**
-   実データでの agent batch 実行(12 run)は、既存の不変条件どおり実行前に別途確認を
-   取る。
+   → 承認、かつ「検証とその後の追加実験と試行錯誤まで承認なしで進めて良い」との追加許可
+   を得た。
+
+## 9. 実施結果サマリ(2026-08-29)
+
+- **v0.4.3-a:** 完了。[クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)
+  に追記——「context プーリング」は artifact ではなく、2段階ゲート
+  (`leave_one_context_out_stable` → `promotion_passed`)に守られた本物の発見と判定。
+- **v0.4.3-b:** 完了。[層2 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+  を新設し、3コンペ全ての技術クラス参照物に相互参照を追加。
+- **v0.4.3-c:** 部分完了。metric(`_spearman`)・oracle(`HistGradientBoostingRegressor`)・
+  matched negative(`_destroy_target_structure` 流用)・回帰用 agent 提出契約
+  (`v043_regression_agent.py`)・回帰用プロンプトは実装・単体テスト完了(`make ci` 相当
+  全て green)。Rossmann の実データでの build-only preflight 以降は、
+  [preregistration doc](verification/v043_rossmann_regression_preregistration.md) §7 に
+  記載の共有基盤ブロッカー(`CANONICAL_FEATURES` の固定10スロット・disjoint pack 制約が
+  Rossmann の実列数と根本的に不整合)により未実行——次ラウンドの専用 preregister が必要。
+- **v0.4.3-d:** 完了。実行構成は既に `V042_EXECUTION_CONFIGS` で P1/P3/P3 の3系統を保持
+  しており、今後の新規コンペでも同じ構成を既定とする方針をここに明文化した。
