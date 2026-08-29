@@ -1,0 +1,1346 @@
+{
+  "any_configuration_reproducibility_met": true,
+  "competition_id": "santander-customer-transaction-prediction",
+  "per_config": {
+    "MC-opus-P1": {
+      "p2_satisfied_runs": 4,
+      "reproducibility_met": true,
+      "runs": 4
+    },
+    "MC-opus-P3": {
+      "p2_satisfied_runs": 4,
+      "reproducibility_met": true,
+      "runs": 4
+    },
+    "MC-sol-P3": {
+      "p2_satisfied_runs": 3,
+      "reproducibility_met": true,
+      "runs": 4
+    }
+  },
+  "per_run": [
+    {
+      "config_id": "MC-opus-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c03",
+        "pack-c02",
+        "pack-c01",
+        "pack-c04"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.6162035366293757,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-ab7d8ca964fa54edc226",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6380873007604959,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-bf1d2d2a9e6561c1ad6e",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4654065934065934,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-bfcc02d63e25f7d0c6bb",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5642146776406035,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-6da502d01aca5f4db54a",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5747193896265864,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-441113a7efc0cf6b2e0f",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5556819015479422,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-31c85e73fb64cb8a3c42",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.44352729650212486,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e19fc68d89d6cbb58f42",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.530638665132336,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-544e24000eb003be9052",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-01-s17"
+    },
+    {
+      "config_id": "MC-opus-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c02",
+        "pack-c03",
+        "pack-c01"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.532095957743379,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-27c0f3a17687fe668c09",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6217069649945868,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d8af57a243a0643ef30a",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5633482503117893,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a92b4ac1cf980d231100",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5700636942675159,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-88fdba4ab7407914d4ca",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5014505494505495,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-b382916839d1bba34cef",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5425041670752034,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-e18e353bc73348679a69",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6255593866920989,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-606276f8740cc4e772ad",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5117227319062182,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-0a787820d3f0f9ed234b",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-01-s42"
+    },
+    {
+      "config_id": "MC-opus-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c02",
+        "pack-c01",
+        "pack-c04",
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5320225955542514,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-c7c9ca8296e1033a1ceb",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5014505494505495,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-dfd3be4e5ca9fe0e9324",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4964212177664477,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-4ffb67dd743ca773a26e",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5911363859201882,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-825a64c023fecb768367",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6254860245029712,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-67278c7fd1c27e4b95be",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4551014734500973,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-9e8a5dcdbfa3a7fdf0a1",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5699944613680421,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-974cb013a43216ec6b72",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6217971851317214,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-aa506f6b7edba4481503",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s93"
+    },
+    {
+      "config_id": "MC-opus-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c01",
+        "pack-c04",
+        "pack-c03",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5054945054945055,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-e199ea61e02a17863107",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5677499816594527,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-cc5be6962e358ef705a7",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6139480332010104,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-3e5cc576d06531e0729e",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4920886075949367,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-e8ea349af8e84eb632a7",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6378789457235129,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-331a15a7bc21e37d0275",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5363876458073509,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-ab976582ac8869a77982",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4579742377907515,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-c738bc4a75f593a5abd5",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5595604395604395,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-adc9ab0ac3792915bf87",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s124"
+    },
+    {
+      "config_id": "MC-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c01",
+        "pack-c03",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5701329271669897,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-40fa58dfa37aa3ff98b6",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5117227319062182,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-57407871a1121118f7fc",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5427002647318364,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-673e784358c818ea3950",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6255593866920989,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-beb6aefa8896dadff8dc",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6217069649945868,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-f3f2cab585a84984837a",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5814154200230149,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-8a1ba8ba21a972edc817",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5428801995451544,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-e339c741851c3bf2657e",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5010989010989011,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-9aa8580d43d0dada1d21",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s17"
+    },
+    {
+      "config_id": "MC-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c01",
+        "pack-c02",
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5693713652727777,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-65b0d9123233079dbbfb",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5773115011275616,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-775694ff8f1bb4a8e615",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5419158741053044,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-bccdeda3c2afe8f46008",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5372313109823197,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-d626b1c4e22b4875a1e7",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6254860245029712,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-96508a0f7321a7ed9b12",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6228798267773367,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-4d1d5ed3e59d7c21372b",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5028571428571429,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-1cf1d1a338e48481f2a4",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.511074043184135,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-003d8a3bdbb51959ddfc",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s42"
+    },
+    {
+      "config_id": "MC-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c02",
+        "pack-c01",
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5673831707138141,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a8685a9e71d722044de5",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5364976890910425,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-f251b97f444d3f41591d",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.49287974683544306,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-4d808db0a9d8d32418ee",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.638504010834462,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-7bda7b4a16f768aa47a5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5670174466906674,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-268d0a461092f2b5c7db",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-49183803f75933f21837",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6153013352580295,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-3bfda02215c3a62348d6",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d7ca95dc502fa99e24dc",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s93"
+    },
+    {
+      "config_id": "MC-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c03",
+        "pack-c02",
+        "pack-c01"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.47238439440274305,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-b450153c96ad9de59f20",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.49764682812040395,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-12e1169cd5b24095dc89",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5911363859201882,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d40e4afbb0f73be60e41",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5431002861125376,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-e3f36542e8ca29df7367",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6254860245029712,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-a33ef727607a204d927d",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5675020769869842,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-20a5292a18c8a7911ae5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5068571428571429,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-d3767b5b3f63a2b4dd05",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6217971851317214,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-b5b2fa8f1868e6509990",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-02-s124"
+    },
+    {
+      "config_id": "MC-sol-P3",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n02"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5662827378768982,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a8f057480d6bb3395a1c",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4900747986191024,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d0857e05b154574379c9",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5360575159562762,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-59d88faf6bb4fb4f60dc",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5997203098106713,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-31f84a821c05ccfff68c",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5057918635900287,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d26a1af1fb03becca0b1",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5556923076923077,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-a226735bc369d05bcf22",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6371363190585159,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-57d695ab4f887d639eb5",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5028571428571429,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-abcc321212156c72a72c",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-03-s17"
+    },
+    {
+      "config_id": "MC-sol-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.4672412195347975,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-1a814c7d2605ff3ad116",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5671630841464309,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d8809ffd8bae3c6477a9",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4967912087912088,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-0d86eca057a00f11b308",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5020100009804883,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-ce58bcf7ddfea03ffcae",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6310615508766781,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-f491a8702ec8116ea92c",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6141284734752797,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-6a76929b89972d452b3f",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5317291467977404,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-e4afcf5445cd1ecc7a85",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5668097479922459,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-175a161952bb2715abf1",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-03-s42"
+    },
+    {
+      "config_id": "MC-sol-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c03",
+        "pack-c01",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.46687054026503566,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-4ce511f0bb5c6e4c3ae8",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5663251176959291,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-ac2a93afb17a8428bfda",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5365710512801702,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-64c6024f6fed17d0ae1b",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6160223021054948,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-4b13a8cc9714878d80b3",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5095384615384615,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-09d8aa81900811fad90f",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5021080498088047,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-3f03986b4b80f655c235",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6187297004691447,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-82c2f824632c0bc6d3a5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5623945418531289,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-e63ee372ce7c92eaafe8",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-03-s93"
+    },
+    {
+      "config_id": "MC-sol-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c04",
+        "pack-c03",
+        "pack-c01",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.4898590333716916,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-ef7c1c639116d6acdda1",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.45936428505235843,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-9795dd80a3606855d6d0",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6163839769036449,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6002778685845047,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e699918b03f06684a5f5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5032087912087913,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-d2961388f0e85e3ae2ad",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5666020492938244,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5392527472527473,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-33cd4e9f21ee09c6f3b3",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5662827378768982,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5274741398283325,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-98867a8425d59d29cc20",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5360575159562762,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-1585f79c0cf635251f53",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6389113051133446,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5485290881079892,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-adc7412834b2e3acfb38",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-03-s124"
+    }
+  ],
+  "study": "v042-multi-competition-blind-bridge",
+  "suite_id": "v042-mc-b02",
+  "version": "0.4.2"
+}

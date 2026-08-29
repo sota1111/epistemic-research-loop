@@ -4,12 +4,16 @@
 **現在の基準:** v0.4.0 Track A 世代 1 + 4 つの side-probe 全て完了(78 run)。**opus×P1(cycle=4)が
 3 study・14 replicate を通じて false promotion ゼロのまま P1 達成基準を満たしたと判定。**
 [v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動。**Matched Negative
-構築法の根本的な設計欠陥(decile-stratified permutation)を特定・修正した後の再々検証
-(`v041-trackb-03`)で、opus×P3・sol×P3×xhigh の 2 構成が P2 再現要件を達成——Track B(実データ
-blind bridge)が初めて確認された(2026-08-29)。** Matched Negative 48 パック中 0 件昇格、
-agent 申告 AUC が chance 水準(中央値 0.522)へ復帰。opus×P1(合成側 P1 達成構成)は実データでは
-1/4 のみで非達成——P3 scaffold の追加が実データ transfer に重要という新知見。詳細:
-[Track B qualification](verification/v041_track_b_qualification.md)。
+構築法の根本的な設計欠陥(decile-stratified permutation)を特定・修正した後、IEEE-CIS
+(`v041-trackb-03`)・Santander(`v042-mc-b02`)の 2 コンペ独立に blind bridge の成立を
+確認した(2026-08-29)。** IEEE-CIS:opus×P3・sol×P3×xhigh の 2/3 構成が P2 達成。
+Santander:**3/3 構成全てが達成**、Matched Negative は 48 パック中 1 件のみ昇格
+(agent 申告 AUC 中央値 0.503、ほぼ完全な chance)。2 コンペでの独立達成により、
+単一コンペの偶然という懸念は解消された。opus×P1(合成側 P1 達成構成)は IEEE-CIS では
+1/4 のみだが Santander では 4/4——同一構成の実データ transfer 成功率がコンペ依存で
+大きく異なるという知見も得た。詳細:
+[Track B qualification](verification/v041_track_b_qualification.md) /
+[Santander qualification](verification/v042_santander_qualification.md)。
 
 **v0.4.2 進行中(2026-08-29)。** 目標を「Kaggle 金メダル」から「複数コンペでの best-of-population
 近傍到達 + 未知構造発見の検証」に修正([v0.4.2 方針](c_lite_v042_policy.md)、改訂メモ参照)。
@@ -27,10 +31,20 @@ Rossmann・Santander は同日中にユーザーが Kaggle コンペ規約に同
 48 パック中 0 件昇格**——修正が機能したことを確認した。詳細:
 [Track B qualification](verification/v041_track_b_qualification.md)。
 
-**Santander は 1 回目(`v042-mc-b01`)を旧 permutation のまま実行済み(結果は参考情報のみ、
-FSPR/negative 側は信頼できない——[記録](verification/v042_santander_v1_informal_note.md))。**
-修正版 `v042-mc-b02` を construct・実行中、完了・開封され次第正式な結果とする。Rossmann は
-回帰対応が未実装のため引き続き見送り([v0.4.2 方針§3](c_lite_v042_policy.md))。
+**Santander(`v042-mc-b02`、修正版)も P2 再現要件を達成——IEEE-CIS より強い結果
+(2026-08-29)。** 3構成全て(MC-opus-P1:4/4、MC-opus-P3:4/4、MC-sol-P3:3/4)が
+成立、Matched Negative は 48 パック中 1 件のみ昇格(AUC中央値0.503、ほぼ完全な
+chance)。**2 つのコンペで独立に P2 が達成されたことで、v0.4.2 の 2 claim(best-of-
+population 近傍到達・未知構造発見)が単一コンペの偶然でないことを実証した。** 構造面では
+promoted パックの claim が構成・seedを問わず「context 間で共有される単一の線形方向」という
+一貫した discovery を示し、Santander technique taxonomy の技術クラス#2(特徴独立性前提の
+モデリング)と初めて部分一致した(IEEE-CIS 側は 0/6 一致だった)。**opus×P1(合成側 P1
+達成構成)は IEEE-CIS では 1/4 だったが Santander では 4/4——同一構成の成功率がコンペ
+依存で大きく異なるという新知見。** 詳細:
+[Santander qualification](verification/v042_santander_qualification.md)。
+旧 permutation 版(`v042-mc-b01`)は参考記録のみ:
+[記録](verification/v042_santander_v1_informal_note.md)。Rossmann は回帰対応が未実装の
+ため引き続き見送り([v0.4.2 方針§3](c_lite_v042_policy.md))。
 
 **suite_id 命名の教訓:** `v042-mc-santander-01` のように suite_id にコンペ名を含めると
 `agent_packet.json` へそのまま書き込まれエージェントへ漏洩する(盲検監査が検出・修正済み)。
@@ -390,6 +404,8 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
 - **[v0.4.2 方針](c_lite_v042_policy.md)** — 現行の正本。best-of-population + 未知構造発見の
   複数コンペ検証、計算量フィルタ
 - [best-of-population 遡及分析(IEEE-CIS)](verification/v042_best_of_population_ieee_cis_retrospective.md)
+- [Santander qualification(P2 3/3 構成達成)](verification/v042_santander_qualification.md) /
+  [参考記録(v042-mc-b01)](verification/v042_santander_v1_informal_note.md)
 - Controller専有 technique taxonomy:
   [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
   [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
