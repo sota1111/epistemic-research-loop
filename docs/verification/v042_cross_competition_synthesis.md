@@ -61,6 +61,28 @@ baseline を明確に上回る候補が複数・独立に存在した(IEEE-CIS �
 参照物であるべきで、事後に見つかったパターンを遡及して taxonomy に追加するのは
 circular になる)。次ラウンドの taxonomy 設計への入力として記録するに留める。
 
+## 解法の多様性(v0.4.2 §2 のレバーが実際にもたらした多様性の実測)
+
+promoted パックの `translation_kind`(採用された解法の要約記述)をユニーク化して数えると:
+
+- **IEEE-CIS:promoted 27 パック中、9 通りの異なる `translation_kind`**——
+  activation/sparsity 系(active-channel breadth count 等)、pooled context-invariant
+  model 系(CatBoost・HistGradientBoosting をそのまま pooled fit)、burden/phenotype 系
+  (signed-log・robust-scale 特徴)、threshold-state ensemble 系など、**アプローチの
+  「種類」自体が複数存在する**——単一の解法が繰り返し当たっているのではない。
+- **Santander:promoted 37 パック中、12 通りの異なる `translation_kind`**——ほぼ全てが
+  「pooled/shared linear score」という同じ大枠のバリエーション(ridge・L2 logistic・
+  z-scored・ECDF正規化・marginal-rank 等、正規化/推定方法の違い)——IEEE-CIS より
+  収束度が高い。これは Santander の真の構造(特徴のほぼ独立性、線形分離可能性)が
+  そもそも単純であることの反映と考えられる。
+
+**この非対称性自体が claim 1 の重要な観測結果:** 「diverse な population の中にベストな
+1つが存在する」という best-of-population の存在命題は、**構造が複雑なコンペ(IEEE-CIS)
+では複数の質的に異なるアプローチが population に共存し、構造が単純なコンペ(Santander)
+では同じアプローチの精緻化バリエーションが多数を占める**——多様性戦略(§2 のレバー:
+reasoning effort・P3 自己批判・独立 run 数)の価値は、コンペの構造的複雑さに応じて
+異なる形で発揮されるとわかった。
+
 ## Claim 2(未知構造の発見)への回答
 
 **両コンペで成立。** 上記のメタ技術パターン(context プーリング、activation/sparsity 集約)
