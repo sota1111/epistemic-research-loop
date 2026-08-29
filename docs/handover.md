@@ -1,8 +1,9 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-28
+**更新日:** 2026-08-29
 **現在の基準:** v0.3.9 完了(FAIL・TSRR 3.3 倍)/ v0.4.0 Track A 世代 1 完了・修正済み(5 構成が世代 2 進出)/
-sol reasoning-effort ablation 完了(xhigh 最良、persistent_clear 初発見)/ scaffold-ladder screen 実行中
+sol reasoning-effort ablation 完了(xhigh 最良、persistent_clear 初発見)/
+scaffold-ladder screen(Stage 1)完了(P3 が opus の多様性を 3 倍に、claude 側で persistent 系初発見)
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -49,12 +50,17 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   (held-out 証拠を 0.95 閾値まで積む能力)の問題であるという仮説を支持する最初の肯定的証拠。
   世代 2 の codex sol 構成には xhigh を採用する根拠が得られた。
   詳細: [verification/v040_sol_effort_ablation_qualification.md](verification/v040_sol_effort_ablation_qualification.md)
-- **Opus + Sol scaffold-ladder screen(Stage 1)を実行中。** 「Opus と Sol だけで解法の多様性・
+- **Opus + Sol scaffold-ladder screen(Stage 1)完了。** 「Opus と Sol だけで解法の多様性・
   未知構造発見に到達できる構造」を第一優先課題とする方針のもと、P1(baseline)/ P2(仮説列挙強制)/
   P3(新規:昇格前の自己批判 cycle、既存 cycle 予算内)を opus・sol に交差させた 6 構成 × 4 replicate
-  = 24 run(新 Suite `v040-scaf-c01..c04`)。スクリーニング段階として replicate=4 を明示的に
-  正当化(P1→P2 で 2.5 倍の効果が既に出ている実績があり、大きな効果の検出が目的)。反証データ
-  (persistent L1–L3 が scaffold・architecture 双方で 0/24)を preregistration に事前開示済み。
+  = 24 run(新 Suite `v040-scaf-c01..c04`)。**P3 が opus の仮説多様性(semantic_family_count)を
+  4 replicate 全てで再現性高く約 3 倍(3.00→8.75)に押し上げ、false promotion は 0 のまま。**
+  **claude 側で初めて persistent 系が真に発見された**(opus×P1:persistent_clear +
+  persistent_compositional 同時発見、opus×P3:persistent_noisy_proxy)。**P2 は opus には
+  効かなかった**(発見イベント P1=P3=9 > P2=7)——scaffold の効果はモデル依存と判明(事前登録した
+  3 通りの予測のうち「モデル依存」が支持された)。sol×P3 の false promotion 7 件は単一 suite に
+  集中する単発の暴走(terra/g03、sol ablation high/b05 と同型)。
+  詳細: [verification/v040_scaffold_ladder_qualification.md](verification/v040_scaffold_ladder_qualification.md)
   Preregistration: [v040_scaffold_ladder_preregistration.json](v040_scaffold_ladder_preregistration.json)
   新規プロンプト: [v040_p3.md](../prompts/generic_research_agent/v040_p3.md)
 - **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
@@ -183,21 +189,19 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **scaffold-ladder screen(Stage 1)の完走・監査・Lock・開封**(実行中、24 run)。
-   `scripts/audit_v040_scaffold_ladder_blindness.py` → `lock_v040_scaffold_ladder_runs.py` →
-   `finalize_v040_scaffold_ladder.py` の順。sol ablation の結論(xhigh が全指標で最良)と
-   整合的に読めるかを確認する(scaffold-ladder の sol 側は xhigh 固定)。P3(自己批判)が
-   false promotion を下げるかが二次予測。
-2. **v0.4.0 Track A 世代 2 の設計。** sol ablation の結論(xhigh 採用)と scaffold-ladder の結果を
-   踏まえて確定する。現時点の暫定候補:C3 opus-5×P1 baseline・C2 fable-5×P2・C5 codex sol×xhigh。
-   各 6–8 run 再現確認(policy §3.2)。terra(C6)は false promotion 5 件(1 replicate 集中)を
-   再現するか要観察。
-3. **persistent L1–L3 の壁について新しい手がかりが得られた。** sol ablation で `persistent_clear`
-   が high・xhigh でのみ計 2 件、history 上初めて真に発見された(low/medium・gen1・
-   scaffold-ladder では 0 件)。**evidentiary capacity(reasoning effort・cycle 予算)が壁を
-   動かす可能性が高まった**——contract(implication provenance 0.95 閾値)自体の問題という
-   仮説より優先して検証すべき。次の一手は **cycle 予算 4→8 の ablation**(deferred_to_generation_2
-   に記載済み、まだ未実施)。
+1. **Stage 2(scaffold-ladder 確認世代)を起動する。** Stage 1 の結論(opus×P3 が多様性で圧倒、
+   opus×P1 と同点最高発見、sol は xhigh 固定が最良)を policy §3.2 の推奨 replicate(6)で
+   新 Suite に対して再現確認する。特に (a) opus×P3 の semantic_family_count 3 倍化が再現するか、
+   (b) sol×P3 の false promotion 7 件(単一 suite 集中)が繰り返すか、(c) persistent 系発見
+   (opus×P1/P3 で計 3 件、sol ablation の high/xhigh で計 2 件)が偶然か構造的傾向かを見る。
+2. **v0.4.0 Track A 世代 2 の設計。** Stage 2 の結果を踏まえて確定する。現時点の暫定候補:
+   opus×P1・opus×P3・sol×xhigh(P1 か P3、Stage 2 の結果次第)。fable・GLM は使用量制約のため
+   1 構成ずつに留める。
+3. **persistent L1–L4 の壁は「evidentiary capacity」仮説がさらに補強された。** sol ablation
+   (high/xhigh)に加え、scaffold-ladder でも opus×P1(persistent_clear + compositional 同時)・
+   opus×P3(persistent_noisy_proxy)で claude 側初の真の発見が生じた。低 effort・P2 以外の
+   条件で確率的に発見され始めている。**次の一手は cycle 予算 4→8 の ablation**
+  (deferred_to_generation_2 に記載済み、まだ未実施)——Stage 2 と並行して着手を検討。
 4. **GLM(zai)の正式な study 設計。** runner 統合・smoke test は完了しているが、
    世代・config 数・replicate 数を伴う preregistration はまだない。次の preregistration
    (世代 2、または独立 GLM probe)で候補プールに加える判断ポイント。GLM-5.3 のみが確認済みで、

@@ -416,3 +416,31 @@ tree, silently moving this session's HEAD to `main` (which contains none of this
 background batch was mid-flight. Caught and recovered (`git checkout system/c-lite-v0.3.8`) before
 any subprocess spawn could fail; no commits were lost (branch refs are independent of HEAD), but
 this is now a standing risk for any long-running background execution in this environment.
+
+## 2026-08-29 — scaffold-ladder screen: P3 triples Opus's hypothesis diversity, claude finds persistent structure for the first time
+
+All 24 runs (Opus x {P1, P2, P3} crossed with Sol x {P1, P2, P3}, 4 replicates each) completed,
+audited clean, locked, and unblinded. One run (opus x P2) hit a legitimate terminal-resolution
+self-consistency contract rejection after 3 repair attempts and was retried once successfully
+through the batch's resumable design -- not an infrastructure failure.
+
+Headline result: P3 (the new self-critique-before-promotion scaffold) raised Opus's mean
+semantic_family_count from 3.00 (both P1 and P2) to 8.75 -- consistently across all 4 replicates
+(12, 6, 9, 8 distinct families), not a single-run artifact -- while keeping false promotions at 0.
+This is the most reproducible finding of the whole scaffold-ladder probe. Separately, and for the
+first time across this entire session's data (generation 1, the sol-effort ablation, and this
+screen), claude-family models found genuine persistent-ladder structure: opus x P1 discovered both
+persistent_clear and persistent_compositional in the same suite instance, and opus x P3 discovered
+persistent_noisy_proxy in a different one. P2, which had produced a 2.5x discovery-event swing for
+fable in generation 1, did NOT help opus (discovery events P1=P3=9 > P2=7) and unlocked no
+persistent family -- confirming the preregistered "model-dependent" outcome over "consistent
+across architectures." Sol x P3's 7 false promotions were entirely concentrated in one suite
+instance (the same single-outlier pattern already seen with generation 1's terra/g03 and the
+sol-ablation's high/b05), not a systemic P3-plus-sol calibration problem.
+
+Combined with the sol-effort ablation's finding that persistent_clear only appeared at high/xhigh
+effort, the persistent-ladder collapse now looks less like a single uniform wall and more like a
+low-probability event that several different capacity-increasing levers (high reasoning effort;
+P1 or P3 scaffolds on a strong model) can each occasionally cross, while low effort and P2
+specifically do not. Full detail:
+[verification/v040_scaffold_ladder_qualification.md](verification/v040_scaffold_ladder_qualification.md).
