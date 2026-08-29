@@ -1,9 +1,9 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-29
-**現在の基準:** v0.4.0 Track A 世代 1 完了・修正済み/ sol reasoning-effort ablation 完了/
-scaffold-ladder Stage 1・Stage 2 完了(**persistent ラダー全 4 段階が history 上初めて破られた**)/
-cycle-budget ablation 準備完了・起動待ち
+**現在の基準:** v0.4.0 Track A 世代 1 + 3 つの side-probe(sol effort ablation・scaffold-ladder
+Stage1/2・cycle-budget ablation)全て完了。**persistent ラダー全 4 段階が history 上初めて破られた。**
+v0.4.1 仕様策定へ移行
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -75,13 +75,17 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   確認した上で適用。
   詳細: [verification/v040_scaffold_ladder_stage2_qualification.md](verification/v040_scaffold_ladder_stage2_qualification.md)
   累積発見台帳: [v040_discovery_ledger.md](v040_discovery_ledger.md)
-- **cycle-budget ablation(4→8 cycle、opus×P1×cycle8・sol×P1×xhigh×cycle8、各 6 replicate =
-  12 run)を preregister・suite build 済み、実行待ち。** `MAX_CYCLES_PER_PACK` を 4→8 に拡張
-  (`src/epistemic_loop/controller/v037_agent.py`、後方互換——既存 395 test 全通過確認済み)。
-  新プロンプト [v040_p1_c8.md](../prompts/generic_research_agent/v040_p1_c8.md)(P1 の「four」を
-  「eight」に変えただけの単一差分)。cycle=4 の baseline は既存 study(gen1+Stage1 の opus×P1、
-  sol ablation の xhigh)を再利用し、cycle=8 のみ新規実行。
-  Preregistration: [v040_cycle_budget_ablation_preregistration.json](v040_cycle_budget_ablation_preregistration.json)
+- **cycle-budget ablation(4→8 cycle)完了。** opus×P1×cycle8・sol×P1×xhigh×cycle8、各 6
+  replicate = 12 run(cycle=4 baseline は既存 study 再利用)。**事前登録した capacity 仮説は
+  支持されなかった。** 発見イベント数はほぼ横ばい(opus 2.0→1.83/replicate、sol 1.17→1.33/
+  replicate)。**多様性指標は両モデルとも明確に低下**(opus 3.75→2.67、sol 1.67→1.17)——
+  reasoning effort とは逆方向の効果。**cycle を増やすと「広く探索」ではなく「同じ仮説を
+  深く詰める」方向に働く**——evidentiary capacity を単一概念で扱うのは不正確だったと判明。
+  sol の false promotion 1→4(単一 suite 集中、単発の暴走型)。`persistent_delayed_history`
+  は opus×P1×cycle8 でも 1/6 発見(cycle=4 の Stage2 と同水準、底上げなし)。
+  運用面:suite build 実行忘れ・`_CONFIG_REGISTRY` 登録漏れ(Stage2 に続き 2 度目、回帰テスト
+  追加済み)、バッチ親プロセスが原因不明で異常終了(子プロセスは孤立生存で完走、実害なし)。
+  詳細: [verification/v040_cycle_budget_ablation_qualification.md](verification/v040_cycle_budget_ablation_qualification.md)
 - **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
   (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
   **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで

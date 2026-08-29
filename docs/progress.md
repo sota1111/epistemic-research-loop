@@ -481,3 +481,42 @@ a new `MAX_CYCLES_PER_PACK = 8` module constant -- backward compatible by constr
 full 395-test suite passes unchanged. New prompt `v040_p1_c8.md` is P1 with exactly one word
 changed ('four' -> 'eight'). Only the cycle=8 arm will be executed as new runs; each
 configuration's cycle=4 baseline is read from already-unblinded prior studies rather than re-run.
+
+## 2026-08-29 — cycle-budget ablation: capacity hypothesis rejected, effort and cycles diverge
+
+All 12 runs completed, audited clean, and unblinded (with two operational hiccups along the way:
+the suite build script and `_CONFIG_REGISTRY` registration were both forgotten after writing --
+the same mistake as Stage 2, now caught by a new regression test
+(`test_run_v040_agent_registers_every_study_suite_id_set`) that imports the runner and asserts
+every declared suite-id constant is registered; and the batch's parent process died mid-run for an
+unexplained reason (no OOM evidence, memory looked normal) while one child subprocess survived as
+an orphan and ran to completion on its own -- the one truly-missing pair was launched individually,
+avoiding a collision with the still-running orphan, and all 12 submissions landed cleanly with no
+duplication or corruption).
+
+The preregistered capacity hypothesis -- that raising `max_cycles_per_pack` from 4 to 8 would
+increase discovery the way raising reasoning effort did -- was not supported. Discovery-event
+rates were roughly flat once normalized by replicate count (opus 2.0 -> 1.83 events/replicate, sol
+1.17 -> 1.33). But diversity metrics moved in the OPPOSITE direction from the effort ablation:
+mean semantic_family_count fell for both models (opus 3.75 -> 2.67, sol 1.67 -> 1.17). The
+working interpretation: more cycles per pack let an agent go deeper on fewer lineages rather than
+broader across more hypotheses -- cycle budget and reasoning effort are not interchangeable
+"evidentiary capacity" levers; they pull in different directions on the depth/breadth axis. Sol's
+false-promotion count rose from 1 (cycle=4 baseline) to 4 (cycle=8), but all 4 were concentrated in
+a single suite instance -- the same single-outlier pattern already seen repeatedly across the
+session (generation 1's terra/g03, the effort ablation's high/b05, Stage 1's sol x P3), now also
+showing up for cycle=8, suggesting a recurring "some suite instances trigger a runaway-validation
+mode regardless of model/scaffold/effort/cycles" phenomenon worth investigating on its own.
+`persistent_delayed_history` was discovered once more (opus x P1 x cycle8), at the same ~1-in-6
+rate already seen at cycle=4 in Stage 2 -- cycle budget did not clearly raise the persistent-ladder
+discovery rate either. Full detail:
+[verification/v040_cycle_budget_ablation_qualification.md](verification/v040_cycle_budget_ablation_qualification.md).
+
+Updated the cross-study discovery ledger (now 102 runs across 5 completed studies):
+[v040_discovery_ledger.md](v040_discovery_ledger.md). persistent_delayed_history now stands at 3
+discoveries (2 from Stage 2, 1 from this ablation); every persistent-ladder family has been broken
+at least once, none more than 6 times out of 102 runs.
+
+This closes out v0.4.0's generation-1 side-probe program (sol-effort ablation, scaffold-ladder
+Stage 1/2, cycle-budget ablation all complete). Next: synthesize all of it into a v0.4.1
+specification.
