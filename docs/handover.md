@@ -10,16 +10,26 @@
 
 **v0.4.2 進行中(2026-08-29)。** 目標を「Kaggle 金メダル」から「複数コンペでの best-of-population
 近傍到達 + 未知構造発見の検証」に修正([v0.4.2 方針](c_lite_v042_policy.md)、改訂メモ参照)。
-Matched Negative 修正版(`v041-trackb-02`)の再検証バッチを実行中、builder を
-`v042_multi_competition_suite.py` としてコンペ非依存に一般化済み(IEEE-CIS で回帰テスト
-済み・[詳細](../src/epistemic_loop/benchmark/v042_multi_competition_suite.py))。
-**⚠️ ブロッカー:Rossmann・Santander のデータ取得は Kaggle 側のコンペ規約同意
-(ブラウザでのログイン・クリック操作)が必要で、API 経由では実行不可(`403 Forbidden`)。**
-ユーザーが `kaggle.com/competitions/rossmann-store-sales/rules` と
-`kaggle.com/competitions/santander-customer-transaction-prediction/rules` で規約に同意すれば
-即座に `kaggle competitions download` が通り、`scripts/build_v042_suite.py` で Suite 構築に進める
-(CompetitionSpec は `v042_competitions.py` に定義済み、technique taxonomy も
-`docs/controller_reference/` に作成済み)。
+Rossmann・Santander は同日中にユーザーが Kaggle コンペ規約に同意しデータ取得済み(旧
+ブロッカー解消)。builder を `v042_multi_competition_suite.py` としてコンペ非依存に一般化済み。
+
+**Matched Negative 構築法に 2 段階の欠陥修正を実施済み(2026-08-29)。**
+1 段目(baseline model を線形→`HistGradientBoostingClassifier`)は**効果なし**と判明
+(`v041-trackb-02`:P2 再現要件 3 構成とも 0/4、negative パック AUC 0.48〜0.73 で初回から
+不変)。根本原因を数学的・実験的に特定——**`decile-stratified permutation` は decile 間の
+陽性率相関を完全に温存する設計欠陥**(baseline の表現力とは無関係)。`_destroy_target_structure`
+(完全ランダム permutation、stratification 廃止)へ 2 段目の修正を実施し、`v041-trackb-03`
+(IEEE-CIS 再々検証)・`v042-mc-b02`(Santander、修正版)を construct・実行中。
+詳細:[Track B qualification](verification/v041_track_b_qualification.md)。
+
+**Santander は 1 回目(`v042-mc-b01`)を旧 permutation のまま実行済み(結果は参考情報のみ、
+FSPR/negative 側は信頼できない)。** 修正版 `v042-mc-b02` が完了・開封され次第、正式な結果と
+する。Rossmann は回帰対応が未実装のため引き続き見送り([v0.4.2 方針§3](c_lite_v042_policy.md))。
+
+**suite_id 命名の教訓:** `v042-mc-santander-01` のように suite_id にコンペ名を含めると
+`agent_packet.json` へそのまま書き込まれエージェントへ漏洩する(盲検監査が検出・修正済み)。
+以後の suite_id はコンペ名を含まない opaque 命名(`v042-mc-a01`・`b01`・`b02`...)を使うこと。
+
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -261,20 +271,32 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
    **次のステップ:** baseline モデルをより表現力の高いものに変える等で Matched Negative
    構築を強化し、新 Suite で再試行する。実データを再び扱う判断のため、**実行前にユーザー
    確認を取ること**。
-   **2026-08-29 追記:** ユーザー承認を得て baseline を `HistGradientBoostingClassifier` に
-   変更した新 Suite(`v041-trackb-02`)を construct(全 4 候補パックが 1 回の試行で
-   identifiability preflight 通過、research gain 0.03〜0.2 → 0.40〜0.49 に改善)、
-   12-run 再検証バッチを実行中(進行状況はこのセッションのバックグラウンドタスクで監視中)。
-   完了後 `scripts/audit_v041_track_b_blindness.py --suite-id v041-trackb-02` →
-   `lock_v041_track_b_runs.py` → `finalize_v041_track_b.py` の順で開封・判定すること
-   (一次判定基準:Matched Negative の agent 申告 transfer AUC が chance 水準に戻ったか、
-   [事前登録](v042_trackb_matched_negative_fix_preregistration.json))。
-   並行して builder を `v042_multi_competition_suite.py` としてコンペ非依存に一般化し
-   (IEEE-CIS で回帰テスト済み)、v041-trackb-01 の FSPR-clean な 2 run(Matched Negative
-   汚染の影響を受けていない)に対して修正後の best-of-population 指標を遡及適用した——
-   構造面は taxonomy 6 クラスと 0/6 一致(匿名化データでは列意味論依存の技術クラスに
-   到達しにくい可能性)、性能面は population 最大 +0.21 AUC(baseline比)。詳細:
+   **2026-08-29 追記1:** ユーザー承認を得て baseline を `HistGradientBoostingClassifier` に
+   変更した新 Suite(`v041-trackb-02`)を construct・12-run 再検証を実行・開封。**結果:
+   P2 再現要件は 3 構成とも 0/4 で不成立——初回よりむしろ悪化。** negative パックの agent
+   申告 transfer AUC は 0.48〜0.73(中央値 0.602)と初回(0.55〜0.71)からほぼ不変——
+   baseline 強化は効かなかった。
+   並行して builder を `v042_multi_competition_suite.py` としてコンペ非依存に一般化し、
+   v041-trackb-01 の FSPR-clean な 2 run(Matched Negative 汚染の影響を受けていない)に
+   対して修正後の best-of-population 指標を遡及適用した——構造面は taxonomy 6 クラスと
+   0/6 一致(匿名化データでは列意味論依存の技術クラスに到達しにくい可能性)、性能面は
+   population 最大 +0.21 AUC(baseline比)。詳細:
    [遡及分析](verification/v042_best_of_population_ieee_cis_retrospective.md)。
+   **2026-08-29 追記2(根本原因特定・本修正):** baseline 強化が効かなかった理由を数学的に
+   特定した——`_decile_stratified_permutation` は risk decile **内**でのみラベルを
+   シャッフルするため、decile **間**の陽性率相関(target と risk の粗い相関)を完全に
+   温存してしまう設計欠陥だった(bucket 内シャッフルは bucket の陽性件数を不変に保つため、
+   これは permutation の数学的性質として必然)。AUC は順位統計量であり、この粗い相関だけで
+   chance を大きく超えるスコアが出る。合成データでの再現実験で
+   `AUC(risk, decile-permuted target)=0.988`、`AUC(held-out独立モデル, 同target)=0.700`
+   (実測レンジ 0.55〜0.73 と整合)を確認、baseline の表現力とは無関係と証明した。
+   **修正:** `_decile_stratified_permutation` → `_destroy_target_structure`(完全ランダム
+   permutation、stratification 廃止)。`v041-trackb-03`(IEEE-CIS 再々検証)・
+   `v042-mc-b02`(Santander、修正版)を construct・実行中。**suite_id 命名の教訓も同時に
+   発見:** `v042-mc-santander-01` は suite_id が `agent_packet.json` に書き込まれるため
+   コンペ名の漏洩になる(盲検監査が検出)——以後 opaque 命名(`v042-mc-a01`/`b01`/`b02`)に
+   統一。詳細:[Track B qualification](verification/v041_track_b_qualification.md)
+   (「再検証 v1」「根本原因の特定」節)。
 2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
    read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
    Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、
