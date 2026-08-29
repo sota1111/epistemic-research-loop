@@ -3,8 +3,10 @@
 **更新日:** 2026-08-29
 **現在の基準:** v0.4.0 Track A 世代 1 + 4 つの side-probe 全て完了(78 run)。**opus×P1(cycle=4)が
 3 study・14 replicate を通じて false promotion ゼロのまま P1 達成基準を満たしたと判定。**
-[v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)起動へ——**Suite build はユーザー
-確認待ち**
+[v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動・実行(12 run)。**P2 再現要件は
+3 構成とも不成立——ただし主因は Track B 自身の Matched Negative 構築方法の統計的な甘さの疑いが強く、
+「合成が実データへ転移しなかった」と結論するのは時期尚早。** 詳細:
+[Track B qualification](verification/v041_track_b_qualification.md)。次の Suite 再構築はユーザー確認待ち。
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -223,13 +225,19 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **Track B(IEEE-CIS blind bridge)の起動——[v0.4.1 方針](c_lite_v041_policy.md)の主目的。**
-   opus×P1 が P1 達成基準を満たしたと判定したため、v0.4.0 の停止規則 2 に従い Track A の
-   さらなる世代は追わない。投入構成:opus×P1・opus×P3・sol×P3×xhigh、各 4 run(独立 2 run
-   以上の再現要件は合成 Track A と同じ)。**Suite build(`.data/ieee-cis` から時間分離・
-   opaque 化・実データ Matched Negative の生成)は実データを扱うため、実行前にユーザー確認を
-   取ること**(v0.4.1 方針§3.3 に明記)。受け入れ基準は v0.4.0 方針§4.2 のまま(隠し transfer
-   gain・構造破壊プローブ・実データ Matched Negative 非昇格・evidence bundle 有効)。
+1. **Track B(IEEE-CIS blind bridge)——起動・実行済み、Matched Negative 設計の修正が必要
+   (2026-08-29)。** 1 Suite(`v041-trackb-01`)・12 run(opus×P1/P3・sol×P3×xhigh 各 4 replicate)
+   を実行、契約エラー 0・盲検監査クリーンだったが、**P2 再現要件は 3 構成とも不成立**——
+   主因は候補構造の未発見ではなく、**Matched Negative パックが 12 run 中 9 run で最低 1 件
+   昇格した**こと。提出済み transfer AUC を精査すると、一部(`pack-n01`)は chance 付近
+   (~0.5)なのに昇格されておりエージェント側の閾値判定の甘さ、残り(`pack-n02/03/04`)は
+   複数 run・複数モデルで再現する 0.55〜0.71 の AUC が見られ、**Controller 側の Matched
+   Negative 構築法(decile-stratified permutation、baseline が線形ロジスティック回帰)が
+   非線形残差構造を破壊しきれていない疑いが強い**——suite 設計側の技術的負債。
+   詳細:[Track B qualification](verification/v041_track_b_qualification.md)。
+   **次のステップ:** baseline モデルをより表現力の高いものに変える等で Matched Negative
+   構築を強化し、新 Suite で再試行する。実データを再び扱う判断のため、**実行前にユーザー
+   確認を取ること**。
 2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
    read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
    Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、
