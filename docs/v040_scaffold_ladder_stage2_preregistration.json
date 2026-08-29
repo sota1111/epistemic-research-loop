@@ -1,0 +1,32 @@
+{
+  "version": "0.4.0",
+  "title": "Track A side-probe — Opus + Sol scaffold-ladder Stage 2 (confirmatory follow-up)",
+  "policy": "c_lite_v040_policy.md",
+  "parent_study": "v040_scaffold_ladder_preregistration.json (Stage 1, n=4 screen)",
+  "frozen_before_suite_generation": true,
+  "rationale": "Stage 1 (n=4) found three results that need confirmation at policy-recommended replicate count before being trusted for generation-2 design: (a) Opus x P3 raised mean semantic_family_count from 3.00 to 8.75 consistently across all 4 replicates -- looks robust but only 4 data points; (b) Sol x P3 had 7 false promotions concentrated entirely in one suite instance -- looks like a single-outlier fluke but could recur; (c) Opus x P1 and Opus x P3 each genuinely discovered a persistent-ladder family for the first time in claude-family data -- 1 hit each out of 4 replicates, base rate unknown. Sol x P1 x xhigh is NOT re-tested here: the sol-effort ablation already provides 6 clean replicates of exactly that configuration (7 discovery events, 0 false promotions), so repeating it would waste budget on an already-answered question.",
+  "discovery_ledger_context": "docs/v040_discovery_ledger.md, compiled from all 88 runs across generation 1, the sol-effort ablation, and Stage 1: persistent_clear found 4 times, persistent_noisy_proxy 1 time, persistent_compositional 3 times, persistent_delayed_history 0 times -- the only family never once discovered by any configuration, model, scaffold, or effort level tried so far. This probe explicitly tracks whether any of its three configurations breaks it, as a named secondary endpoint distinct from the aggregate discovery-event count.",
+  "suite_ids": ["v040-scaf2-d01", "v040-scaf2-d02", "v040-scaf2-d03", "v040-scaf2-d04", "v040-scaf2-d05", "v040-scaf2-d06"],
+  "master_seed": 20260929,
+  "pack_plan": "identical to generation 1 and Stage 1: 4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs). New master seed (Stage 1's and generation 1's suites are already unblinded and cannot be reused).",
+  "execution_configurations": {
+    "T2-opus-P1": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1", "slot": "agent-01-s17"},
+    "T2-opus-P3": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3", "slot": "agent-01-s93"},
+    "T2-sol-P3": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p3", "reasoning_effort": "xhigh", "slot": "agent-02-s93"}
+  },
+  "held_fixed": "reasoning_effort=xhigh for sol, max_cycles_per_pack=4 for both, lineage_policy=posterior_commit -- identical execution parameters to the corresponding Stage 1 cells, only replicate count changes",
+  "replicates_per_configuration": 6,
+  "total_runs": 18,
+  "replicate_count_rationale": "policy Sec 3.2's recommended lower bound, appropriate here because this is now a CONFIRMATORY stage (is the Stage-1 screening signal real?), not a screening stage. 3 configurations, not 6: Opus x P2 and Sol x P1/P2 are not carried forward (P2 did not help Opus in Stage 1; Sol x P1 x xhigh already has 6 clean replicates from the effort ablation).",
+  "contract": "identical v0.4.0 contract as all prior v0.4.0 studies (implication provenance, terminal-resolution consistency); no contract changes",
+  "runner_correctness": "codex slot uses -s danger-full-access and explicit -c model_reasoning_effort=xhigh; claude slots use --dangerously-skip-permissions, as in all prior v0.4.0 studies",
+  "isolation": "workdir-copy + RUNNER.md instructions + transcript audit only for codex (no OS sandbox); claude's deny-rule settings.json as in all prior versions",
+  "evaluation": "locked v0.3.7-lineage evaluator (evaluate_v037_runs/evaluate_v038_runs) with expected_suite_count=6 explicit. Reports discovery-event counts, false-promotion counts, and the same diversity/exploration-breadth secondary metrics as Stage 1 and the sol-effort ablation (semantic_family_count, effective_family_count, eecr, deep_lineage_completion_rate), PLUS a new named binary endpoint per config: whether persistent_delayed_history was genuinely discovered (behaviorally_discovered=true) in any of its 6 replicates -- the first time this specific family is tracked as its own endpoint rather than folded into the aggregate persistent_/grammar_composed discovery-event count.",
+  "predictions": {
+    "primary": "Opus x P3's diversity boost (Stage 1: 8.75 vs baseline 3.00) reproduces at n=6 with a substantially similar magnitude (not regressing to Stage 1's P1/P2 level of ~3.0); if it regresses to baseline, Stage 1's finding was noise from n=4 and should not inform generation 2.",
+    "secondary_false_promotion": "Sol x P3's false-promotion rate at n=6 is materially lower than Stage 1's 7-out-of-a-possible-42 rate (i.e. the single-suite spike does not recur in a second independent suite instance); if it does recur, P3 carries a real calibration risk for Sol specifically that generation 2 must account for.",
+    "secondary_persistent_delayed_history": "no directional prediction (this family has a 0/88 base rate and no config here has previously touched it) -- purely exploratory tracking, reported regardless of outcome."
+  },
+  "stopping_rule": "fixed 18-run confirmatory probe. Feeds generation 2's final configuration choice directly (this is the last preregistered step before generation 2 is designed). Does not itself trigger Track B.",
+  "post_registration_deviations": []
+}

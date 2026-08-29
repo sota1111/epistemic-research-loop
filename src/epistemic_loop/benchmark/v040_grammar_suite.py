@@ -149,6 +149,28 @@ V040_SCAFFOLD_LADDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V040_SCAFFOLD_LADDER_RUN_IDS = tuple(V040_SCAFFOLD_LADDER_CONFIGS)
 
+#: Independent side-probe: Stage 2 confirmatory follow-up on the scaffold-ladder screen's three
+#: most information-rich cells (docs/v040_scaffold_ladder_stage2_preregistration.json). Not a
+#: repeat of the sol reasoning-effort ablation (already have 6 clean replicates of sol x P1 x
+#: xhigh from that study); this targets what Stage 1 could not resolve at n=4: does Opus x P3's
+#: ~3x hypothesis-diversity boost reproduce, does Sol x P3's single-suite false-promotion spike
+#: recur, and does persistent_delayed_history (0 discoveries across 88 runs so far,
+#: docs/v040_discovery_ledger.md) finally break under any of these.
+V040_SCAFFOLD_STAGE2_SUITE_IDS = tuple(f"v040-scaf2-d{index:02d}" for index in range(1, 7))
+V040_SCAFFOLD_STAGE2_MASTER_SEED = 20260929
+V040_SCAFFOLD_STAGE2_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    "agent-01-s17": {"config_id": "T2-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1"},
+    "agent-01-s93": {"config_id": "T2-opus-P3", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3"},
+    "agent-02-s93": {
+        "config_id": "T2-sol-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "xhigh",
+    },
+}
+V040_SCAFFOLD_STAGE2_RUN_IDS = tuple(V040_SCAFFOLD_STAGE2_CONFIGS)
+
 GRAMMAR_MOTIFS = (
     "entity_effect",
     "delayed_history",
