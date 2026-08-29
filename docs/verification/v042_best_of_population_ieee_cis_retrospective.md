@@ -1,5 +1,12 @@
 # v0.4.2 best-of-population 指標の遡及適用 — IEEE-CIS Track B(v041-trackb-01)
 
+**⚠️ 一部supersededされました。** 本ドキュメントは v041-trackb-01(Matched Negative
+構築に欠陥のある初回 Suite)の FSPR-clean な 2 run・5 パックのみを対象にした限定的な
+分析です。修正済み Suite(`v041-trackb-03`)の全 12 run・27 promoted パックを対象にした、
+より完全でクリーンな分析、および Santander との比較は
+[cross-competition synthesis](v042_cross_competition_synthesis.md) を参照してください。
+本ドキュメントは、初期の限定分析として歴史的に保持します。
+
 **目的:** [c_lite_v042_policy.md](../c_lite_v042_policy.md) §1 で定義した best-of-population
 近似度(構造面・性能面)を、既に完了済みの v041-trackb-01(12 run)に遡及適用する。新規
 データ取得を必要とせず、修正後の評価枠組みが実データでどう機能するかを検証できる。

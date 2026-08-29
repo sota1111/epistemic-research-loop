@@ -403,7 +403,9 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [Matched Negative 修正 Preregistration](v042_trackb_matched_negative_fix_preregistration.json)
 - **[v0.4.2 方針](c_lite_v042_policy.md)** — 現行の正本。best-of-population + 未知構造発見の
   複数コンペ検証、計算量フィルタ
-- [best-of-population 遡及分析(IEEE-CIS)](verification/v042_best_of_population_ieee_cis_retrospective.md)
+- **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
+  — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見
+- [best-of-population 遡及分析(IEEE-CIS、v041-trackb-01 の限定データ、superseded)](verification/v042_best_of_population_ieee_cis_retrospective.md)
 - [Santander qualification(P2 3/3 構成達成)](verification/v042_santander_qualification.md) /
   [参考記録(v042-mc-b01)](verification/v042_santander_v1_informal_note.md)
 - Controller専有 technique taxonomy:
