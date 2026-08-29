@@ -56,12 +56,19 @@ from epistemic_loop.benchmark.v037_repro_suite import (
 from epistemic_loop.controller.v037_agent import MAX_CYCLES_PER_PACK
 
 V041_TRACKB_SUITE_ID = "v041-trackb-01"
-#: v041-trackb-01 is the original (flawed matched-negative construction, see
-#: docs/verification/v041_track_b_qualification.md) suite, kept as a historical artifact.
-#: v041-trackb-02 is the re-verification suite with a strengthened baseline model (see
-#: docs/v042_trackb_matched_negative_fix_preregistration.json). New suite ids are appended
-#: here, never reused, matching the project's discard-and-rebuild discipline.
-V041_TRACKB_SUITE_IDS = ("v041-trackb-01", "v041-trackb-02")
+#: v041-trackb-01 is the original (flawed matched-negative construction: linear baseline,
+#: decile-stratified permutation) suite, kept as a historical artifact -- see
+#: docs/verification/v041_track_b_qualification.md.
+#: v041-trackb-02 re-verified with a strengthened baseline model (HistGradientBoosting) but
+#: kept the decile-stratified permutation, and reproduced the same matched-negative
+#: false-promotion pattern (0/12 runs met P2 reproducibility) -- proving the flaw was in the
+#: permutation's stratification, not the baseline's capacity. See
+#: docs/v042_trackb_matched_negative_fix_preregistration.json for the (incomplete) v02 fix
+#: and docs/verification/v041_track_b_qualification.md for the root-cause derivation.
+#: v041-trackb-03 re-verifies again with the corrected permutation (full random, no
+#: stratification -- see _destroy_target_structure). New suite ids are appended here, never
+#: reused, matching the project's discard-and-rebuild discipline.
+V041_TRACKB_SUITE_IDS = ("v041-trackb-01", "v041-trackb-02", "v041-trackb-03")
 V041_TRACKB_MASTER_SEED = 20261001
 V041_TRACKB_MAX_CYCLES_PER_PACK = 4
 V041_TRACKB_CONTEXTS_PER_PACK = 3
@@ -171,25 +178,35 @@ def _sample_segment(segment: pd.DataFrame, *, count: int, seed: int) -> pd.DataF
 
 def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) -> HistGradientBoostingClassifier:
     # Gradient-boosted trees are the dominant real-world top-solution model class for tabular
-    # Kaggle competitions; native NaN handling means no imputer/scaler is needed. Swapped in
-    # after the original linear LogisticRegression baseline's decile-stratified permutation was
-    # found to leave nonlinear residual structure in matched-negative packs -- see
-    # docs/v042_trackb_matched_negative_fix_preregistration.json.
+    # Kaggle competitions; native NaN handling means no imputer/scaler is needed.
     model = HistGradientBoostingClassifier(random_state=0)
     model.fit(features, target)
     return model
 
 
-def _decile_stratified_permutation(risk: np.ndarray, target: np.ndarray, *, seed: int) -> np.ndarray:
+def _destroy_target_structure(target: np.ndarray, *, seed: int) -> np.ndarray:
+    """Full random permutation of the target within a segment.
+
+    Replaces an earlier decile-stratified-by-risk permutation (v041-trackb-01/02): shuffling
+    labels only *within* each risk-decile bucket preserves the *between*-decile positive-rate
+    correlation with risk exactly (bucket membership, and therefore each bucket's positive
+    count, is invariant under a within-bucket shuffle). Since AUC is a rank statistic, that
+    coarse (10-level) correlation alone is enough for any model that can approximately recover
+    decile membership from raw features -- which is almost guaranteed, since deciles were
+    defined by a model fit on the same features -- to score well above chance. This was
+    empirically confirmed: negative-pack agent-submitted transfer AUC sat at 0.55-0.73 in both
+    v041-trackb-01 (linear baseline) and v041-trackb-02 (HistGradientBoosting baseline),
+    unmoved by the baseline-capacity fix -- because the flaw was in the permutation's
+    stratification, not the baseline's expressive power. A full (unstratified) permutation
+    preserves the segment's marginal positive rate exactly (same count of positives,
+    reassigned uniformly at random) while making risk statistically independent of target, so
+    AUC(any risk score, permuted target) -> 0.5 in expectation. See
+    docs/verification/v041_track_b_qualification.md SS(reverification) for the derivation and
+    a synthetic reproduction.
+    """
+
     rng = np.random.RandomState(seed)
-    order = np.argsort(np.argsort(risk))
-    n = len(risk)
-    decile = order * 10 // max(n, 1)
-    permuted = target.copy()
-    for bucket in np.unique(decile):
-        indices = np.where(decile == bucket)[0]
-        permuted[indices] = target[indices][rng.permutation(len(indices))]
-    return permuted
+    return target[rng.permutation(len(target))]
 
 
 def _build_row_dicts(
@@ -254,7 +271,7 @@ def build_context_rows(
             )
         )
         perm_seed = _derive_int(master_seed, "permute", str(pack_index), str(context_index), name) % (2**32)
-        permuted_targets = _decile_stratified_permutation(oracle, targets, seed=perm_seed)
+        permuted_targets = _destroy_target_structure(targets, seed=perm_seed)
         negative_rows.extend(
             _build_row_dicts(
                 segment_frame,

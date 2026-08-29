@@ -5,8 +5,8 @@
 into a :class:`CompetitionSpec` so a new closed Kaggle competition can be added by
 declaring its data path, target column, and (if it has one) a time column -- everything
 else (pack/context/truth schema, opaque view, encrypted truth, matched-negative
-construction via decile-stratified permutation of a HistGradientBoostingClassifier
-baseline, identifiability preflight with retry) is unchanged from Track B.
+construction via full random permutation of the target within each segment,
+identifiability preflight with retry) is unchanged from Track B.
 
 Two split strategies are supported, chosen automatically by whether ``time_column`` is
 set:
@@ -20,10 +20,9 @@ set:
   generalization, matching the actual structure of that competition's test set.
 
 Regression targets (e.g. Rossmann's continuous ``Sales``) are out of scope for this
-module: the whole pipeline (AUC-based preflight/scoring, decile-stratified permutation
-of a classifier's predicted probability) assumes a binary target. A regression-metric
-variant would need its own oracle/permutation design and is deferred -- see
-docs/c_lite_v042_policy.md SS3.
+module: the whole pipeline (AUC-based preflight/scoring, permutation of a binary
+target) assumes a binary target. A regression-metric variant would need its own
+oracle/permutation design and is deferred -- see docs/c_lite_v042_policy.md SS3.
 """
 
 from __future__ import annotations
@@ -129,7 +128,8 @@ V042_RUN_IDS = tuple(V042_EXECUTION_CONFIGS)
 #: (a, b, c, ...) for competition order instead.
 V042_MC_SUITE_IDS: tuple[str, ...] = (
     "v042-mc-a01",  # IEEE-CIS, build-only regression check for the generalized builder
-    "v042-mc-b01",  # Santander Customer Transaction Prediction
+    "v042-mc-b01",  # Santander, flawed: decile-stratified permutation (see v041-trackb-02)
+    "v042-mc-b02",  # Santander, corrected permutation (_destroy_target_structure)
 )
 
 _CANDIDATE_PACK_COUNT = 4
@@ -222,16 +222,29 @@ def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) ->
     return model
 
 
-def _decile_stratified_permutation(risk: np.ndarray, target: np.ndarray, *, seed: int) -> np.ndarray:
+def _destroy_target_structure(target: np.ndarray, *, seed: int) -> np.ndarray:
+    """Full random permutation of the target within a segment.
+
+    Replaces an earlier decile-stratified-by-risk permutation (v041-trackb-01/02, and this
+    module's own first Santander build): shuffling labels only *within* each risk-decile
+    bucket preserves the *between*-decile positive-rate correlation with risk exactly (bucket
+    membership, and therefore each bucket's positive count, is invariant under a within-bucket
+    shuffle). Since AUC is a rank statistic, that coarse (10-level) correlation alone is enough
+    for any model that can approximately recover decile membership from raw features -- which
+    is almost guaranteed, since deciles were defined by a model fit on the same features -- to
+    score well above chance. This was empirically confirmed on the IEEE-CIS side: negative-pack
+    agent-submitted transfer AUC sat at 0.55-0.73 in both v041-trackb-01 (linear baseline) and
+    v041-trackb-02 (HistGradientBoosting baseline), unmoved by the baseline-capacity fix --
+    because the flaw was in the permutation's stratification, not the baseline's expressive
+    power. A full (unstratified) permutation preserves the segment's marginal positive rate
+    exactly (same count of positives, reassigned uniformly at random) while making risk
+    statistically independent of target, so AUC(any risk score, permuted target) -> 0.5 in
+    expectation. See docs/verification/v041_track_b_qualification.md for the derivation and a
+    synthetic reproduction.
+    """
+
     rng = np.random.RandomState(seed)
-    order = np.argsort(np.argsort(risk))
-    n = len(risk)
-    decile = order * 10 // max(n, 1)
-    permuted = target.copy()
-    for bucket in np.unique(decile):
-        indices = np.where(decile == bucket)[0]
-        permuted[indices] = target[indices][rng.permutation(len(indices))]
-    return permuted
+    return target[rng.permutation(len(target))]
 
 
 def _coordinate_column(spec: CompetitionSpec) -> str:
@@ -310,7 +323,7 @@ def build_context_rows(
             )
         )
         perm_seed = _derive_int(master_seed, "permute", str(pack_index), str(context_index), name) % (2**32)
-        permuted_targets = _decile_stratified_permutation(oracle, targets, seed=perm_seed)
+        permuted_targets = _destroy_target_structure(targets, seed=perm_seed)
         negative_rows.extend(
             _build_row_dicts(
                 segment_frame,
