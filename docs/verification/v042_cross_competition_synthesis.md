@@ -98,6 +98,61 @@ blind discovery の枠組みが機能した証拠である。
 コンペを跨いだ頑健性が高い**——今後の複数コンペ展開(Rossmann 含む)では、P1 単独ではなく
 P3 系構成を優先すべきという実践的な示唆。
 
+## 追記(v0.4.3-a):「context プーリング」発見は artifact か、実データの構造か
+
+[v0.4.3 方針](../c_lite_v043_policy.md) §1 の検証を、新規 agent run なしで手持ちデータ
+(`agent_submission.json` の `claim` テキスト・`leave_one_context_out_stable`・診断 JSON の
+`promoted`/`family`)のみを使って実行した。全 96 パック(IEEE-CIS)+ 全 96 パック
+(Santander)を `opaque_pack_id` で診断 JSON と突合し、claim テキストがプーリング(context
+間の共有機構・exchangeable・context-invariant 等)を主張しているかを分類した。
+
+**IEEE-CIS(v041-trackb-03):**
+
+| | 件数 | 内訳 |
+| --- | --- | --- |
+| Promoted(27件) | プーリング主張 17(63%)/ 非プーリング 10(37%) | 非プーリングは activation/sparsity・burden/phenotype・threshold-ensemble 系 |
+| Matched Negative(48件) | プーリング主張を試みた 21件 | **昇格 0 / falsified 21(100%)** |
+| 上記21件中 `leave_one_context_out_stable` | True 8 / False 13 | LOCOを通過しても昇格には至らない |
+
+**Santander(v042-mc-b02):**
+
+| | 件数 | 内訳 |
+| --- | --- | --- |
+| Promoted(38件) | プーリング主張 38(100%) | 非プーリングの promoted は 0 |
+| Matched Negative(48件) | プーリング主張を試みた 48件(100%) | **昇格 1 / falsified・却下 47(98%、既知の FSPR 汚染1件と一致)** |
+| 上記48件中 `leave_one_context_out_stable` | True 6 / False 42 | True 6件のうち昇格は1件のみ——残り5件は別ゲートで却下 |
+
+**重要な発見:`promotion_passed` は `leave_one_context_out_stable` とは独立な、より厳しい
+下流ゲートである。** Matched Negative パックがプーリングを主張して LOCO を通過しても
+(IEEE-CIS 8/21、Santander 6/48)、`promotion_passed` はほぼ全てを追加で棄却している——
+FSPR がほぼゼロ(IEEE-CIS 0/48、Santander 1/48)である理由は、この 2 段階ゲートが機能して
+いるためだと確認できた。代表的な却下理由(Santander の Matched Negative、LOCO通過後に
+`promotion_passed: False`):「pooling は real だが unvalidated な予測gainをもたらす……LOCO
+AUC 0.551、permutation p=0.0125……しかし independent implication が—」。別例では明示的に
+「context 間の係数ベクトルは自身の permutation null を超えて一致しない(cosine -0.012 vs
+null -0.013)」として falsified。
+
+**結論(artifact 説は積極的に反証された、ただし留保あり):**
+
+1. Matched Negative でのプーリング主張は IEEE-CIS 100%・Santander 98% が正しく棄却されて
+   おり、Suite 全体の FSPR とほぼ一致する。プーリング主張が昇格ロジックに優遇されている
+   なら、プーリング主張に限定して false promotion 率が高くなるはずだが、逆にほぼゼロである。
+2. IEEE-CIS では promoted 27 件中 37% が非プーリング(activation/sparsity 集約等)で
+   昇格しており、**プーリングは昇格への唯一の抜け道ではない**——これが artifact 説への
+   最も強い反証。
+3. **留保:** Santander は promoted・negative の**両方**で claim 試行率が 100% であり、
+   Santander 単独では「エージェントがプーリングを主張しがちである」と「Santander の真の
+   構造がプーリング(=共有線形方向)そのものである」を区別できない(taxonomy 技術クラス#2
+   との部分一致と整合的)。この区別を可能にしているのは IEEE-CIS の非プーリング昇格の
+   存在である。また `leave_one_context_out_stable` が非プーリング promoted パック(IEEE-CIS
+   10件全て)で一律 `True` になっている点は、この field がプーリング以外の claim に対して
+   意味のある negative signal として機能しているかは未確認——ただし今回の artifact 判定
+   自体には影響しない。
+
+**判定:v0.4.3-a の問いへの回答は「本物の構造(2段階ゲートに正しく守られている)」。**
+taxonomy 2層化(v0.4.3-b)は計画通り進めてよい——プーリングは artifact ではなく、
+taxonomy 層2(データ形式非依存のメタ技術)に正式に組み込む価値のある発見だったと判断する。
+
 ## 今後の方針への含意
 
 1. **v0.4.2 の 2 claim は 2 コンペで独立に実証された。** 3 コンペ目(Rossmann、回帰対応後)
