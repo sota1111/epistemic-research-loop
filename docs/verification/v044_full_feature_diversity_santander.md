@@ -87,9 +87,32 @@ baseline 0.7985)。
 比率)——Gaussian Naive Bayes等での明示的なモデリングと、定量的な「加法的・
 特徴ごとの信号」という確認を伴っていた。
 
+## 追記:Round 3(population拡大、`v044-suite-b03`)——population拡大でも
+Santanderの公開技術には到達しなかった(明確な否定的結果)
+
+`F4-xhigh-P3` に新規4 seed(512・634・777・901)を追加(このセル単体でn=8、
+Santander全体の全特徴量runは累計22 run)。全4 run が baseline(0.7968)を上回った
+——性能面は引き続き完全に安定。
+
+**発見(8、決定的な否定的結果):population をこのセル単体でn=8まで拡大しても、
+頻度エンコーディング(0/4)・real/synthetic行判定(0/4)は一度も出現しなかった。**
+4 run全てが「exact duplicate rows or cross-split overlaps は存在しない」ことを
+明示的に確認した上で、それを特徴量化する方向(頻度エンコーディング的発想)には
+進まなかった。**これにより「population拡大が足りないだけ」という仮説は棄却できる**
+——Santander全体で22 run・列数200列全てを使っても、この2つの実際の公開技術には
+一度も到達していない。列数を増やすことも population を増やすことも、この
+ギャップを埋めなかった。
+
+一方、adversarial validation は新規4 runでも4/4継続(引き続き完璧なパターン)。
+1件、興味深い派生パターンが観測された(s901):confirmation/transfer領域の
+**ラベルなしデータの分布形状**を使って per-feature の generalized-Gaussian
+形状パラメータを推定するという、緩やかな transductive/semi-supervised 手法——
+Santanderの実際の「test構造」技術とは異なるが、方向性としては近い発想であり、
+今後の観察対象として記録する。
+
 ## 正本
 
-- [Diagnostics(screening)](../v044_v044_suite_b01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_b02_diagnostics.json)
+- [Diagnostics(screening)](../v044_v044_suite_b01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_b02_diagnostics.json) / [Diagnostics(round3)](../v044_v044_suite_b03_diagnostics.json)
 - [IEEE-CIS側](v044_full_feature_diversity_ieee_cis.md)
 - [10列制約インシデント記録](v044_ten_column_constraint_incident.md)
 - [c_lite_v044_policy.md](../c_lite_v044_policy.md)
