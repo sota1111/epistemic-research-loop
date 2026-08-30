@@ -76,9 +76,49 @@ IEEE-CIS では **high** effort、Santander では **low** effort で起きた�
 3. **未知構造探索エージェント:** `SD-low-P1` が該当——低 effort でありながら、他の
    全構成が前提とする「特徴独立性」を否定する対抗的な claim に到達した。
 
+## 追記:Round 2(確認ラウンド、`v042-mc-d02`)——SD-high-P1 は確定、SD-low-P1 の脱出は再現せず
+
+`SD-high-P1`(最良セル)・`SD-low-P1`(脱出セル)それぞれに新規 seed(155・186・217)を
+3件追加した(**注:** round2 実行中に `agent-01-s217` の transcript で "santander" 文字列の
+盲検リークが発覚し、原因(バッチオーケストレータの `--config-set` 起動引数がコンペ名を
+含んでいた)を修正の上、該当1 runを破棄・再実行済み——詳細は
+[ps -ef 盲検リーク事例](v043_blindness_incident_ps_ef_leak.md))。
+
+| config_id | round1(seed17) | round2(新規3 seed) | 合計 n=4 での P2 達成数 |
+| --- | --- | --- | ---: |
+| SD-high-P1 | ✓(1/2 beats_baseline) | **✓ 3/3(FSPR汚染ゼロ)** | **4/4(達成)** |
+| SD-low-P1 | ✓(1/2 beats_baseline、脱出claim) | **✗ 0/3(promotion自体ゼロ)** | **1/4(未達)** |
+
+**発見(12):`SD-high-P1` は 4 seed 全てで P2 を達成——IEEE-CIS の `SD-high-P3` と並ぶ、
+このラウンドで最も頑健な sol 単独構成として確定した。**
+
+**発見(13、IEEE-CIS の発見11と対になる結果):`SD-low-P1` の「非線形多変量」脱出 claim は
+再現しなかった。** round2 の新規3 seed は promoted パックが**1件もない**(全て
+`inconclusive`/`useful_encoding_unvalidated` に留まる)——round1(seed17)が到達した
+validated 状態への昇格自体が、新規3 seed のいずれでも再現しなかった。IEEE-CIS の
+`SD-high-P3`/occurrence-sparsity 脱出(発見11)と全く同じパターン:**両コンペで
+唯一観測された「支配的パターンからの脱出」は、いずれも n=4 での確認により
+「頑健な発見」ではなく「一回性の draw」に格下げされた。**
+
+**v0.4.3-f 最終的な総括(2コンペ・8+8+6+6=28 run を踏まえて):**
+
+1. **解法多様性:** sol・reasoning-effort のみでは、opus を含む元の混合構成バッチ
+   (多様性指数 IEEE-CIS 6・Santander 2)を上回る多様性は得られなかった——む
+   しろ IEEE-CIS 側は 2 種に収束し、多様性指数が低下した。
+2. **上位解法相当の存在:** Santander は既存の傾向(特徴独立性モデリングとの高い一致率)
+   を維持。IEEE-CIS は今回も layer1 一致ゼロを維持——匿名化の効果は reasoning effort に
+   依存しない頑健な制約であることが再確認された。
+3. **未知構造探索エージェント:** round1 単体では両コンペに1件ずつ「脱出」事例が
+   見えたが、**n=4 での確認を経ていずれも再現しなかった。** これは v0.4.3-f の最も
+   重要な結論——novel-structure-seeking の「成功」を騙る screening 結果は、
+   確認ラウンドなしに信頼してはならない。今後、単一 seed の discovery を
+   「エージェントが未知構造の探索に成功した」と主張する際は、必ず追加 seed での
+   再現確認を経ること。
+
 ## 正本
 
-- [Diagnostics](../v042_mc_c02_diagnostics.json)
+- [Diagnostics(round1)](../v042_mc_c02_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d02_diagnostics.json)
+- [ps -ef 盲検リーク事例](v043_blindness_incident_ps_ef_leak.md)
 - [IEEE-CIS 側(対になる分析)](v043_sol_effort_diversity_ieee_cis.md)
 - [クロスコンペ統合分析](v042_cross_competition_synthesis.md)
 - [v0.4.3 方針§10](../c_lite_v043_policy.md)
