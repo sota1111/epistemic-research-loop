@@ -19,6 +19,8 @@ from epistemic_loop.benchmark.v042_multi_competition_suite import (
     V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
     V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
     V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
     V043_SOL_EFFORT_RUN_IDS,
 )
 
@@ -30,6 +32,8 @@ _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
     "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
     "sol-effort-r3-a": V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
     "sol-effort-r3-b": V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    "sol-effort-r4-a": V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    "sol-effort-r4-b": V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
 }
 
 

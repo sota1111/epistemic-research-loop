@@ -275,6 +275,37 @@ V043_SOL_EFFORT_R3_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R3_SANTANDER_CONFIGS)
 
+#: Round 4 (fill remaining confirmatory gaps): rounds 2-3 only confirmed one P3 cell for
+#: IEEE-CIS (SD-high-P3) and one P1 cell for Santander (SD-high-P1), leaving two other
+#: round-1 screening results that looked strong (IEEE-CIS SD-high-P1, 1/4 beats_baseline
+#: in round 1 -- same rate as SD-high-P3 before its confirmation revealed it was actually
+#: robust; Santander SD-xhigh-P3, round 1's single strongest result, 4/4 beats_baseline)
+#: sitting at n=1, unconfirmed. Adds 3 new seeds (512/634/777, no overlap with rounds 1-3)
+#: to each, bringing both to n=4.
+V043_SOL_EFFORT_R4_SEEDS = (512, 634, 777)
+V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R4_SEEDS
+}
+V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS)
+V043_SOL_EFFORT_R4_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-xhigh-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "xhigh",
+    }
+    for seed in V043_SOL_EFFORT_R4_SEEDS
+}
+V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R4_SANTANDER_CONFIGS)
+
 #: Opaque suite ids for the sol-effort diversity round -- "c" continues the per-competition
 #: letter sequence started by V042_MC_SUITE_IDS's a/b, kept in a separate tuple only because
 #: this round uses V043_SOL_EFFORT_CONFIGS instead of V042_EXECUTION_CONFIGS (see
@@ -292,6 +323,9 @@ V043_SOL_EFFORT_R2_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-d02",)
 #: Round 3 (population scale-up) suite ids -- "e" continues the letter sequence.
 V043_SOL_EFFORT_R3_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-e01",)
 V043_SOL_EFFORT_R3_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-e02",)
+#: Round 4 (fill remaining confirmatory gaps) suite ids -- "f" continues the letter sequence.
+V043_SOL_EFFORT_R4_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-f01",)
+V043_SOL_EFFORT_R4_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-f02",)
 
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature
