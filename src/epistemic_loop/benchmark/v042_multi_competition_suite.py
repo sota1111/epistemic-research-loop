@@ -148,6 +148,47 @@ V042_MC_SUITE_IDS: tuple[str, ...] = (
     "v042-mc-b02",  # Santander, corrected permutation (_destroy_target_structure)
 )
 
+#: v0.4.3 sol-only reasoning-effort diversity round (2026-08-30). Claude/opus quota was
+#: exhausted mid-session; codex/gpt-5.6-sol quota was not, so this round trades the
+#: model-diversity lever (opus vs sol) for the reasoning-effort lever (low/medium/high/
+#: xhigh, matching V040_SOL_ABLATION_CONFIGS's precedent on synthetic data) crossed with
+#: prompt_arm (p1/p3), to keep growing the discovered-solution population on real data
+#: without spending exhausted budget. See docs/c_lite_v043_policy.md SS10.
+V043_SOL_EFFORT_MASTER_SEED = 20260830
+V043_SOL_EFFORT_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": f"SD-{effort}-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": effort,
+        }
+        for seed, effort in zip((17, 42, 93, 124), ("low", "medium", "high", "xhigh"), strict=True)
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": f"SD-{effort}-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": effort,
+        }
+        for seed, effort in zip((17, 42, 93, 124), ("low", "medium", "high", "xhigh"), strict=True)
+    },
+}
+V043_SOL_EFFORT_RUN_IDS = tuple(V043_SOL_EFFORT_CONFIGS)
+
+#: Opaque suite ids for the sol-effort diversity round -- "c" continues the per-competition
+#: letter sequence started by V042_MC_SUITE_IDS's a/b, kept in a separate tuple only because
+#: this round uses V043_SOL_EFFORT_CONFIGS instead of V042_EXECUTION_CONFIGS (see
+#: scripts/run_v040_agent.py's _CONFIG_REGISTRY, which maps suite ids to *one* config dict
+#: each). Still competition-name-free per the same blindness discipline.
+V043_SOL_EFFORT_SUITE_IDS: tuple[str, ...] = (
+    "v042-mc-c01",  # IEEE-CIS
+    "v042-mc-c02",  # Santander
+)
+
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature
 _ROWS_PER_CONTEXT_SEGMENT = {"research": 1080, "confirmation": 360, "transfer": 360}

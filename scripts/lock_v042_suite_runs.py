@@ -8,13 +8,19 @@ import hashlib
 import json
 from pathlib import Path
 
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS, V043_SOL_EFFORT_RUN_IDS
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
+
+_RUN_ID_SETS: dict[str, tuple[str, ...]] = {
+    "default": V042_RUN_IDS,
+    "sol-effort": V043_SOL_EFFORT_RUN_IDS,
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="default", choices=sorted(_RUN_ID_SETS))
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v042"))
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     arguments = parser.parse_args()
@@ -23,7 +29,7 @@ def main() -> None:
         raise SystemExit(f"suite outputs for {arguments.suite_id} are already locked")
     records: list[dict[str, object]] = []
     errors: list[str] = []
-    for run_id in V042_RUN_IDS:
+    for run_id in _RUN_ID_SETS[arguments.config_set]:
         packet_path = arguments.suite_root / arguments.suite_id / "agent_views" / run_id / "agent_packet.json"
         submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         try:

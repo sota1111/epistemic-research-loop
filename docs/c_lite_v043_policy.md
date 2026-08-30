@@ -169,3 +169,36 @@ v0.4.3-e  (優先度低)Jigsaw 追加の検討。
   Rossmann の実列数と根本的に不整合)により未実行——次ラウンドの専用 preregister が必要。
 - **v0.4.3-d:** 完了。実行構成は既に `V042_EXECUTION_CONFIGS` で P1/P3/P3 の3系統を保持
   しており、今後の新規コンペでも同じ構成を既定とする方針をここに明文化した。
+
+## 10. v0.4.3-f:sol reasoning-effort 多様性ラウンド(2026-08-30、8時間の無人試行錯誤)
+
+**背景:** ユーザーが8時間離席するにあたり、「解法の多様性」「その多様性の中に上位解法相当が
+含まれること」「未知の構造の発見に近づくアプローチをするエージェントの存在」を価値の中心に
+据えて計画・試行錯誤するよう指示された。その後、Claude(opus)側のクォータが枯渇し
+codex/gpt-5.6-sol 側に余裕があると判明したため、**モデル多様性のレバー(opus vs sol)を
+reasoning-effort 多様性のレバー(low/medium/high/xhigh)に置き換えて**、既存の
+IEEE-CIS・Santander データ上で追加の discovery population を積み増す方針とした。
+
+**設計(`V043_SOL_EFFORT_CONFIGS`、[v042_multi_competition_suite.py](../src/epistemic_loop/benchmark/v042_multi_competition_suite.py)):**
+sol/codex のみ、reasoning_effort ∈ {low, medium, high, xhigh} × prompt_arm ∈ {p1, p3} の
+8 run(v0.4.0 の sol reasoning-effort ablation の設計を p1 単独から p1/p3 双方に拡張)。
+IEEE-CIS 向け `v042-mc-c01`・Santander 向け `v042-mc-c02` として build-only preflight・
+盲検監査ともにクリーンを確認済み(2026-08-30)。suite_id 命名規則(コンペ名を含めない)
+は維持。
+
+**評価の軸(P2 の再現要件に加えて、今回新設):**
+
+1. **解法多様性:** promoted パックの `translation_kind` のユニーク数(既存の
+   [クロスコンペ分析](verification/v042_cross_competition_synthesis.md)の測定と同じ手法)。
+   reasoning_effort が上がるほど多様性が増すか、あるいは収束するかを観察する。
+2. **上位解法相当の存在:** [layer1/layer2 taxonomy](controller_reference/) との照合率。
+3. **未知構造探索エージェントの識別:** `failure_trace`(preregister された仮説数・
+   attack cycle の有無)・`shadow_candidate_ids` の数・cycle 内で複数の異なる
+   `hypothesis_family`/`representation_family` を試した形跡など、**「一つの答えに
+   収束する前にどれだけ幅広く探索したか」を示す transcript レベルの特徴**を、この
+   ラウンドから明示的に記録・比較する(既存の P2/taxonomy 照合だけでは捉えきれない
+   軸)。
+
+**実行順序:** build-only preflight(完了)→ 盲検監査(完了)→ 8-run batch(IEEE-CIS →
+Santander の順、バックグラウンドで逐次実行)→ lock → finalize → 上記3軸での分析・
+[クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)への追記。

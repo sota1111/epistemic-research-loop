@@ -21,20 +21,33 @@ from epistemic_loop.benchmark.v042_multi_competition_suite import (
     V042_MASTER_SEED,
     V042_MAX_CYCLES_PER_PACK,
     V042_RUN_IDS,
+    V043_SOL_EFFORT_CONFIGS,
+    V043_SOL_EFFORT_RUN_IDS,
     build_v042_suite,
 )
 from epistemic_loop.controller.v040_agent import v040_submission_contract
+
+#: --config-set selects which preregistered execution-configuration mapping this suite
+#: uses; "default" is the original 3-config (opus-P1/opus-P3/sol-P3) design, "sol-effort"
+#: is the v0.4.3 sol-only reasoning-effort diversity round (see V043_SOL_EFFORT_CONFIGS's
+#: docstring in v042_multi_competition_suite.py).
+_CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
+    "default": (V042_EXECUTION_CONFIGS, V042_RUN_IDS),
+    "sol-effort": (V043_SOL_EFFORT_CONFIGS, V043_SOL_EFFORT_RUN_IDS),
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--competition-id", required=True, choices=sorted(COMPETITION_REGISTRY))
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="default", choices=sorted(_CONFIG_SETS))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v042"))
     parser.add_argument("--truth-root", type=Path, default=Path(".controller_truth/v042"))
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
     parser.add_argument("--lock-file", type=Path, default=None)
     arguments = parser.parse_args()
+    execution_configs, run_ids = _CONFIG_SETS[arguments.config_set]
     if arguments.lock_file is None:
         arguments.lock_file = arguments.output_root / f"{arguments.suite_id}_suite_lock.json"
     if arguments.lock_file.exists():
@@ -82,8 +95,8 @@ def main() -> None:
         policy_contract=policy_contract,
         suite_id=arguments.suite_id,
         master_seed=V042_MASTER_SEED,
-        configs=V042_EXECUTION_CONFIGS,
-        run_ids=V042_RUN_IDS,
+        configs=execution_configs,
+        run_ids=run_ids,
         max_cycles_per_pack=V042_MAX_CYCLES_PER_PACK,
     )
     contract = v040_submission_contract()
@@ -97,8 +110,8 @@ def main() -> None:
         "suite_id": arguments.suite_id,
         "split_strategy": spec.split_strategy,
         "max_cycles_per_pack": V042_MAX_CYCLES_PER_PACK,
-        "execution_configurations": {run: dict(config) for run, config in V042_EXECUTION_CONFIGS.items()},
-        "total_runs": len(V042_RUN_IDS),
+        "execution_configurations": {run: dict(config) for run, config in execution_configs.items()},
+        "total_runs": len(run_ids),
         "fresh_llm_context_per_run": True,
         "prompts_frozen_before_generation": True,
         "prompt_hashes": {
@@ -116,7 +129,7 @@ def main() -> None:
                 "competition_id": arguments.competition_id,
                 "suite_id": arguments.suite_id,
                 "split_strategy": spec.split_strategy,
-                "runs": len(V042_RUN_IDS),
+                "runs": len(run_ids),
                 "preflight_passed": result.preflight_passed,
                 "preflight": [
                     {
