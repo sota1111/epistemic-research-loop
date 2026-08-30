@@ -90,8 +90,34 @@ zero-state/heavy-tail の activity bundle として扱うべきで、これは�
    発見であり、reasoning effort を安易に「上げれば良い」という単純な結論を退ける
    材料になる。
 
+## 追記:Round 2(確認ラウンド、`v042-mc-d01`)——発見4は再現し、発見2の一部は再現しなかった
+
+Round 1(screening、各セル n=1)が示した「SD-medium-P3 が最良(3/3 beats_baseline)」
+「SD-high-P3 がプーリングから脱出した唯一の run」という2つの観測について、それぞれ新規
+seed(155・186・217)を3件追加し、n=4(本プロジェクトの標準的な再現性基準)で確認した。
+
+| config_id | round1(seed93/42) | round2(新規3 seed) | 合計 n=4 での P2 達成数 |
+| --- | --- | --- | ---: |
+| SD-medium-P3 | ✓(3/3 beats_baseline) | **✗ 0/3(FSPR汚染1件含む)** | **1/4(未達)** |
+| SD-high-P3 | ✓(1/3 beats_baseline) | **✓ 3/3(FSPR汚染ゼロ)** | **4/4(達成)** |
+
+**発見(9、最重要):round 1 単体では「medium effort が最良」に見えたが、これは再現しなかった
+——n=1 の screening 結果を過信してはならないという直接的な教訓。** `SD-medium-P3` は
+round 2 の新規3 seed で 0/3 が P2 を満たさず、うち1件(`agent-01-s186`)では **Matched
+Negative パック(`pack-n04`)が誤って promoted される FSPR 汚染**が発生した——round 1 の
+「3/3 全勝」という結果は統計的なブレ(運の良い draw)だった可能性が高い。
+
+**発見(10):`SD-high-P3` は 4 seed 全てで P2 を達成し(4/4)、FSPR 汚染はゼロ——sol×
+reasoning_effort=high×P3 は、この 8 セル探索の中で最も頑健な構成だったと確定した。**
+round 1 だけを見ると「medium が良く見えて high は今ひとつ(1/3)」という逆の印象を
+与えていたが、round 2 で完全に逆転した。**単一 seed のスクリーニング結果から実行構成の
+優劣を判断することの危険性を、この対比が定量的に示している。**
+
+taxonomy 再現性(発見4の脱出パターンが再現するか)は別途フォローアップ分析中——
+[Santander 側](v043_sol_effort_diversity_santander.md)の round 2 と合わせて追記する。
+
 ## 正本
 
-- [Diagnostics](../v042_mc_c01_diagnostics.json)
+- [Diagnostics(round1)](../v042_mc_c01_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d01_diagnostics.json)
 - [クロスコンペ統合分析](v042_cross_competition_synthesis.md)
 - [v0.4.3 方針§10](../c_lite_v043_policy.md)
