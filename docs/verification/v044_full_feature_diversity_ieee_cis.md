@@ -68,8 +68,35 @@ P1configの4runには1件も出現しなかった。**「自身の最良解を�
 できる——reasoning effort の高低とは無関係。これは v0.4.3-f 側では見えなかった、
 全特徴量下で初めて明確になった知見である。
 
+## 追記:Round 2(確認ラウンド、`v044-suite-a02`)——両パターンとも確定
+
+`F4-xhigh-P1`(最良performer)・`F4-xhigh-P3`(adversarial validation候補)に新規3
+seed(271・314・358)を追加した(新しい独立行サンプル、reference baseline 0.8271)。
+
+| config_id | 新規3 seed の transfer AUC | baseline超え |
+| --- | --- | :---: |
+| F4-xhigh-P1 | 0.8543 / 0.8456 / 0.8631 | 3/3 ✓ |
+| F4-xhigh-P3 | 0.8429 / 0.8634 / 0.8702 | 3/3 ✓ |
+
+**発見(5):両セルとも6/6が新規seedでbaselineを上回り、性能面は完全に確定した。**
+
+**発見(6、最重要——adversarial validationパターンが2ラウンドを通じて確定):**
+adversarial validation は新規3 seed全ての `F4-xhigh-P3` run(s271・s314・s358)に
+出現し(AUC 0.493〜0.509、いずれも「シフトなし」と正しく解釈)、`F4-xhigh-P1` の
+3 runには1件も出現しなかった。**screening(4/4 P3・0/4 P1)と合わせて、pooled で
+7/7 P3・0/7 P1**——これはもはや screening レベルの一回性ではなく、**2つの独立した
+ラウンドで確認された頑健なパターン**として確定してよい。「P3の自己批判指示が
+adversarial validationという具体的な検証手法を安定して誘発する」という結論は、
+v0.4.3-fの「単一seedのnoveltyは信頼できない」という教訓を踏まえた上で、正式に
+支持されたと言える。
+
+**発見(7):重複行照合パターンは screening と異なり、P3限定ではなかった。**
+新規6 runの5/6(P1・P3両方)で exact-duplicate 照合が試みられ、重複が実際に
+存在する場合のみ予測補正に使われ、存在しない場合は「漏洩がないことの確認」として
+正しく棄却された——健全に校正された技術であることが確認できた。
+
 ## 正本
 
-- [Diagnostics](../v044_v044_suite_a01_diagnostics.json)
+- [Diagnostics(screening)](../v044_v044_suite_a01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_a02_diagnostics.json)
 - [10列制約インシデント記録](v044_ten_column_constraint_incident.md)
 - [c_lite_v044_policy.md](../c_lite_v044_policy.md)
