@@ -153,6 +153,58 @@ null -0.013)」として falsified。
 taxonomy 2層化(v0.4.3-b)は計画通り進めてよい——プーリングは artifact ではなく、
 taxonomy 層2(データ形式非依存のメタ技術)に正式に組み込む価値のある発見だったと判断する。
 
+## 追記(v0.4.3-f 準備):解法多様性・上位解法一致・探索幅の全数監査(2026-08-30)
+
+ユーザーが新たに提示した価値基準(解法多様性・その中の上位解法相当の存在・未知構造探索
+エージェントの識別)に基づき、既存の promoted 全パック(IEEE-CIS 27件・Santander 38件)を
+layer1(コンペ固有)・layer2(データ形式非依存)taxonomy 双方に対して**全数**照合した
+(従来は 2 run のみの spot check、または `translation_kind` のユニーク数カウントに留まって
+いた)。
+
+**技術クラス一致率:**
+
+| | IEEE-CIS(27件) | Santander(38件) |
+| --- | --- | --- |
+| L1 #1〜#6 一致(いずれか) | 6件(UID復元2・GBMアンサンブル4、22%) | 17件(特徴独立性モデリング、45%) |
+| L2 #1 context プーリング | 19件(70%) | 38件(100%) |
+| L2 #2 occurrence/sparsity 集約 | 7件(26%) | 0件(0%) |
+| 未分類(層1・層2いずれとも不一致) | 4件(15%) | 0件 |
+| **多様性指数(観測された技術クラスの組み合わせの種類数)** | **6** | **2** |
+
+**解釈:** IEEE-CIS は上位解法クラスとの部分一致(UID復元・GBMアンサンブル)を持ちながら
+質的に異なる複数の技術クラスが共存する、多様性指数6の population。Santander は
+layer2#1(プーリング)がほぼ全件を占め、layer1側もほぼ単一クラス(特徴独立性モデリング)
+に収束する多様性指数2の population——[解法の多様性セクション](#解法の多様性v042-2-のレバーが実際にもたらした多様性の実測)
+の `translation_kind` ユニーク数(IEEE-CIS 9通り・Santander 12通り)と一見矛盾するように
+見えるが、`translation_kind` はパラメータ化・正規化方法の違いまで区別する細かい粒度で
+あるのに対し、taxonomy 一致は「技術クラス」という粗い粒度である——両指標は補完的:
+Santander は「同じ技術クラスの精緻化バリエーションが多い」、IEEE-CIS は「異なる技術
+クラスが複数共存する」という、既存の分析と整合する結果が数値でも裏付けられた。
+
+**探索幅(未知構造探索エージェントの識別、新設の評価軸):** run 単位で「サイクル横断で
+提案された `hypothesis_family` の異なり数」+「保持された `shadow_candidate_ids` 総数」を
+探索幅の代理指標として全 24 run(両コンペ計)をランク付けした。
+
+- **両コンペで一貫して、opus run(agent-01/02、config MC/TB-opus-P1・P3)が sol run
+  (agent-03、config MC/TB-sol-P3)を探索幅で明確に上回った。** IEEE-CIS:opus 45〜67 点
+  vs sol 19〜26点。Santander:opus 47〜89点 vs sol 26〜33点。同じ P3 プロンプトアーム
+  でも sol の shadow candidate 保持数は opus のおよそ半分。
+- 最高探索幅:IEEE-CIS は `agent-01-s93`(TB-opus-P1、shadow 64件)、Santander は
+  `agent-01-s124`(MC-opus-P1、hypothesis_family 9種・shadow 80件)。
+- `failure_trace.above_row_unit_considered`・`history_or_link_intervention_considered` は
+  全 run で True——プロンプトが要求する最低限の考慮事項であり、この2つ単独では
+  run 間の弁別力を持たない(プロンプト設計上の天井効果)。
+
+**v0.4.3-f(進行中の sol reasoning-effort 多様性ラウンド)への含意——重要な留保:**
+この監査は sol エージェント(config_id `*-sol-P3`、reasoning_effort=xhigh)が、同一
+プロンプトアーム P3 であっても opus より探索幅が構造的に狭いことを示した。現在進行中の
+`V043_SOL_EFFORT_CONFIGS`(sol のみ、reasoning_effort を low〜xhigh で振る)ラウンドの
+結果を解釈する際は、**reasoning effort を上げることが探索幅を opus 相当まで引き上げるか
+どうか自体を観察すべき問いとして扱う**(それを所与の前提とせず)。もし xhigh でも探索幅が
+opus に届かない場合、それは「sol というモデル自体の探索スタイルの違い」であって
+reasoning_effort 単独では代替できない可能性を示唆する——これ自体もこのラウンドの発見と
+して記録する。
+
 ## 今後の方針への含意
 
 1. **v0.4.2 の 2 claim は 2 コンペで独立に実証された。** 3 コンペ目(Rossmann、回帰対応後)
