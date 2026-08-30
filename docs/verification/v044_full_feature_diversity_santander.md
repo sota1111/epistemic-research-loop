@@ -58,9 +58,38 @@ P1には1件も出現しなかった(IEEE-CIS側の発見4と完全に一致)。
 (AUC 0.4921) or transfer (0.4998).」——コンペを跨いで再現した、prompt_arm 依存の
 頑健なパターンとして確定してよい。
 
+## 追記:Round 2(確認ラウンド、`v044-suite-b02`)——adversarial validationが
+クロスコンペで完全確定
+
+`F4-xhigh-P1`・`F4-xhigh-P3` に新規3 seed(271・314・358)を追加(reference
+baseline 0.7985)。
+
+| config_id | 新規3 seed の transfer AUC | baseline超え |
+| --- | --- | :---: |
+| F4-xhigh-P1 | 0.8502 / 0.8596 / 0.8578 | 3/3 ✓ |
+| F4-xhigh-P3 | 0.8557 / 0.8593 / 0.8508 | 3/3 ✓ |
+
+**発見(5):6/6が新規seedでbaselineを上回り、性能面は完全に確定した。**
+
+**発見(6、最重要——クロスコンペで完全確定):** adversarial validation は新規3 seed
+全ての `F4-xhigh-P3` runに出現し(AUC 0.493〜0.515、全て「シフトなし」)、
+`F4-xhigh-P1` の3 runには1件も出現しなかった。Santander単独では screening+round2
+で **7/7 P3・0/7 P1**。**IEEE-CIS側(7/7 P3・0/7 P1)と合わせると、両コンペ・
+両ラウンド通算で 14/14 P3-arm run が adversarial validation を示し、P1-arm run
+(14件)は1件も示さなかった。** これはコンペに依存しない、prompt_armに完全に
+決定される頑健なパターンとして確定した——v0.4.3-fの「単一seedのnoveltyは
+信頼できない」という教訓を踏まえた2段階の確認プロセスを経て到達した、本ラウンド
+最強の結論である。
+
+**発見(7):Santanderの実際の公開技術(頻度エンコーディング・real/synthetic行判定)
+は、round2の6 runでも一度も出現しなかった**——screeningの発見3をそのまま再確認。
+一方 layer1#2(特徴独立性モデリング)は6/6全run に出現(screeningの5/8より高い
+比率)——Gaussian Naive Bayes等での明示的なモデリングと、定量的な「加法的・
+特徴ごとの信号」という確認を伴っていた。
+
 ## 正本
 
-- [Diagnostics](../v044_v044_suite_b01_diagnostics.json)
+- [Diagnostics(screening)](../v044_v044_suite_b01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_b02_diagnostics.json)
 - [IEEE-CIS側](v044_full_feature_diversity_ieee_cis.md)
 - [10列制約インシデント記録](v044_ten_column_constraint_incident.md)
 - [c_lite_v044_policy.md](../c_lite_v044_policy.md)
