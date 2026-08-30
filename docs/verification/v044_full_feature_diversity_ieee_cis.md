@@ -95,8 +95,28 @@ v0.4.3-fの「単一seedのnoveltyは信頼できない」という教訓を踏�
 存在する場合のみ予測補正に使われ、存在しない場合は「漏洩がないことの確認」として
 正しく棄却された——健全に校正された技術であることが確認できた。
 
+## 追記:Round 3(population拡大、`v044-suite-a03`)——このセルは「収束」した、
+「多様化」ではなく
+
+`F4-xhigh-P3` に新規4 seed(512・634・777・901)を追加した(screening 1 seed +
+round2 3 seed + round3 4 seed = このセル単体で計8 run)。全4 run が
+baseline(0.8444)を上回った。adversarial validation は4/4全てに再確認され、
+P3全体(このセル含む)での累計は11 run中11 runと、なお完全なパターンを維持した。
+
+**発見(8、v0.4.3-fとの対比——重要な反証):population を拡大しても、新しい技術
+クラスは出現しなかった。** v0.4.3-f(10列制約下)では同様の population 拡大が
+IEEE-CIS側で2件の新規未分類パターンを生んだが、**全特徴量下でこのセルを拡大しても、
+新規4 runは全て既存のtoolkit(adversarial validation・重複行照合・特徴ブロック
+ablation・高カーディナリティ特徴の過学習診断)の**精緻化**に留まり、新しい技術
+クラスは出現しなかった**。解釈:このセルは既に強く検証されたアプローチに
+収束しており(AUCが0.86〜0.87という狭い範囲に密集)、population拡大による
+多様化は「セルがまだ定まっていない場合」にのみ有効で、**既に収束したセルを
+さらに拡大しても新規性は生まれにくい**——今後の多様性探索には、同じセルの
+population拡大ではなく、異なる arm・異なる着眼点を明示的に導入するレバーが
+必要であることを示唆する。
+
 ## 正本
 
-- [Diagnostics(screening)](../v044_v044_suite_a01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_a02_diagnostics.json)
+- [Diagnostics(screening)](../v044_v044_suite_a01_diagnostics.json) / [Diagnostics(round2)](../v044_v044_suite_a02_diagnostics.json) / [Diagnostics(round3)](../v044_v044_suite_a03_diagnostics.json)
 - [10列制約インシデント記録](v044_ten_column_constraint_incident.md)
 - [c_lite_v044_policy.md](../c_lite_v044_policy.md)
