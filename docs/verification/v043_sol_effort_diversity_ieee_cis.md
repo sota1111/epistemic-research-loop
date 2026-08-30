@@ -167,8 +167,30 @@ prompt_arm=p3)は性能面で頑健(4/4 P2)だが、技術クラスの多様性�
 価値基準3(未知構造探索)への重要な回答であり、「多様性・新規性は狙って再現できる
 ものではなく、稀にしか起きない」という認識をさらに補強する。
 
+## 追記:Round 4(残りの確認漏れセルを埋める、`v042-mc-f01`)——`SD-high-P1` も4/4で確定
+
+round1 screening で `SD-high-P1` は 1/4 beats_baseline(pack-c04 のみ)だったが、round2・
+round3 では `SD-high-P3`(P3側)の確認を優先し、P1側の高性能候補は未確認のまま残って
+いた。新規3 seed(512・634・777)を追加し n=4 で確認した結果:
+
+| config_id | round1(seed93) | round4(新規3 seed) | 合計 n=4 |
+| --- | --- | --- | ---: |
+| SD-high-P1 | ✓(1/4 beats_baseline) | **✓ 3/3(FSPR汚染ゼロ)** | **4/4(達成)** |
+
+**発見(18):`SD-high-P1` も完全な再現性(4/4)を示し、IEEE-CIS は `SD-high-P3`
+(6/8)と合わせて**2つの頑健な sol 単独構成**を持つに至った——P1・P3 いずれの
+prompt arm でも high effort が信頼できることが分かった。**
+
+**発見(19、「加法性の限界」候補の5件目):** `agent-01-s512` の4パック全て(うち3件は
+`validated_actionable_transferred` まで到達)が「加法性の限界」候補パターンを主張——
+「文脈を跨いで安定な joint multivariate row signature こそが共有されたリスク生成
+機構であり、孤立した marginal ではない」。これは**5件目の独立観測**であり、かつ
+**P1 arm での初めての観測**(過去4件は medium-P1・low-P1×2・high-P3)——effort・
+prompt arm を問わず現れる、より頑健なパターンであることが分かった(sol 限定という
+留保は維持、[層2 taxonomy候補](../controller_reference/meta_technique_taxonomy_layer2.md)参照)。
+
 ## 正本
 
-- [Diagnostics(round1)](../v042_mc_c01_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d01_diagnostics.json)
+- [Diagnostics(round1)](../v042_mc_c01_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d01_diagnostics.json) / [Diagnostics(round3)](../v042_mc_e01_diagnostics.json) / [Diagnostics(round4)](../v042_mc_f01_diagnostics.json)
 - [クロスコンペ統合分析](v042_cross_competition_synthesis.md)
 - [v0.4.3 方針§10](../c_lite_v043_policy.md)

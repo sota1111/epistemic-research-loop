@@ -157,9 +157,31 @@ matched-negative ラベルで判定)がこれを正しく検出した**——こ
 3. **未知構造探索エージェント:** 該当なし(round1 の `SD-low-P1` 脱出は再現せず、
    round3 でも新規パターンは出現しなかった)。
 
+## 追記:Round 4(残りの確認漏れセルを埋める、`v042-mc-f02`)——`SD-xhigh-P3` も4/4で確定
+
+round1 screening で最も強かった `SD-xhigh-P3`(4/4 beats_baseline)は round2・round3で
+未確認のまま残っていた。新規3 seed(512・634・777)で確認した結果:
+
+| config_id | round1(seed124) | round4(新規3 seed) | 合計 n=4 |
+| --- | --- | --- | ---: |
+| SD-xhigh-P3 | ✓(4/4 beats_baseline) | **✓ 3/3(FSPR汚染ゼロ、11/12パックがbeats_baseline)** | **4/4(達成)** |
+
+**発見(20):`SD-xhigh-P3` も完全な再現性(4/4)——Santander も IEEE-CIS と同様、
+**2つの頑健な sol 単独構成**(`SD-high-P1` 6/8、`SD-xhigh-P3` 4/4)を持つに至った。**
+
+**発見(21、「加法性の限界」候補は effort に依存する、というコンペ固有の非対称性):**
+`SD-xhigh-P3` の11件の promoted パックは全て純粋な layer2#1(プーリング)——
+うち2 seed の claim は明示的に「**加法的な** risk 機構」と述べており、Santander
+当初の脱出claim(`SD-low-P1`)とは正反対の主張だった。**Santander では「加法性の
+限界」パターンは `SD-low-P1`(低 effort)にのみ観測され、高 effort 構成
+(`SD-high-P1`・`SD-xhigh-P3`)ではどちらも純粋なプーリング/加法性肯定に収束する**
+——IEEE-CIS(medium・high 双方の effort・P1/P3 両arm で出現)とは異なり、
+**Santander ではこの候補パターンが低 effort という特定の条件に強く紐づいている**、
+という新しい非対称性が確認された。
+
 ## 正本
 
-- [Diagnostics(round1)](../v042_mc_c02_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d02_diagnostics.json) / [Diagnostics(round3)](../v042_mc_e02_diagnostics.json)
+- [Diagnostics(round1)](../v042_mc_c02_diagnostics.json) / [Diagnostics(round2)](../v042_mc_d02_diagnostics.json) / [Diagnostics(round3)](../v042_mc_e02_diagnostics.json) / [Diagnostics(round4)](../v042_mc_f02_diagnostics.json)
 - [ps -ef 盲検リーク事例](v043_blindness_incident_ps_ef_leak.md)
 - [IEEE-CIS 側(対になる分析)](v043_sol_effort_diversity_ieee_cis.md)
 - [クロスコンペ統合分析](v042_cross_competition_synthesis.md)
