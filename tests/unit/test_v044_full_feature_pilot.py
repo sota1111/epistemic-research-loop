@@ -15,9 +15,14 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_RESEARCH_ROWS,
     V044_TRANSFER_ROWS,
     _visible_column_map_generic,
-    build_v044_pilot,
+    build_v044_suite,
     select_all_generic_columns,
 )
+
+_TEST_CONFIGS = {
+    "agent-01-s1": {"config_id": "T-p1", "cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1"},
+    "agent-02-s1": {"config_id": "T-p3", "cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p3"},
+}
 
 
 def _write_pilot_csv(path: Path, *, rows: int, feature_columns: int) -> None:
@@ -68,41 +73,53 @@ def test_visible_column_map_generic_is_deterministic_and_unique() -> None:
     assert len(set(map_a.values())) == len(columns)
 
 
-def test_build_v044_pilot_end_to_end_synthetic_plumbing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_build_v044_suite_end_to_end_synthetic_plumbing(tmp_path: Path) -> None:
     csv_path = tmp_path / "train.csv"
     total_rows = V044_RESEARCH_ROWS + V044_CONFIRMATION_ROWS + V044_TRANSFER_ROWS
     _write_pilot_csv(csv_path, rows=total_rows + 500, feature_columns=40)
     spec = _spec(csv_path)
 
-    prompt_path = tmp_path / "prompt.md"
-    prompt_path.write_text("pilot prompt body\n")
+    prompt_p1 = tmp_path / "p1.md"
+    prompt_p1.write_text("p1 prompt body\n")
+    prompt_p3 = tmp_path / "p3.md"
+    prompt_p3.write_text("p3 prompt body\n")
 
     key = Fernet.generate_key()
     scorer_key = Fernet.generate_key()
-    output_root = tmp_path / "run" / "pilot-01"
+    output_root = tmp_path / "run" / "suite-01"
     truth_root = tmp_path / "truth"
-    result = build_v044_pilot(
+    result = build_v044_suite(
         spec,
         output_root=output_root,
         truth_root=truth_root,
         key=key,
         scorer_key=scorer_key,
-        prompt_path=prompt_path,
-        suite_id="pilot-01",
-        run_id="agent-01-s1",
+        prompt_paths={"p1": prompt_p1, "p3": prompt_p3},
+        suite_id="suite-01",
+        configs=_TEST_CONFIGS,
+        run_ids=tuple(_TEST_CONFIGS),
     )
 
     assert result.column_count >= 20
-    view_root = output_root / "agent_views" / "agent-01-s1"
-    packet = json.loads((view_root / "agent_packet.json").read_text())
-    assert packet["research_rows"] == V044_RESEARCH_ROWS
-    assert packet["confirmation_rows"] == V044_CONFIRMATION_ROWS
-    assert packet["transfer_rows"] == V044_TRANSFER_ROWS
-    assert len(packet["feature_columns"]) == result.column_count
-    assert "row_key" not in json.dumps(packet)
+    assert {run.run_id for run in result.runs} == set(_TEST_CONFIGS)
 
-    research = json.loads((view_root / "research.json").read_text())
-    confirmation = json.loads((view_root / "confirmation.json").read_text())
+    view_root_p1 = output_root / "agent_views" / "agent-01-s1"
+    view_root_p3 = output_root / "agent_views" / "agent-02-s1"
+    packet_p1 = json.loads((view_root_p1 / "agent_packet.json").read_text())
+    packet_p3 = json.loads((view_root_p3 / "agent_packet.json").read_text())
+    assert packet_p1["research_rows"] == V044_RESEARCH_ROWS
+    assert packet_p1["confirmation_rows"] == V044_CONFIRMATION_ROWS
+    assert packet_p1["transfer_rows"] == V044_TRANSFER_ROWS
+    assert len(packet_p1["feature_columns"]) == result.column_count
+    assert "row_key" not in json.dumps(packet_p1)
+    assert (view_root_p1 / "agent_prompt.md").read_text() == "p1 prompt body\n"
+    assert (view_root_p3 / "agent_prompt.md").read_text() == "p3 prompt body\n"
+    # different runs get independently-salted column names even though the underlying
+    # row split (and therefore the real data behind each column) is shared
+    assert set(packet_p1["feature_columns"]) != set(packet_p3["feature_columns"])
+
+    research = json.loads((view_root_p1 / "research.json").read_text())
+    confirmation = json.loads((view_root_p1 / "confirmation.json").read_text())
     assert "target" in research[0]
     assert "target" not in confirmation[0]
 

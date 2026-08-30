@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Execute one v0.4.4 full-feature pilot run through codex (sol).
+"""Execute one v0.4.4 full-feature suite run through codex (sol).
 
-Single-run pilot harness (see
-docs/verification/v044_full_feature_pilot_preregistration.md) -- not a batch runner.
+One invocation = one (suite, run_id) pair = one fresh sol context (see
+docs/verification/v044_full_feature_pilot_preregistration.md and c_lite_v044_policy.md).
 Mirrors run_v040_agent.py's codex invocation mechanics (danger-full-access, pinned
 reasoning effort, isolation via workdir-copy + instructions + post-hoc audit only, exactly
-the same posture -- see that script's comments for why). The one addition: this copies
+the same posture -- see that script's comments for why). Sol/codex only -- this study never
+uses claude or glm. Two additions beyond run_v040_agent.py: this copies
 scripts/v044_score_confirmation.py into the agent's own workdir (as score_confirmation.py,
 a relative-path tool, never told the real repo location) and injects the two paths it
 needs (V044_TRUTH_ROOT, V044_KEY_FILE) via environment variables rather than writing them
-into any agent-visible file -- see that script's own docstring for why.
+into any agent-visible file -- see that script's own docstring for why. run_id's execution
+config (reasoning_effort, prompt_arm) is resolved from V044_SOL_EFFORT_CONFIGS, not passed
+on the command line, matching every other suite in this project.
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_MAX_SCORER_CALLS
+from epistemic_loop.benchmark.v044_full_feature_pilot import V044_MAX_SCORER_CALLS, V044_SOL_EFFORT_CONFIGS
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 
@@ -46,7 +49,6 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite-id", required=True)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--reasoning-effort", default="high")
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v044"))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v044/agent_outputs"))
     parser.add_argument("--truth-root", type=Path, default=Path(".controller_truth/v044"))
@@ -54,6 +56,9 @@ def main() -> None:
     parser.add_argument("--workdir-root", type=Path, default=Path.home() / "erl-v044-runs")
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
+    if arguments.run_id not in V044_SOL_EFFORT_CONFIGS:
+        raise SystemExit(f"run id {arguments.run_id!r} has no preregistered v0.4.4 execution configuration")
+    reasoning_effort = V044_SOL_EFFORT_CONFIGS[arguments.run_id]["reasoning_effort"]
 
     view_root = arguments.suite_root / arguments.suite_id / "agent_views" / arguments.run_id
     if not (view_root / "agent_packet.json").exists():
@@ -84,7 +89,7 @@ def main() -> None:
         "-m",
         "gpt-5.6-sol",
         "-c",
-        f'model_reasoning_effort="{arguments.reasoning_effort}"',
+        f'model_reasoning_effort="{reasoning_effort}"',
         "-s",
         "danger-full-access",
         "-C",
@@ -110,7 +115,7 @@ def main() -> None:
     meta = {
         "suite_id": arguments.suite_id,
         "run_id": arguments.run_id,
-        "reasoning_effort": arguments.reasoning_effort,
+        "reasoning_effort": reasoning_effort,
         "fresh_context": True,
         "returncode": completed.returncode,
         "seconds": round(time.time() - started, 1),

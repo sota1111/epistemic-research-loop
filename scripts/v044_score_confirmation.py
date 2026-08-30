@@ -70,7 +70,7 @@ def main() -> None:
         print(json.dumps({"error": f"scorer call limit reached ({_MAX_CALLS})"}))
         raise SystemExit(1)
 
-    labels_path = truth_root / f"{arguments.suite_id}_{arguments.run_id}_confirmation_labels.enc"
+    labels_path = truth_root / f"{arguments.suite_id}_confirmation_labels.enc"
     if not labels_path.exists() or not key_file.exists():
         print(json.dumps({"error": "no confirmation labels registered for this suite/run"}))
         raise SystemExit(1)

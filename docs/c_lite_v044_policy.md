@@ -1,7 +1,12 @@
 # C-lite v0.4.4 方針 — 全特徴量設計での sol reasoning-effort 多様性ラウンドのやり直し
 
 **作成日:** 2026-08-30
-**status:** 方針草案(ユーザー確認前)
+**status:** ユーザーが承認(2026-08-30)。「IEEE-CIS・Santander両方を列数限定なしで、
+解法多様性・上位解法相当の存在・未知構造発見の両方を目指す環境を構築し、sol の
+reasoning-effort 違いで、7時間の間、仮説立案・検証・試行錯誤・レポート作成を承認不要で
+実行してよい」との指示を得た。v0.4.4-a(基盤整備:Santander対応・複数run対応)完了。
+v0.4.4-b screening ラウンド(8 run×2コンペ、全特徴量:IEEE-CIS 106列・Santander
+200列)は build-only preflight・盲検監査ともにクリーンを確認済み、実行中。
 **前提:** [v0.4.3 方針](c_lite_v043_policy.md)、
 [10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)、
 [v0.4.4 pilot preregistration](verification/v044_full_feature_pilot_preregistration.md) /
