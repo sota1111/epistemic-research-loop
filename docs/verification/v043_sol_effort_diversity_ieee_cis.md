@@ -113,8 +113,25 @@ round 1 だけを見ると「medium が良く見えて high は今ひとつ(1/3)
 与えていたが、round 2 で完全に逆転した。**単一 seed のスクリーニング結果から実行構成の
 優劣を判断することの危険性を、この対比が定量的に示している。**
 
-taxonomy 再現性(発見4の脱出パターンが再現するか)は別途フォローアップ分析中——
-[Santander 側](v043_sol_effort_diversity_santander.md)の round 2 と合わせて追記する。
+**発見(11):発見4の「プーリングからの脱出」は再現しなかった——一回性の draw だった。**
+`SD-high-P3` の新規3 seed(155・186・217)全てが layer2#1(context プーリング)に
+収束し、round 1(seed93)の layer2#2(occurrence/sparsity)claim は誰も再現しなかった。
+4 seed 合計では 1/4 が occurrence/sparsity、3/4 がプーリング——**「high effort×P3 が
+プーリングから脱出しやすい」という性質は存在せず、seed93 固有の一回性の事象だった**と
+確定できる。一方で `SD-medium-P3` の新規3 seed は round1(seed42)の「自信を持って
+baseline を上回った」claim とは対照的に、hedge した claim(「validated とは主張しない」
+「feature-role-permutation controls を超えては支持されない」)や、pack-n04 の
+FSPR 汚染を伴う不安定な出力を示した——medium effort は「常に成功/失敗」ではなく、
+**seed によって質的に異なる自信度・妥当性の出力を返す不安定な構成**であることが
+確認された。
+
+**総括(IEEE-CIS、n=4 で確定した知見):** `SD-high-P3`(sol・reasoning_effort=high・
+prompt_arm=p3)は性能面で頑健(4/4 P2)だが、技術クラスの多様性は増やさない
+(4 seed 中 3 がプーリング)。「未知構造探索エージェント」として round 1 で唯一注目
+された `SD-high-P3`/seed93 の occurrence/sparsity 発見は、**再現性の検証を経て
+「頑健な発見」ではなく「稀な一回性の事象」に格下げされた**——これ自体が v0.4.3-f の
+価値基準3(未知構造探索)への重要な回答であり、「多様性・新規性は狙って再現できる
+ものではなく、稀にしか起きない」という認識をさらに補強する。
 
 ## 正本
 
