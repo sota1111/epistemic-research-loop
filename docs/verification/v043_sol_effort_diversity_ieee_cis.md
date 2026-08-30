@@ -1,5 +1,14 @@
 # v0.4.3-f sol reasoning-effort 多様性ラウンド — IEEE-CIS(`v042-mc-c01`)
 
+**⚠️ 10列制約下の結果である旨、明記(2026-08-30追記):** 本ドキュメントの全ての run は、
+ユーザーの承認を得ずに継承されていた固定10列制約の下で実施された
+([インシデント記録](v044_ten_column_constraint_incident.md))。ここに記録された
+diversity 指数・layer1/layer2 一致率・「加法性の限界」候補の観測数などは、**全て
+「10列という上限の中での結果」**として読むこと——全特徴量下でどうなるかは
+[c_lite_v044_policy.md](../c_lite_v044_policy.md) の計画に基づき別途再検証する。
+本ドキュメント自体は削除せず、10列制約下での方法論的教訓(単一seedの不信頼性等、
+列数に依存しない発見)の記録として保持する。
+
 **目的:** [c_lite_v043_policy.md](../c_lite_v043_policy.md) §10。Claude(opus)側のクォータが
 枯渇したため、モデル多様性のレバー(opus vs sol)を reasoning-effort 多様性のレバー
 (low/medium/high/xhigh)に置き換え、sol(codex/gpt-5.6-sol)のみで IEEE-CIS 上の

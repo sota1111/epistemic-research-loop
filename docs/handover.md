@@ -101,12 +101,21 @@ IEEE-CIS では実際に新しい未分類パターンが2件出現し(うち1�
 完全に機能した**——疑似採点を20回(上限まで)使い切り、内部CVとforward validation
 の矛盾を疑似採点で解消するという実際の意思決定に使われ、封印済み transfer 領域の
 最終 AUC は 0.8315(reference baseline 0.7739 を +0.0576 上回る)。盲検監査もクリーン
-(監査スクリプト自体の初期の偽陽性1件を修正済み)。ただし列を増やしても
-layer1(上位解法技術クラス)への到達は未確認のまま——匿名化により列の意味論が
-分からない以上、列数を増やすだけでは UID復元等には直結しないことが示唆される。
-詳細:[preregistration](verification/v044_full_feature_pilot_preregistration.md) /
-[結果](verification/v044_full_feature_pilot_results.md)。次段階(複数seed確認・
-Santander横展開・layer1一致率の明示検証)は未着手。
+(監査スクリプト自体の初期の偽陽性1件を修正済み)。詳細:
+[preregistration](verification/v044_full_feature_pilot_preregistration.md) /
+[結果](verification/v044_full_feature_pilot_results.md)。
+
+**⚠️ 訂正・v0.4.3-f のやり直しが必要(2026-08-30)。** この10列制約が
+**ユーザーの承認を得ずに継承されていた**ことが判明した——[preregistration
+JSON](../v041_track_b_preregistration.json)には設計として記載されていたが、
+「開示するリスク」節には含まれておらず、「実コンペのエージェントに見せる列数を
+10列に制限する、それでよいか」という形で判断を仰いだことは一度もなかった。
+詳細な経緯・影響範囲の切り分けは
+[10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)、
+やり直しの計画は **[c_lite_v044_policy.md](c_lite_v044_policy.md)(現行の正本、
+ユーザー確認前)** を参照——**v0.4.3-f(sol reasoning-effort 多様性ラウンド全体)は
+10列制約下の結果に過ぎず、全特徴量設計で screening→確認→population拡大の同じ
+段階を踏んでやり直す**。v0.4.3-a/b/d は列数に依存しない検証のため対象外。
 
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
@@ -467,11 +476,15 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   回帰対応)は metric/oracle/permutation/agent 契約の実装・テストまで完了、実データ
   実行は共有基盤ブロッカーで次ラウンド持ち越し(§9 参照)
 - [sol reasoning-effort 多様性ラウンド:IEEE-CIS](verification/v043_sol_effort_diversity_ieee_cis.md) /
-  [Santander](verification/v043_sol_effort_diversity_santander.md) /
-  [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
+  [Santander](verification/v043_sol_effort_diversity_santander.md)(⚠️10列制約下の結果、
+  やり直し予定) / [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
+- **[10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)** —
+  無承認継承の経緯・影響範囲の記録
+- **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — 現行の正本(ユーザー確認前の
+  草案)。v0.4.3-f を全特徴量設計でやり直す計画
 - **[v0.4.4 全特徴量 + 疑似採点ループ pilot](verification/v044_full_feature_pilot_preregistration.md)**
-  — 現行の正本。10列制約の撤廃(106列)・[結果](verification/v044_full_feature_pilot_results.md):
-  機構完全動作、transfer AUC 0.8315(baseline比+0.0576)
+  — [結果](verification/v044_full_feature_pilot_results.md):機構完全動作、
+  transfer AUC 0.8315(baseline比+0.0576)
 - **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
   — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
   および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)
