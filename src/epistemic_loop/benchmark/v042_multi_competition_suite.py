@@ -241,6 +241,40 @@ V043_SOL_EFFORT_R2_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R2_SANTANDER_CONFIGS)
 
+#: Round 3 (population scale-up): round 2 confirmed SD-high-P3 (IEEE-CIS) and SD-high-P1
+#: (Santander) as robust (4/4 P2) and confirmed that both competitions' sole round-1
+#: "escape" from the dominant technique class did NOT reproduce at n=4 -- i.e. single-seed
+#: "novelty" is not trustworthy evidence. The remaining open question from
+#: docs/c_lite_v043_policy.md's value framework (does solution diversity keep growing with
+#: population size, and does a large-enough population surface a *reproducible* escape
+#: rather than a one-off) requires scaling the one lever left unexplored: population size
+#: at a fixed, already-robust configuration, rather than another effort/arm sweep. Adds 4
+#: more seeds (271/314/358/402, no overlap with rounds 1-2) to each competition's confirmed
+#: cell, bringing each to n=8.
+V043_SOL_EFFORT_R3_SEEDS = (271, 314, 358, 402)
+V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R3_SEEDS
+}
+V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS)
+V043_SOL_EFFORT_R3_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R3_SEEDS
+}
+V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R3_SANTANDER_CONFIGS)
+
 #: Opaque suite ids for the sol-effort diversity round -- "c" continues the per-competition
 #: letter sequence started by V042_MC_SUITE_IDS's a/b, kept in a separate tuple only because
 #: this round uses V043_SOL_EFFORT_CONFIGS instead of V042_EXECUTION_CONFIGS (see
@@ -255,6 +289,9 @@ V043_SOL_EFFORT_SUITE_IDS: tuple[str, ...] = (
 #: since the two competitions confirm different cells.
 V043_SOL_EFFORT_R2_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-d01",)
 V043_SOL_EFFORT_R2_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-d02",)
+#: Round 3 (population scale-up) suite ids -- "e" continues the letter sequence.
+V043_SOL_EFFORT_R3_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-e01",)
+V043_SOL_EFFORT_R3_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-e02",)
 
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature
