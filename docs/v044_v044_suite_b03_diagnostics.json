@@ -1,0 +1,61 @@
+{
+  "competition_id": "santander-customer-transaction-prediction",
+  "per_run": [
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I audited all 200 continuous features (no missing values) and found a 10.52% positive class with weak but highly distributed univariate signal. Five-fold stratified CV showed that heavily regularized standardized ridge logistic regression was a strong baseline (about 0.830 AUC), whereas random/extra trees and shallow boosting were weaker (about 0.75-0.81). CatBoost reached about 0.803 OOF. Additive quadratic/cubic spline logistic models improved to about 0.850, indicating broad nonlinear marginal effects. A more specific additive cubic representation worked best: standardize each feature, clip at +/-3 SD, expand separately to z, z^2, z^3 (no cross-feature products), standardize the expanded columns, then fit ridge logistic regression with C=0.0001. Its OOF AUC was 0.8585 for the main split and 0.8580-0.8604 over blocked and four shuffled split schemes. Confirmation calls reflected the same ordering: raw ridge 0.8527; individual spline GAMs 0.8779-0.8807; the best spline blend 0.8833; CatBoost 0.8116 and ExtraTrees 0.8057; the cubic model 0.8904. The final prediction is a probability blend of 90% full-data cubic model and 10% full-data uniform-knot spline GAM (six knots, cubic splines, C=0.00008), which scored 0.8909 confirmation AUC and was also a consistent small OOF improvement. I attacked this result as possibly confirmation-specific: there were no exact duplicates or unusually close confirmation neighbors; standardized nearest-neighbor distance distributions for confirmation and transfer matched; research-v-confirmation, research-v-transfer, and confirmation-v-transfer domain classifiers had AUCs near chance (linear/tree about 0.512/0.517, 0.496/0.498, and 0.515/0.502). Blocked CV retained the cubic gain. Interleaved feature-block tests showed signal across the feature space, foldwise feature-importance correlations were 0.862-0.885, the top feature supplied only 1.7% of total importance, and the top ten only 12.8%. Thus I found no convincing fold, overlap, domain-shift, or single-feature artifact and retained the cubic-dominant blend.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.880567322202328,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s512",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.867421020971188
+    },
+    {
+      "actual_confirmation_calls": 10,
+      "approach_summary": "I profiled all 200 dense numeric features and found no missing values, exact duplicate rows, or cross-split overlaps. Feature-feature correlations were essentially absent, while weak marginal target signal was spread broadly across the feature set. I compared regularized linear and feature-selected logistic models, Gaussian naive Bayes, diagonal/full discriminant models, quantile-normal and spline transforms, quadratic logistic models, histogram boosting, random forests, extremely randomized trees, and LightGBM. Five-fold OOF AUC was about 0.832 for the best linear model, 0.856 for Gaussian NB, 0.858 for the selected regularized quadratic model, and roughly 0.74-0.80 for the tree ensembles. The selected model standardizes each feature, clips standardized values to [-5,5], concatenates z with 0.65*(z^2-1), and fits L2-logistic regression with C=0.0001 on all 5,000 research rows. The 0.65 quadratic scale and regularization were stable over three shuffled five-fold partitions and a chronological 1,500-row research holdout. Ten predeclared/local confirmation checks gave 0.8851 and 0.8855 for Gaussian-NB variants, 0.8527 for linear logistic, 0.8861 for an initial quadratic model, up to 0.8868 for its Gaussian blend, 0.8865 for quadratic scale 0.60, and a best 0.8874 for the selected scale-0.65 model (a 90/10 Gaussian blend scored 0.8872). I attacked the final choice as possible confirmation overfitting or row-block drift. Linear/nonlinear adversarial source classifiers were near chance (research-vs-confirmation AUC 0.498/0.508, research-vs-transfer 0.490/0.490); confirmation and transfer prediction distributions had KS distance 0.020 (p about 0.93); independently trained research halves produced similar downstream rankings; all four disjoint 50-feature blocks carried OOF signal (AUC 0.694-0.716); and sequential research-quarter AUCs were 0.844-0.876. Mean effects were stable across halves (correlation about 0.73), while variance effects were less stable, supporting rather than undermining their deliberate downweighting. This attack found no convincing confirmation-only artifact, so I retained the independently selected quadratic model and did not use row_id.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.8861886254130458,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s634",
+      "self_reported_confirmation_calls": 10,
+      "transfer_auc": 0.858325208985874
+    },
+    {
+      "actual_confirmation_calls": 18,
+      "approach_summary": "I profiled all 200 features and checked missingness, exact duplicates/overlap, feature dependence, univariate effects, class balance, and split drift. The features were essentially mutually independent but carried many weak class-specific mean shifts plus a broad class-specific variance increase. Five-fold OOF AUCs were about 0.830 for regularized linear logistic, 0.852 for diagonal-quadratic logistic, 0.856 for Gaussian naive Bayes, 0.775-0.799 for ExtraTrees/random forests, and 0.766-0.795 for LightGBM. I therefore built a hierarchical empirical-Bayes diagonal Gaussian model that shrinks mean effects toward zero and noisy per-feature log-variance deviations toward their shared across-feature value; it reached roughly 0.859 mean AUC over ten repeated five-fold runs (and 0.862 in the initial tuning split). Confirmation feedback agreed: raw Gaussian Bayes scored 0.8855, empirical-Bayes variants 0.8855-0.8896, quadratic logistic 0.8846, linear logistic 0.8494, and ExtraTrees 0.8477. Most broad blends did not help. The final conservative blend is 90% rank-normalized empirical-Bayes Gaussian and 10% rank-normalized diagonal-quadratic logistic; it scored 0.8898. I attacked this approach by looking for exact research/confirmation overlap (none), training domain classifiers to distinguish confirmation from transfer (AUC only 0.508-0.514), testing chronological holdouts (AUC 0.852-0.878), comparing independently estimated half-sample effects, using a tree-only interaction challenger, and ablating the unusually important x_024 feature. Dropping x_024 raised confirmation AUC from 0.8896 to 0.8909, the strongest apparent counterexample, but its effects replicated closely in both research halves and the ablation reduced paired OOF AUC by a mean 0.00647 in all 30 repeated splits. Dropping the ten strongest effects fell to 0.8666 confirmation AUC and a split-half ensemble scored 0.8883. Thus the small x_024 confirmation gain was judged confirmation-sample noise, not convincing evidence of a transferable failure, and the stable full-feature model was retained.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.8883599963123087,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s777",
+      "self_reported_confirmation_calls": 18,
+      "transfer_auc": 0.8656578647140576
+    },
+    {
+      "actual_confirmation_calls": 17,
+      "approach_summary": "I profiled all 200 features across research, confirmation, and transfer. There were no missing values, infinities, duplicate rows, or material sequential distribution shifts; research prevalence was 10.52% and stable across contiguous 500-row blocks. The features were nearly mutually independent, but many had weak target-associated mean effects and positive rows showed a broadly shared variance increase. I compared regularized logistic regression (about 0.828 repeated-CV AUC), shrinkage LDA (0.829), spline/additive logistic models (up to 0.835), Gaussian naive Bayes (0.853), histogram boosting (0.809), and random/extra-trees (about 0.77). Exploiting the observed structure, I shrank feature-specific class mean and log-variance estimates toward cross-feature regressions on stable unlabeled distribution descriptors. Because every feature was platykurtic, I then used a shared-shape generalized-Gaussian likelihood with each feature's shape estimated from all available unlabeled values. This reached 0.8622 mean AUC over eight repeated five-fold splits and 0.8641 on contiguous-block validation; a small blend with a heavily regularized linear-plus-quadratic model reached about 0.8630 repeated-CV AUC. In 17 confirmation calls, ordinary Gaussian NB scored 0.8855, hierarchical Gaussian variants 0.8899-0.8920, generalized-Gaussian variants 0.8960-0.8982, and the chosen 75% generalized-Gaussian / 25% regularized quadratic blend scored 0.8981 (essentially tied with the 0.8982 single-model maximum). I attacked the leader as potentially confirmation-specific because unlabeled confirmation rows contributed to its shape estimates. Linear and nonlinear research-vs-confirmation and confirmation-vs-transfer domain classifiers were at chance (effective AUC about 0.50-0.51); re-estimating shapes without confirmation still scored 0.8975, research-only shapes scored 0.8956, and shapes estimated from transfer alone scored 0.8973. Every disjoint 50-feature quarter also retained OOF signal (0.704-0.720), while the two 100-feature halves scored 0.777 and 0.779. Together with the absence of overlap and the blocked-CV result, this attack did not support leakage, a single spurious feature, or confirmation-only shift. I therefore kept the preselected robust blend rather than chasing the tiny confirmation-only differences.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.8968271297630658,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s901",
+      "self_reported_confirmation_calls": 17,
+      "transfer_auc": 0.878375925657035
+    }
+  ],
+  "reference_baseline_transfer_auc": 0.7968014271194175,
+  "study": "v044-full-feature-suite",
+  "suite_id": "v044-suite-b03",
+  "version": "0.4.4"
+}
