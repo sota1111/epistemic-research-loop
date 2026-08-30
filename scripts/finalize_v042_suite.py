@@ -40,8 +40,8 @@ _PROMOTED = {
 _CONFIG_SETS: dict[str, object] = {
     "default": V042_EXECUTION_CONFIGS,
     "sol-effort": V043_SOL_EFFORT_CONFIGS,
-    "sol-effort-r2-ieee-cis": V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
-    "sol-effort-r2-santander": V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
+    "sol-effort-r2-a": V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
 }
 
 

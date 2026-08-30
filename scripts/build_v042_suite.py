@@ -39,8 +39,8 @@ from epistemic_loop.controller.v040_agent import v040_submission_contract
 _CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
     "default": (V042_EXECUTION_CONFIGS, V042_RUN_IDS),
     "sol-effort": (V043_SOL_EFFORT_CONFIGS, V043_SOL_EFFORT_RUN_IDS),
-    "sol-effort-r2-ieee-cis": (V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS, V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS),
-    "sol-effort-r2-santander": (V043_SOL_EFFORT_R2_SANTANDER_CONFIGS, V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS),
+    "sol-effort-r2-a": (V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS, V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS),
+    "sol-effort-r2-b": (V043_SOL_EFFORT_R2_SANTANDER_CONFIGS, V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS),
 }
 
 

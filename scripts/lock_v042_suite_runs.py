@@ -19,8 +19,8 @@ from epistemic_loop.controller.v040_agent import load_v040_submission, validate_
 _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
     "default": V042_RUN_IDS,
     "sol-effort": V043_SOL_EFFORT_RUN_IDS,
-    "sol-effort-r2-ieee-cis": V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
-    "sol-effort-r2-santander": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    "sol-effort-r2-a": V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
 }
 
 
