@@ -120,20 +120,24 @@ JSON](../v041_track_b_preregistration.json)には設計として記載されて�
 ユーザーが「両コンペを列数限定なしで、解法多様性・上位解法相当の存在・未知構造
 発見を目指す環境を構築し、sol reasoning-effort で7時間承認不要で実行してよい」と
 承認。IEEE-CIS(106列)・Santander(200列)双方で、v0.4.3-fと同じ8構成(sol・
-reasoning_effort×prompt_arm)のscreening→確認ラウンド(計28 run×2コンペ=計56 run)
-を実施。**結果は10列制約下と劇的に異なった:**
-1. **性能面:** screening(8run×2競技=16run)・確認ラウンド(6run×2競技=12run)
-   合計28 run**全て**が reference baseline を上回った——10列制約下の不安定な
-   成否パターンから一変。
+reasoning_effort×prompt_arm)のscreening→確認→population拡大の3ラウンド
+(計36 run×2コンペではなく、両コンペ合計36 run:screening16+確認12+population
+拡大8)を実施。**結果は10列制約下と劇的に異なった:**
+1. **性能面:** 36 run**全て**が reference baseline を上回った——10列制約下の
+   不安定な成否パターンから一変。
 2. **layer1到達:** IEEE-CISで技術クラス#5(adversarial validation)への到達が
-   初めて確認された(10列制約下は全ラウンド0%)。ただしSantanderでは200列でも
-   実際の公開技術(頻度エンコーディング・real/synthetic行判定)には未到達——
-   「列数を増やせば解決」という単純な仮説はコンペ依存で部分的にしか成立しない。
+   初めて確認された(10列制約下は全ラウンド0%)。ただしSantanderでは200列・
+   population拡大(計22 run)を経ても実際の公開技術(頻度エンコーディング・
+   real/synthetic行判定)には未到達——「列数・populationを増やせば解決」という
+   単純な仮説はコンペ依存で部分的にしか成立しないことが確定した。
 3. **最も頑健な発見:** adversarial validation は reasoning effort ではなく
-   **prompt_arm(P3の自己批判指示)に完全に決定される**——両コンペ・両ラウンド
-   通算で **14/14 P3-arm run が示し、P1-arm run(14件)は1件も示さなかった**。
-   v0.4.3-fの「単一seedのnoveltyは信頼できない」という教訓を踏まえた2段階確認
-   (screening→確認)を経て正式に確定した、本セッション最強の知見。
+   **prompt_arm(P3の自己批判指示)に完全に決定される**——両コンペ・全ラウンド
+   通算で **22/22 P3-arm run が示し、P1-arm run(14件)は1件も示さなかった**。
+   v0.4.3-fの「単一seedのnoveltyは信頼できない」という教訓を踏まえた3段階確認
+   (screening→確認→population拡大)を経て正式に確定した、本セッション最強の知見。
+4. **population拡大の限界:** 収束済みセル(IEEE-CIS)をさらに拡大しても新規性は
+   生まれず、既存toolkitの精緻化に留まった——「populationを増やせば多様性が
+   増える」は普遍的ではなく、「まだ収束していないセルでのみ有効」と判明。
 詳細:[クロスコンペ統合分析](verification/v044_cross_competition_synthesis.md) /
 [IEEE-CIS側](verification/v044_full_feature_diversity_ieee_cis.md) /
 [Santander側](verification/v044_full_feature_diversity_santander.md)。
@@ -503,11 +507,12 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   無承認継承の経緯・影響範囲の記録
 - **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — 現行の正本。v0.4.3-f を全特徴量
   設計でやり直し完了(v0.4.4-b)
-- **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening+確認ラウンド)](verification/v044_cross_competition_synthesis.md)**
+- **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
   — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
-  [Santander](verification/v044_full_feature_diversity_santander.md)。28/28 run が
+  [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が
   baseline超え、adversarial validation が prompt_arm(P3)に完全決定される形で
-  14/14 P3・0/14 P1と確定
+  22/22 P3・0/14 P1と確定。Santanderの実際の公開技術は列数・population両方を
+  増やしても未到達と確定
 - [v0.4.4 全特徴量 + 疑似採点ループ pilot](verification/v044_full_feature_pilot_preregistration.md)
   — [結果](verification/v044_full_feature_pilot_results.md):機構完全動作(v0.4.4-bの
   基盤となった単発feasibility確認)

@@ -5,10 +5,14 @@
 解法多様性・上位解法相当の存在・未知構造発見の両方を目指す環境を構築し、sol の
 reasoning-effort 違いで、7時間の間、仮説立案・検証・試行錯誤・レポート作成を承認不要で
 実行してよい」との指示を得た。v0.4.4-a(基盤整備:Santander対応・複数run対応)完了。
-**v0.4.4-b(screening+確認ラウンド、計28 run×2コンペ)完了。** 8/8構成が両コンペで
-baselineを上回り(10列制約下の不安定さから一変)、adversarial validation が
-prompt_arm(P3)に完全に決定される形で両コンペ・両ラウンド通算14/14 P3・0/14 P1と
-確定した。詳細:
+**v0.4.4-b(screening→確認→population拡大の3ラウンド、両コンペ合計36 run)完了。**
+36/36 run全てがbaselineを上回り(10列制約下の不安定さから一変)、adversarial
+validation が prompt_arm(P3)に完全に決定される形で両コンペ・全ラウンド通算
+22/22 P3-arm run が示し、P1-arm run(14件)は1件も示さないと確定した
+(round3はP3のみを対象としたpopulation拡大のため、P1側の総数はscreening+round2の
+14件で据え置き)。population拡大は「収束していないセルでのみ多様性を
+増やす」ことも判明(IEEE-CISの収束済みセルは精緻化のみ、Santanderの未到達技術は
+列数・population いずれを増やしても発見されず)。詳細:
 [クロスコンペ統合分析](verification/v044_cross_competition_synthesis.md)。
 **前提:** [v0.4.3 方針](c_lite_v043_policy.md)、
 [10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)、
