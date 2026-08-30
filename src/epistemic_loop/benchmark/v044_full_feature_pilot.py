@@ -31,6 +31,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -131,6 +132,64 @@ V044_R3_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V044_R3_RUN_IDS = tuple(V044_R3_CONFIGS)
 
+#: v0.4.5 cells C/D (docs/c_lite_v045_policy.md SS2): 10-column limit (the v0.4.3-f
+#: constraint, reintroduced deliberately via column_limit) WITH the iterative confirmation-
+#: scoring loop, at xhigh effort, both prompt arms -- isolates the feedback-loop factor from
+#: the column-count factor. New seeds, no overlap with rounds 1-3.
+V044_R4_SEEDS = (1033, 1147, 1258, 1369)
+V044_R4_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "F5-10col-fb-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R4_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "F5-10col-fb-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R4_SEEDS
+    },
+}
+V044_R4_RUN_IDS = tuple(V044_R4_CONFIGS)
+
+#: v0.4.5 cells E/F (docs/c_lite_v045_policy.md SS2): full column pool WITHOUT the
+#: confirmation-scoring loop (one-shot, exactly like v0.4.3-f's scoring regime), at xhigh
+#: effort, both prompt arms -- isolates the column-count factor from the feedback-loop
+#: factor. New seeds, no overlap with rounds 1-4.
+V044_R5_SEEDS = (1481, 1592, 1703, 1814)
+V044_R5_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "F5-full-nofb-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R5_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "F5-full-nofb-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R5_SEEDS
+    },
+}
+V044_R5_RUN_IDS = tuple(V044_R5_CONFIGS)
+
 
 @dataclass(frozen=True)
 class V044RunBuildResult:
@@ -143,7 +202,7 @@ class V044SuiteBuildResult:
     suite_id: str
     column_count: int
     reference_baseline_transfer_auc: float
-    confirmation_labels_path: str
+    confirmation_labels_path: str | None
     transfer_labels_path: str
     runs: tuple[V044RunBuildResult, ...]
 
@@ -164,6 +223,22 @@ def select_all_generic_columns(spec: CompetitionSpec) -> list[str]:
     ]
     missingness = pd.read_csv(spec.data_path, usecols=numeric_columns).isna().mean()
     return sorted(column for column in numeric_columns if missingness[column] < spec.missingness_threshold)
+
+
+def _select_column_subset(columns: Sequence[str], column_limit: int, *, master_seed: int, suite_id: str) -> list[str]:
+    """Deterministically subsample the generic column pool to ``column_limit`` columns.
+
+    Used by the v0.4.5 factorial design (docs/c_lite_v045_policy.md SS3) to reintroduce a
+    10-column condition without hand-picking which 10 -- same generic-selection principle
+    as select_all_generic_columns, just narrower. Seeded from suite_id + master_seed only
+    (never run_id), so every run_id in a suite sees the same column subset, matching how
+    the full-column suites already share one row split across run_ids.
+    """
+
+    if column_limit > len(columns):
+        raise ValueError(f"column_limit={column_limit} exceeds available column pool ({len(columns)})")
+    seed = _derive_int(master_seed, suite_id, "column-limit") % (2**32)
+    return sorted(random.Random(seed).sample(sorted(columns), column_limit))
 
 
 def _visible_column_map_generic(key: bytes, suite_id: str, run_id: str, columns: Sequence[str]) -> dict[str, str]:
@@ -230,6 +305,8 @@ def build_v044_suite(
     configs: Mapping[str, Mapping[str, str]] = V044_SOL_EFFORT_CONFIGS,
     run_ids: Sequence[str] = V044_SOL_EFFORT_RUN_IDS,
     master_seed: int = V044_MASTER_SEED,
+    column_limit: int | None = None,
+    enable_confirmation_scoring: bool = True,
 ) -> V044SuiteBuildResult:
     if output_root.exists():
         raise FileExistsError("a v0.4.4 suite is immutable once built; delete both roots to rebuild deliberately")
@@ -242,6 +319,8 @@ def build_v044_suite(
     columns = select_all_generic_columns(spec)
     if len(columns) < 20:
         raise ValueError(f"expected a rich full-feature column pool, found only {len(columns)}")
+    if column_limit is not None:
+        columns = _select_column_subset(columns, column_limit, master_seed=master_seed, suite_id=suite_id)
     splits = _sample_split(spec, columns, master_seed=master_seed, suite_id=suite_id)
 
     research_y = splits["research"][spec.target_column].to_numpy(dtype=int)
@@ -251,14 +330,18 @@ def build_v044_suite(
     reference_baseline_auc = _auc(transfer_y, transfer_oracle)
 
     truth_root.mkdir(parents=True, exist_ok=True)
-    confirmation_labels = _label_map(splits["confirmation"], spec)
     transfer_labels = _label_map(splits["transfer"], spec)
-    confirmation_path = truth_root / f"{suite_id}_confirmation_labels.enc"
     transfer_path = truth_root / f"{suite_id}_transfer_labels.enc"
-    confirmation_path.write_bytes(Fernet(scorer_key).encrypt(json.dumps(confirmation_labels, sort_keys=True).encode()))
-    confirmation_path.chmod(0o600)
     transfer_path.write_bytes(Fernet(key).encrypt(json.dumps(transfer_labels, sort_keys=True).encode()))
     transfer_path.chmod(0o600)
+    confirmation_path: Path | None = None
+    if enable_confirmation_scoring:
+        confirmation_labels = _label_map(splits["confirmation"], spec)
+        confirmation_path = truth_root / f"{suite_id}_confirmation_labels.enc"
+        confirmation_path.write_bytes(
+            Fernet(scorer_key).encrypt(json.dumps(confirmation_labels, sort_keys=True).encode())
+        )
+        confirmation_path.chmod(0o600)
 
     runs: list[V044RunBuildResult] = []
     for run_id in run_ids:
@@ -269,10 +352,8 @@ def build_v044_suite(
         research_rows = _rows_to_agent_view(splits["research"], columns, column_map)
         for row, target in zip(research_rows, splits["research"][spec.target_column].tolist(), strict=True):
             row["target"] = int(target)
-        confirmation_rows = _rows_to_agent_view(splits["confirmation"], columns, column_map)
         transfer_rows = _rows_to_agent_view(splits["transfer"], columns, column_map)
         _write_json(view_root / "research.json", research_rows)
-        _write_json(view_root / "confirmation.json", confirmation_rows)
         _write_json(view_root / "transfer.json", transfer_rows)
         (view_root / "agent_prompt.md").write_bytes(prompt_paths[prompt_arm].read_bytes())
 
@@ -283,19 +364,22 @@ def build_v044_suite(
             "feature_columns": sorted(column_map.values()),
             "target_column": "target",
             "research_file": "research.json",
-            "confirmation_file": "confirmation.json",
             "transfer_file": "transfer.json",
             "research_rows": len(research_rows),
-            "confirmation_rows": len(confirmation_rows),
             "transfer_rows": len(transfer_rows),
-            "confirmation_scorer_command": (
+        }
+        if enable_confirmation_scoring:
+            confirmation_rows = _rows_to_agent_view(splits["confirmation"], columns, column_map)
+            _write_json(view_root / "confirmation.json", confirmation_rows)
+            packet["confirmation_file"] = "confirmation.json"
+            packet["confirmation_rows"] = len(confirmation_rows)
+            packet["confirmation_scorer_command"] = (
                 f"python3 ./score_confirmation.py --suite-id {suite_id} --run-id {run_id} "
                 "--predictions <path-to-your-csv, relative to this directory>"
-            ),
-            "confirmation_scorer_max_calls": V044_MAX_SCORER_CALLS,
-            "confirmation_scorer_input_format": "CSV with header row_id,prediction; prediction in [0,1]",
-            "prompt_hash": _sha256_file(view_root / "agent_prompt.md"),
-        }
+            )
+            packet["confirmation_scorer_max_calls"] = V044_MAX_SCORER_CALLS
+            packet["confirmation_scorer_input_format"] = "CSV with header row_id,prediction; prediction in [0,1]"
+        packet["prompt_hash"] = _sha256_file(view_root / "agent_prompt.md")
         _write_json(view_root / "agent_packet.json", packet)
         runs.append(V044RunBuildResult(run_id=run_id, view_root=str(view_root)))
 
@@ -303,7 +387,7 @@ def build_v044_suite(
         suite_id=suite_id,
         column_count=len(columns),
         reference_baseline_transfer_auc=reference_baseline_auc,
-        confirmation_labels_path=str(confirmation_path),
+        confirmation_labels_path=str(confirmation_path) if confirmation_path is not None else None,
         transfer_labels_path=str(transfer_path),
         runs=tuple(runs),
     )

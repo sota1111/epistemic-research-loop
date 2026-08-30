@@ -29,10 +29,18 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_MAX_SCORER_CALLS,
     V044_R2_CONFIGS,
     V044_R3_CONFIGS,
+    V044_R4_CONFIGS,
+    V044_R5_CONFIGS,
     V044_SOL_EFFORT_CONFIGS,
 )
 
-_ALL_CONFIGS = {**V044_SOL_EFFORT_CONFIGS, **V044_R2_CONFIGS, **V044_R3_CONFIGS}
+_ALL_CONFIGS = {
+    **V044_SOL_EFFORT_CONFIGS,
+    **V044_R2_CONFIGS,
+    **V044_R3_CONFIGS,
+    **V044_R4_CONFIGS,
+    **V044_R5_CONFIGS,
+}
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 
@@ -74,6 +82,9 @@ def main() -> None:
     if (output_dir / "agent_submission.json").exists():
         raise SystemExit(f"output already recorded for {arguments.suite_id}/{arguments.run_id}")
 
+    packet = json.loads((view_root / "agent_packet.json").read_text())
+    scoring_enabled = "confirmation_scorer_command" in packet
+
     workdir = arguments.workdir_root / arguments.suite_id / arguments.run_id
     if not workdir.exists():
         workdir.mkdir(parents=True)
@@ -83,10 +94,9 @@ def main() -> None:
             else:
                 shutil.copy2(item, workdir / item.name)
         (workdir / "RUNNER.md").write_text(RUNNER_INSTRUCTIONS)
-        scorer_script = Path(__file__).parent / "v044_score_confirmation.py"
-        shutil.copy2(scorer_script, workdir / "score_confirmation.py")
-
-    packet = json.loads((view_root / "agent_packet.json").read_text())
+        if scoring_enabled:
+            scorer_script = Path(__file__).parent / "v044_score_confirmation.py"
+            shutil.copy2(scorer_script, workdir / "score_confirmation.py")
     submission_path = workdir / "agent_submission.json"
     command = [
         "codex",
@@ -104,7 +114,7 @@ def main() -> None:
         KICKOFF,
     ]
     transcript = workdir / "transcript-attempt-1.stream.jsonl"
-    environment = _environment(arguments.truth_root, arguments.scorer_key_file)
+    environment = _environment(arguments.truth_root, arguments.scorer_key_file, scoring_enabled=scoring_enabled)
     started = time.time()
     with transcript.open("w") as sink:
         completed = subprocess.run(
@@ -149,14 +159,9 @@ def _validate(submission_path: Path, packet: dict[str, object]) -> tuple[str, ..
     except json.JSONDecodeError as error:
         return (f"submission is not valid JSON: {error}",)
     errors: list[str] = []
-    required_fields = (
-        "version",
-        "suite_id",
-        "run_id",
-        "approach_summary",
-        "confirmation_calls_made",
-        "transfer_predictions",
-    )
+    required_fields: tuple[str, ...] = ("version", "suite_id", "run_id", "approach_summary", "transfer_predictions")
+    if "confirmation_scorer_command" in packet:
+        required_fields = (*required_fields, "confirmation_calls_made")
     for field in required_fields:
         if field not in payload:
             errors.append(f"missing field: {field}")
@@ -181,13 +186,14 @@ def _validate(submission_path: Path, packet: dict[str, object]) -> tuple[str, ..
     return tuple(errors)
 
 
-def _environment(truth_root: Path, scorer_key_file: Path) -> dict[str, str]:
+def _environment(truth_root: Path, scorer_key_file: Path, *, scoring_enabled: bool) -> dict[str, str]:
     keep = ("PATH", "HOME", "LANG", "TERM", "SHELL")
     environment = {name: os.environ[name] for name in keep if name in os.environ}
     for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
         environment[name] = "2"
-    environment["V044_TRUTH_ROOT"] = str(truth_root.resolve())
-    environment["V044_KEY_FILE"] = str(scorer_key_file.resolve())
+    if scoring_enabled:
+        environment["V044_TRUTH_ROOT"] = str(truth_root.resolve())
+        environment["V044_KEY_FILE"] = str(scorer_key_file.resolve())
     return environment
 
 
