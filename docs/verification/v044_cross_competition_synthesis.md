@@ -66,18 +66,32 @@ IEEE-CIS の 4/8 run で、confirmation/transfer領域の特徴ベクトルが r
 ——Santander側では観測されなかった(200列全て匿名の連続値であり、完全一致行が
 IEEE-CISほど意味を持たない構造のため、と考えられる)。
 
-## 今後の方針
+## 追記(Round 2完了):adversarial validation はクロスコンペで完全確定した
 
-1. **screeningラウンド(n=1)は8/8構成が成功したため、v0.4.3-fのような「弱い/強い
-   セルの選別」ではなく、「最良構成の確認」と「adversarial validationパターンの
-   確認」を主目的とした確認ラウンドに進む。** IEEE-CIS・Santanderともに xhigh-P1
-   (最良performer)と、adversarial validationが出現したP3configの1つを、追加seed
-   で確認する。
-2. **adversarial validationのP3限定パターンは、両コンペ8/8での一致という強い
-   証拠があるが、これも「screeningレベルの一回性」のリスクを排除できていない
-   ——v0.4.3-fの教訓(単一seedのnovelty不信頼性)を踏まえ、追加seedでの再現確認を
-   経てから正式な結論とする。**
-3. Santanderの「頻度エンコーディング・real/synthetic行判定に到達しない」という
+`F4-xhigh-P1`(最良performer)・`F4-xhigh-P3`(adversarial validation候補)に
+両コンペ・新規3 seedずつを追加した確認ラウンドが完了した。
+
+**最終結果:**
+
+1. **性能面:** IEEE-CIS・Santanderともに、両セルの新規6 run(計12 run/コンペ)
+   全てが新しい独立行サンプルの reference baseline を上回った——合計24/24 run が
+   確認ラウンドで成功。
+2. **adversarial validation:** **IEEE-CIS 7/7 P3・0/7 P1、Santander 7/7 P3・
+   0/7 P1——両コンペ合計 14/14 P3-arm run が示し、P1-arm run(14件)は1件も
+   示さなかった。** screening のみの結果(8/8)から、v0.4.3-fの教訓(単一ラウンドの
+   noveltyは信頼できない)に従って追加確認を行い、**完全にコンペ非依存・
+   prompt_arm決定論的なパターンとして正式に確定した。**
+3. **Santanderの実際の公開技術(頻度エンコーディング・real/synthetic行判定)は、
+   確認ラウンドの6 runでも一度も出現しなかった**——「列数を増やすだけでは
+   Santander固有の着眼点には到達しない」という発見2の結論も、確認ラウンドを
+   経て維持された。
+
+**今後の方針:**
+
+1. **「自己批判(P3)スキャフォールドは、reasoning effortよりも技術発見の
+   確実な誘発因子である」という知見は、今回のセッションで最も頑健に確認された
+   発見として、今後の全ラウンドの標準設計に反映すべきである。**
+2. Santanderの「頻度エンコーディング・real/synthetic行判定に到達しない」という
    発見は、列数を増やす以外のアプローチ(例:プロンプトで「値の出現頻度」という
    観点を明示的に示唆する、ただしこれは既知解法のヒントを与えることになり
    blindness原則に抵触するため慎重な検討が必要)を要する——今回のセッションでは

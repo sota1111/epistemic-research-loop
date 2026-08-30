@@ -5,8 +5,11 @@
 解法多様性・上位解法相当の存在・未知構造発見の両方を目指す環境を構築し、sol の
 reasoning-effort 違いで、7時間の間、仮説立案・検証・試行錯誤・レポート作成を承認不要で
 実行してよい」との指示を得た。v0.4.4-a(基盤整備:Santander対応・複数run対応)完了。
-v0.4.4-b screening ラウンド(8 run×2コンペ、全特徴量:IEEE-CIS 106列・Santander
-200列)は build-only preflight・盲検監査ともにクリーンを確認済み、実行中。
+**v0.4.4-b(screening+確認ラウンド、計28 run×2コンペ)完了。** 8/8構成が両コンペで
+baselineを上回り(10列制約下の不安定さから一変)、adversarial validation が
+prompt_arm(P3)に完全に決定される形で両コンペ・両ラウンド通算14/14 P3・0/14 P1と
+確定した。詳細:
+[クロスコンペ統合分析](verification/v044_cross_competition_synthesis.md)。
 **前提:** [v0.4.3 方針](c_lite_v043_policy.md)、
 [10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)、
 [v0.4.4 pilot preregistration](verification/v044_full_feature_pilot_preregistration.md) /
