@@ -179,6 +179,68 @@ V043_SOL_EFFORT_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V043_SOL_EFFORT_RUN_IDS = tuple(V043_SOL_EFFORT_CONFIGS)
 
+#: Round 2 (confirmatory): the screening round (V043_SOL_EFFORT_CONFIGS, n=1 seed/cell)
+#: surfaced, per competition, (a) its strongest P2-passing cell and (b) a single run that
+#: escaped the population's dominant technique class -- see
+#: docs/verification/v043_sol_effort_diversity_ieee_cis.md and
+#: docs/verification/v043_sol_effort_diversity_santander.md. Adding 3 more seeds to just
+#: those 2 cells per competition brings each to n=4, matching this project's standard
+#: reproducibility bar (>=2/4), and tests whether the "escape" was a real, reproducible
+#: alternative-discovery mode or a one-off draw. New seeds (155/186/217) do not overlap
+#: the screening round's (17/42/93/124).
+V043_SOL_EFFORT_R2_SEEDS = (155, 186, 217)
+#: IEEE-CIS: confirm SD-medium-P3 (best P2 rate, 3/3 beats_baseline) and SD-high-P3 (the
+#: only run to escape context-pooling into occurrence/sparsity aggregation).
+V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "SD-medium-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "medium",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "SD-high-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "high",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+}
+V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS)
+#: Santander: confirm SD-high-P1 (4/4 beats_baseline, the round's strongest single cell)
+#: and SD-low-P1 (the only run to escape the feature-independence/pooling story into a
+#: nonlinear multivariate claim).
+V043_SOL_EFFORT_R2_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "SD-high-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "high",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "SD-low-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "low",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+}
+V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R2_SANTANDER_CONFIGS)
+
 #: Opaque suite ids for the sol-effort diversity round -- "c" continues the per-competition
 #: letter sequence started by V042_MC_SUITE_IDS's a/b, kept in a separate tuple only because
 #: this round uses V043_SOL_EFFORT_CONFIGS instead of V042_EXECUTION_CONFIGS (see
@@ -188,6 +250,11 @@ V043_SOL_EFFORT_SUITE_IDS: tuple[str, ...] = (
     "v042-mc-c01",  # IEEE-CIS
     "v042-mc-c02",  # Santander
 )
+#: Round 2 (confirmatory) suite ids -- "d" continues the letter sequence. Each uses its own
+#: config dict (V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS / V043_SOL_EFFORT_R2_SANTANDER_CONFIGS)
+#: since the two competitions confirm different cells.
+V043_SOL_EFFORT_R2_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-d01",)
+V043_SOL_EFFORT_R2_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-d02",)
 
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature

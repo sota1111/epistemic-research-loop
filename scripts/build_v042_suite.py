@@ -22,6 +22,10 @@ from epistemic_loop.benchmark.v042_multi_competition_suite import (
     V042_MAX_CYCLES_PER_PACK,
     V042_RUN_IDS,
     V043_SOL_EFFORT_CONFIGS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
+    V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
     V043_SOL_EFFORT_RUN_IDS,
     build_v042_suite,
 )
@@ -29,11 +33,14 @@ from epistemic_loop.controller.v040_agent import v040_submission_contract
 
 #: --config-set selects which preregistered execution-configuration mapping this suite
 #: uses; "default" is the original 3-config (opus-P1/opus-P3/sol-P3) design, "sol-effort"
-#: is the v0.4.3 sol-only reasoning-effort diversity round (see V043_SOL_EFFORT_CONFIGS's
-#: docstring in v042_multi_competition_suite.py).
+#: is the v0.4.3 sol-only reasoning-effort diversity screening round, "sol-effort-r2-*" are
+#: the per-competition confirmatory follow-ups (see V043_SOL_EFFORT_CONFIGS's docstring in
+#: v042_multi_competition_suite.py).
 _CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
     "default": (V042_EXECUTION_CONFIGS, V042_RUN_IDS),
     "sol-effort": (V043_SOL_EFFORT_CONFIGS, V043_SOL_EFFORT_RUN_IDS),
+    "sol-effort-r2-ieee-cis": (V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS, V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS),
+    "sol-effort-r2-santander": (V043_SOL_EFFORT_R2_SANTANDER_CONFIGS, V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS),
 }
 
 

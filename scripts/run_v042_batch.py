@@ -13,12 +13,19 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS, V043_SOL_EFFORT_RUN_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import (
+    V042_RUN_IDS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_RUN_IDS,
+)
 
 #: Mirrors build_v042_suite.py's --config-set: which run-id set this suite was built with.
 _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
     "default": V042_RUN_IDS,
     "sol-effort": V043_SOL_EFFORT_RUN_IDS,
+    "sol-effort-r2-ieee-cis": V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    "sol-effort-r2-santander": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
 }
 
 

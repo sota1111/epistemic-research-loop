@@ -23,7 +23,12 @@ from pathlib import Path
 from statistics import median
 
 from epistemic_loop.benchmark.v037_repro_suite import V037AliasTruth, _auc, decrypt_v037_suite
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_EXECUTION_CONFIGS, V043_SOL_EFFORT_CONFIGS
+from epistemic_loop.benchmark.v042_multi_competition_suite import (
+    V042_EXECUTION_CONFIGS,
+    V043_SOL_EFFORT_CONFIGS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
+)
 from epistemic_loop.controller.v037_agent import V037Resolution
 from epistemic_loop.controller.v040_agent import load_v040_submission
 
@@ -35,6 +40,8 @@ _PROMOTED = {
 _CONFIG_SETS: dict[str, object] = {
     "default": V042_EXECUTION_CONFIGS,
     "sol-effort": V043_SOL_EFFORT_CONFIGS,
+    "sol-effort-r2-ieee-cis": V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    "sol-effort-r2-santander": V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
 }
 
 
