@@ -1,7 +1,16 @@
 # C-lite v0.4.5 方針 — 交絡要因を分離する要因計画法(DOE)
 
 **作成日:** 2026-08-30
-**status:** 方針草案(ユーザーからの指摘を受けて起案。実験計画のみ、実行は段階的)
+**status:** **v0.4.5-a〜d 完了(2026-08-30)。** セルC・D・E・F(計32 run、両コンペ)を構築・
+盲検監査・実行——全run成功、全suite盲検監査クリーン。2×2×2要因計画が完成し、
+「列数が効いたのか・フィードバックが効いたのか・P3が効いたのか」を定量的に切り分けた。
+**最重要結果:P3は必要条件(ゲート)——列数・フィードバックいずれの組み合わせでも
+P1アームでadversarial validationが出現したことは一度もない。** P3アーム限定では
+列数・フィードバックの両方に正の主効果があり(列数の方がやや強い、弱い正の交互作用あり)、
+連続値応答(baseline上乗せ幅)では列数とフィードバックのどちらが効くかはコンペ依存
+(IEEE-CISはフィードバック優位、Santanderは列数優位)という結果になった。詳細:
+[v0.4.5要因計画結果](verification/v045_factorial_design_results.md)。
+残作業:v0.4.5-e(本ドキュメントとしては結果の要約のみ完了、追加確認ラウンドは今後の課題)。
 **前提:** [v0.4.4 方針](c_lite_v044_policy.md)、
 [クロスコンペ統合分析](verification/v044_cross_competition_synthesis.md)
 
@@ -47,10 +56,10 @@ reasoning effort を xhigh に固定した上で、列数×フィードバック
 | --- | --- | --- | --- | --- | --- |
 | A | 10 | None | P1 | v0.4.3-f `SD-xhigh-P1` (screening+round2+round4合算) | 4件(既存) |
 | B | 10 | None | P3 | v0.4.3-f 全P3 run(§5で無償確認済み) | 41 submission(既存、確認済み) |
-| C | 10 | **Iterative** | P1 | — | **新規構築** |
-| D | 10 | **Iterative** | P3 | — | **新規構築** |
-| E | Full | None | P1 | — | **新規構築** |
-| F | Full | None | P3 | — | **新規構築** |
+| C | 10 | **Iterative** | P1 | `v044-suite-a04`(IEEE-CIS)・`v044-suite-b04`(Santander) | 8件(4+4、構築・実行・監査完了) |
+| D | 10 | **Iterative** | P3 | 同上 | 8件(4+4、構築・実行・監査完了) |
+| E | Full | None | P1 | `v044-suite-a05`(IEEE-CIS)・`v044-suite-b05`(Santander) | 8件(4+4、構築・実行・監査完了) |
+| F | Full | None | P3 | 同上 | 8件(4+4、構築・実行・監査完了) |
 | G | Full | Iterative | P1 | v0.4.4-b `F4-xhigh-P1` (screening+round2合算) | 4件(既存) |
 | H | Full | Iterative | P3 | v0.4.4-b `F4-xhigh-P3` (screening+round2+round3合算) | 8件(既存) |
 
@@ -125,17 +134,16 @@ confirmation/transfer分割間の判別可能性検定)とは別物と判明し�
 ## 6. 実行順序
 
 ```text
-v0.4.5-a  既存データ探索(セルB・H・A・Gのadversarial validation出現率・AUC集計)
-          — 新規実行不要、まず実施
-v0.4.5-b  基盤整備(column_limitオプション・feedback無効化オプション・
+v0.4.5-a  [完了] 既存データ探索(セルB・H・A・Gのadversarial validation出現率・AUC集計)
+v0.4.5-b  [完了] 基盤整備(column_limitオプション・feedback無効化オプション・
           専用プロンプトvariant実装、単体テスト)
-v0.4.5-c  セルC・D構築(10列×フィードバックあり、P1・P3)
-          → build-only preflight → 盲検監査 → 実行(n=4×2競技=8run)
-v0.4.5-d  セルE・F構築(全列×フィードバックなし、P1・P3)
-          → 同上(n=4×2競技=8run)
-v0.4.5-e  分析:2^3要因計画の主効果・交互作用を算出し、
-          「列数が効いたのか・フィードバックが効いたのか・P3が効いたのか」を
-          定量的に切り分ける。レポート作成。
+v0.4.5-c  [完了] セルC・D構築(10列×フィードバックあり、P1・P3)
+          → build-only preflight(実データ・両コンペで確認済み)→ 盲検監査(クリーン)
+          → 実行(n=4×2競技=8run、全成功)
+v0.4.5-d  [完了] セルE・F構築(全列×フィードバックなし、P1・P3)
+          → 同上(n=4×2競技=8run、全成功)
+v0.4.5-e  [完了] 分析:2^3要因計画の主効果・交互作用を算出。
+          結果:[v0.4.5要因計画結果](verification/v045_factorial_design_results.md)。
 ```
 
 ## 7. 不変条件

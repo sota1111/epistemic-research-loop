@@ -1,0 +1,113 @@
+{
+  "competition_id": "santander-customer-transaction-prediction",
+  "per_run": [
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "Profiled all 10 continuous features across the 5,000 research rows (10.1% positives), including missingness, shifts, univariate AUC/MI, quantile response curves, correlations, class means/variances, row-order balance, and interactions. I compared regularized logistic, Gaussian NB/QDA, additive splines, quadratic logistic models, Random Forests, Extra Trees, CatBoost, and LightGBM under common stratified folds. The signal was weak and broad: linear CV AUC was about 0.587, quadratic interactions did not help, and aggressive boosting overfit. Heavy tree smoothing and class-conditional variance effects were useful: Extra Trees with min_samples_leaf 20-40 and Gaussian NB reached about 0.596-0.599 OOF AUC, while shallow CatBoost supplied complementary rankings. I used all 20 confirmation calls. Representative confirmation AUCs were linear 0.5766, Gaussian NB 0.5856, spline 0.5864, Extra Trees leaf-20 0.5926, shallow CatBoost 0.5935, and a 50/50 CatBoost/Extra-Trees rank blend 0.5965. Small diversified blends were essentially tied (0.5961-0.5963); cross-validation favored retaining the Gaussian variance signal. Final transfer predictions are the rank ensemble 40% shallow CatBoost, 40% leaf-20 Extra Trees, and 20% Gaussian NB, all refit on every research row.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P1",
+      "confirmation_call_auc_median": 0.5925691863645797,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1033",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5931910300995323
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "Profiled all 10 anonymized continuous features, checked split stability, feature correlations, univariate/decile effects, class-conditional moments, and sequential target prevalence. Compared regularized logistic and quadratic logistic models, QDA/LDA, additive splines and bins, RBF SVMs, random forests, Extra Trees, histogram and LightGBM boosting, CatBoost, Gaussian naive Bayes, feature-pruned Gaussian variants, and rank ensembles under repeated stratified cross-validation. The main structure was weak mean-shift signal plus systematically different positive-class dispersion (especially in features 3 and 9); diagonal Gaussian modeling captured this better than generic flexible boosting, while tree models added complementary threshold/interaction signal. Confirmation feedback agreed: logistic scored 0.5766, full Gaussian NB 0.5856, random forest 0.5855, the initial Extra Trees model 0.5915, and Gaussian/tree blends about 0.594. Pruning locally weak Gaussian features alone did not improve confirmation performance, but remained complementary in ensembles. After using all 20 allowed calls to compare conservative feature subsets, tree regularization, and blend weights, the best score was 0.5948 for an equal rank ensemble of Extra Trees, random forest, and Gaussian NB excluding features 4 and 8. The transfer predictions use that exact full-research fitted ensemble.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P1",
+      "confirmation_call_auc_median": 0.5907900073572412,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1147",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5832881640484471
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "Explored all 10 continuous features across the labeled and unlabeled splits, checking missingness, marginal distributions, split shift, feature/target associations, conditional moments and correlations, quantile effects, radial summaries, and threshold/parity interactions. Compared stratified 5-fold OOF logistic, polynomial and spline additive models, LDA/QDA and Gaussian naive Bayes, k-nearest-neighbor and RBF-SVM models, random forests/extra trees, histogram boosting, LightGBM, and CatBoost. Signal was weak and diffuse: marginal effects were small, positives had modestly larger multivariate spread, and no crisp parity rule emerged. The best initial OOF result was an RBF-SVM near 0.597, but confirmation feedback showed it did not transfer as well (0.5769). Regularized additive, extra-trees, LightGBM, and CatBoost candidates scored 0.5882, 0.5857, 0.5840, and 0.5963 respectively on confirmation. A controlled CatBoost capacity sweep showed early stopping mattered: depth 6 with 200 trees scored 0.6016, versus 0.5913 with 800 trees; depth 3 with 400 trees scored 0.5981. The final 70/30 rank blend of those two models scored 0.6022 on confirmation and 0.5891 OOF. Both models were refit on all 5,000 research rows, and their transfer ranks were blended with the same weights.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P1",
+      "confirmation_call_auc_median": 0.5918900564055161,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1258",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5856841347883439
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "Audited all 10 continuous features across research, confirmation, and transfer: distributions were stable, the positive rate was 10.1%, pairwise feature correlations were near zero, and marginal effects were weak (x_009 and x_003 were strongest). Under identical stratified 5-fold splits I compared linear and quadratic logistic models, Gaussian NB/QDA, splines, kNN/RBF SVM, random and extremely randomized forests, histogram/classical gradient boosting, CatBoost, and LightGBM. Smoothed forests, Gaussian NB, and a strongly regularized RBF model were the best individual families. Cross-validated permutation importance also found that x_007, despite negligible marginal AUC, helped forests alongside x_009/x_003, indicating non-marginal structure; hard feature restriction did not help. I made 20 confirmation calls. Initial scores favored a smoothed random forest (0.5938) over GNB (0.5856), ExtraTrees (0.5857), logistic (0.5761), and RBF (0.5785). Tuning leaf size and split-feature subsampling raised the forest to 0.5954. Rank blending that forest with a diverse five-model ensemble produced a flat 0.5958-0.5959 confirmation plateau; the final 50/50 blend was selected because it also achieved 0.5958 OOF AUC and avoided choosing a proxy-only weight.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P1",
+      "confirmation_call_auc_median": 0.5917131996453433,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1369",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5853363712675381
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I profiled all 10 continuous features, checked missingness, duplicates, class balance, univariate effects, correlations, row-order effects, and distribution shift across the three splits. Research prevalence was 10.1%; there were no missing values or exact cross-split row duplicates, and marginal research/confirmation/transfer distributions were very similar. I compared logistic and polynomial logistic regression, LDA/QDA/Gaussian NB, RBF SVM, random forests and ExtraTrees, additive histogram boosting, LightGBM, CatBoost, and piecewise-linear additive splines, with feature subsets and rank ensembles. Flexible interaction-heavy models generally overfit; the reproducible signal was a mix of weak global effects and stable nonlinear effects, especially involving features 0, 1, 3, 5, 6, and 9. Shuffled and contiguous validation favored regularized forests and additive splines. Across five additional shuffled 5-fold runs, the initial spline/selected-forest/selected-logistic blend scored 0.5919-0.6026 AUC. Confirmation scores included 0.5761 for all-feature logistic, 0.5879 for QDA, 0.5975 for the all-feature spline, 0.5949 for the all-feature forest, 0.5892 for the selected forest, and 0.6008-0.6010 for the first blends. The final prediction is a percentile-rank blend: 45% all-feature additive spline, 20% selected-feature regularized forest, 15% all-feature regularized forest, 10% selected-feature logistic regression, and 10% regularized QDA. It scored 0.6031 on confirmation and 0.5975/0.5987 in two fresh internal 5-fold validations. I attacked the best approach by testing prefix-to-future holdouts, repeated shuffled folds, split-detectability, prediction-shift, and feature ablations. Sequential holdouts were noisy but showed no systematic late-row collapse; linear classifiers could not distinguish research, confirmation, and transfer (oriented AUC 0.507-0.512), and the final blend's confirmation-vs-transfer prediction KS distance was 0.02. Although dropping features 4 or 8 improved one internal spline split, confirmation ablations scored only 0.5942 and 0.5888 (dropping 7 scored 0.5971), so the apparent ablation gain did not generalize. The attack therefore found variance from the small positive class, but no convincing confirmation-specific artifact or transfer distribution mismatch.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P3",
+      "confirmation_call_auc_median": 0.593314342847441,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1033",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5869624655234441
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I profiled all ten continuous features across the 5,000 research, 1,500 confirmation, and 1,500 transfer rows (no missing values or duplicates, target prevalence 0.101, and only small marginal split differences). I compared stratified CV and forward/contiguous holdouts for scaled logistic and polynomial logistic regression, LDA/QDA and Gaussian naive Bayes, additive square/tail/spline/bin models, k-NN, RBF SVM, random forests, ExtraTrees, histogram gradient boosting, LightGBM, CatBoost, and rank blends. The useful structure was a stable multivariate location effect plus weaker dispersion/nonlinear effects: logistic scored 0.5846 OOF, Gaussian NB 0.5923, ExtraTrees about 0.579, and a standardized range statistic 0.5791, while high-capacity boosters generally did worse. Across 20 permitted confirmation calls, representative AUCs were logistic 0.5795, Gaussian NB 0.5857, ExtraTrees 0.5816, raw range 0.5471, a four-model core blend 0.5888, QDA(reg=0.10) 0.5929, and QDA(reg=0.10)+ExtraTrees 0.5954 (the best observed). I attacked that best result as possible confirmation overfitting: the tempting row-id periodic score fell from about 0.540 cross-fitted to 0.5213 on confirmation, the raw range signal also weakened, and off-diagonal class-covariance effects had only 0.043 correlation between research halves. Conversely, adversarial classifiers found no convincing feature shift between confirmation and transfer, and their model-score KS distances were only 0.023-0.033. The covariance instability was convincing enough to revise the confirmation-optimal model: stronger QDA regularization (0.35) plus a 25% ExtraTrees rank hedge scored 0.5935 on contiguous-block CV versus 0.5912 for the lighter-regularized blend. Final transfer predictions are the 75/25 rank blend of full-data QDA(reg=0.35) and a 1,200-tree ExtraTrees model; row-id and the brittle standalone range rule were excluded.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P3",
+      "confirmation_call_auc_median": 0.5867564941802335,
+      "confirmation_score_trajectory_improved": false,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1147",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5770931766398849
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I profiled all 10 continuous features (5,000 research rows; 505 positives), finding no missing values, duplicate feature rows, or material marginal shift. I compared scaled logistic and polynomial logistic models, splines, Gaussian NB/QDA, k-NN, RBF SVM, random forests/extra-trees, histogram boosting, LightGBM, and CatBoost using stratified and repeated cross-validation. The signal was weak: ordinary logistic and Gaussian NB were near 0.585-0.590 pooled OOF AUC, extra-trees/RF were near 0.59, and flexible boosting/SVM models did not improve reliably. Confirmation calls first gave logistic 0.5761, Gaussian NB 0.5856, extra-trees 0.5869, RF 0.5908, a simple blend 0.5882, shrunken logistic 0.5761, full quadratic logistic 0.5991, and RBF SVM 0.5610. Six oriented univariate probes showed reproducible signal for x0 (0.5462), -x3 (0.5358), x5 (0.5490), and -x9 (0.5573), while apparent research effects in -x1 (0.5034) and x6 (0.4934) did not replicate. A four-feature logistic scored 0.5856, its additive-quadratic form 0.5924, a strongly shrunk all-feature additive quadratic 0.5820, and a hand-restricted squared model 0.5919. A 50/50 rank blend of quadratic logistic and RF reached 0.6058. The submitted model is a more robust OOF-chosen rank blend: 20% full quadratic logistic, 40% RF, and 40% four-feature additive quadratic; it scored 0.6077 on the final confirmation call. I attacked this result as possible confirmation winner's curse after 20 calls: the full quadratic's research OOF AUC was only 0.575 and disjoint-half prediction rank correlation was about 0.23, so I downweighted it rather than submitting the confirmation winner alone. I then tested row-order blocks, overlap, and split-specific covariate structure. There were zero cross-split feature duplicates; confirmation and transfer nearest-research distance quantiles were nearly identical; adversarial research/confirmation/transfer classifiers had only 0.513-0.538 symmetric AUC; and the exact blend averaged 0.6027 AUC over five contiguous research holdouts (component means: quadratic 0.5788, RF 0.5963, restricted quadratic 0.5853). The restricted component was much more half-sample-stable (Spearman about 0.59-0.60), and blend stability was similar on confirmation and transfer (about 0.48-0.50). Thus the attack found real component variance but no convincing confirmation-only artifact; the diversified, downweighted blend is retained.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P3",
+      "confirmation_call_auc_median": 0.5838418947725859,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1258",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5759323659911261
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I profiled all 10 numerical features and all three splits before modeling. The labeled target was rare (505/5000 positives), there were no missing values or duplicate feature vectors, features were nearly mutually uncorrelated, and train/evaluation marginal shifts were small. I compared standardized logistic regression, additive splines, diagonal/full quadratic models, Gaussian naive Bayes/QDA, k-nearest neighbors, RBF SVMs, random and extremely randomized forests, histogram boosting, LightGBM, CatBoost, and rank blends, using identical 5-fold stratified out-of-fold AUC. Flexible kernels/deeper boosting overfit; useful signal was diffuse and weak, including small mean and variance shifts. Representative OOF AUCs were 0.5762 for logistic, 0.5843 for spline, about 0.5894 for shallow LightGBM, 0.5969 for a strongly smoothed unweighted forest, and 0.5926 for the deliberately diverse broad blend under the original folds. Confirmation calls agreed on the ordering: logistic scored 0.5762, spline 0.5887, smoothed forest/LightGBM about 0.595-0.598, and fold-bagged broad or spline/tree blends 0.5998. Retraining the broad seven-model ensemble on all 5000 labeled rows raised confirmation AUC to the run-best 0.6007, whereas a narrower full-data spline/LightGBM blend fell to 0.5927. The submitted score is the equal rank average of full-data logistic, spline-logistic, regularized QDA, random forest, ExtraTrees, histogram-gradient, and shallow LightGBM predictions. I attacked this choice in two ways. First, feature-4 removal looked better in the original CV (LightGBM 0.5894 to 0.5917; smoothed forest 0.5969 to 0.5995), but its confirmation score fell to 0.5928 and its best tested exclusion blend only reached 0.5965, so I rejected that fold-specific ablation. Second, I tested the case that the 0.6007 score came from confirmation-specific overlap or distribution shift: nonlinear split classifiers were at chance for research-vs-confirmation (0.491) and research-vs-transfer (0.497); nearest-research distances were nearly identical for confirmation and transfer (median 1.506 vs 1.502, KS 0.025) with no exact overlaps. New shuffled-fold seeds gave broad-ensemble AUC 0.5957 and 0.5975, contiguous-row validation gave 0.5901, and leaving out any one ensemble component left AUC in 0.5915-0.5929. This attack found confirmation noise (especially for narrow blends) but no convincing confirmation-only mechanism, so I retained the broader, all-feature ensemble rather than chasing the locally attractive feature exclusion.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-10col-fb-P3",
+      "confirmation_call_auc_median": 0.5965378520628573,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1369",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.5897757524883079
+    }
+  ],
+  "reference_baseline_transfer_auc": 0.5375032977575249,
+  "study": "v044-full-feature-suite",
+  "suite_id": "v044-suite-b04",
+  "version": "0.4.4"
+}

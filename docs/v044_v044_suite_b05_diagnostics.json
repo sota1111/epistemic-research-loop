@@ -1,0 +1,113 @@
+{
+  "competition_id": "santander-customer-transaction-prediction",
+  "per_run": [
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 features, including marginal signal, within-class moments, pairwise dependence, row-order effects, and research-to-transfer shift. The columns were complete and stable across the two files, pairwise correlations were negligible, and the target signal was dense: many small mean effects plus a broad positive-class variance increase. In particular, the global standardized squared radius alone had about 0.744 validation AUC. I compared regularized logistic and discriminant models, Gaussian and discretized naive Bayes, ExtraTrees, histogram boosting, LightGBM, CatBoost, polynomial and spline additive models. Trees and splines underperformed; a shrinkage diagonal Gaussian model was much stronger, confirming the distributed mean/variance structure. The final model is a hierarchical additive ridge score using all linear terms, one shared squared-radius term, shrunk feature-specific quadratic terms, and light cubic terms, ensembled with a separately strongly regularized cubic additive score. I selected and calibrated the two scores using five repeated stratified 5-fold out-of-fold runs; the combination improved every repeated split and reached about 0.897 averaged OOF AUC with 0.211 log loss. Transfer predictions blend full-data fits with repeated fold ensembles. Unlabeled transfer values were used only to estimate stable feature moments for the hierarchical basis.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1481",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.9045123605129791
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I audited all 200 features for types, missingness, cardinality, marginal and class-conditional moments, pairwise dependence, covariance spectrum, row-order effects, and research/transfer shift. The useful structure was many weak, nearly independent location effects plus a broad class scale/energy effect in light-tailed marginals; class covariance eigenvalues matched independent-noise behavior, and no meaningful temporal or low-rank interaction structure appeared. I compared regularized linear and quadratic logistic models, Gaussian naive Bayes/LDA/QDA, ExtraTrees, and LightGBM. Generic tree and full-covariance models were materially worse, while diagonal generative models were strongest. The final model is an ensemble of regularized diagonal generalized-normal likelihood ratios. It estimates feature tail shape from the abundant negative class, uses shape-aware MLE locations, heavily shrinks the 200 class scale contrasts while retaining their shared global component, and averages four nearby exponent specifications. Scores were bagged over 10 repeated stratified 5-fold splits and probability-calibrated from their averaged out-of-fold values. Cross-fitted calibration gave log loss 0.2110, ROC AUC 0.8968, and average precision 0.6076; transfer scores average the corresponding 50 fold models.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1592",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.9048514121202027
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 features for missingness, marginal association, dependence, low-rank structure, row-order effects, and research-to-transfer shift. The features were essentially independent and stable, while positives exhibited distributed mean and variance shifts across many columns. I compared regularized linear and quadratic logistic models, shrinkage LDA/Gaussian likelihoods, spline and binned additive models, random/extra trees, histogram boosting, LightGBM, and CatBoost under common stratified cross-validation. Tree and flexible spline models were weaker; a shrinkage diagonal Gaussian likelihood and a strongly regularized linear-plus-squared logistic direction were complementary. I stress-tested shrinkage, feature counts, calibration, and blends over five repeated 5-fold and repeated 10-fold splits. Retaining all features was more stable than split-dependent screening. Final probabilities blend 55% Gaussian and 45% quadratic-logistic predictions, each calibrated out of fold, and average full-data fits with repeated 10-fold bagged fits to reduce estimation and calibration variance.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1703",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8938649503913965
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 continuous features, missingness, uniqueness, feature dependence, row-order effects, and research-to-transfer drift. The rows were complete and the feature marginals were stable, while the 10.5% positive class was distinguished by many weak mean shifts plus a broad increase in conditional variance; cross-feature covariance was negligible. I compared regularized logistic/LDA, Gaussian naive Bayes, random forests/extra trees, histogram and gradient boosting, diagonal and shrunken full QDA, quadratic and higher-order logistic models, binned likelihoods, and parametric/shared-shape density models. Empirical-Bayes diagonal density ratios were strongest and stable across five shuffled CV seeds, blocked folds, and forward holdouts. The final model uses generalized-normal class densities, shrinks noisy mean effects, strongly pools per-feature variance effects toward their shared expansion and the observed relationship between absolute mean shift and variance shift, averages six neighboring settings from the stable validation plateau, and averages Platt calibrations learned from five repeated 5-fold OOF runs. Mean validation performance was about 0.893 AUC and 0.213 log loss.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1814",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.9049525327749887
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 continuous features and found no missing values, duplicate rows, or low-cardinality encodings. The standardized feature matrix was full-rank and almost uncorrelated, while many features had small class-conditional location changes and positives also had modestly larger variances. This supported a many-weak-independent-clues hypothesis: no single feature exceeded about 0.58 marginal AUC, but each fixed quarter of 50 features achieved about 0.72-0.73 OOF AUC. I compared regularized logistic regression, LDA/QDA, Gaussian and histogram naive Bayes, generalized-normal likelihoods, ExtraTrees, random forest, histogram gradient boosting, fold-local feature selection, and regularized per-feature power bases. Tree models reached only about 0.79-0.83 AUC, ridge-linear aggregation about 0.856, and using all features in a diagonal class-conditional likelihood reached about 0.883-0.886. The final model is a generalized-normal naive Bayes with shape 2.2; class means and variances are shrunk 0.6 and 0.5 toward pooled moments because variance effects were less stable than mean effects. Across five shuffled five-fold splits it averaged about 0.886 AUC, and contiguous-block CV was 0.885. Probabilities were calibrated using the observed learning curve across training sizes and centered to the 0.105 research prevalence. For the required attack, I tested the alternative that CV was driven by fold artifacts, row order, a few spurious columns, or research/transfer shift. Five split seeds were consistent; contiguous-block CV and forward holdouts remained strong; disjoint-half mean effects correlated 0.73-0.79; target permutations fell to about 0.50 AUC; and adversarial research-versus-transfer validation was 0.505 AUC. A small random-CV gain from blending a discriminative power model vanished under blocked CV, so I rejected that blend. The attack found no convincing leakage or shift evidence, and I retained the simpler all-feature diagonal model.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1481",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8978205524756716
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 numeric features, including cardinality, marginal target effects, feature correlations, class-conditional correlations, row-id behavior, and research/transfer shift. I compared regularized logistic models with nested feature selection, quantile and power transforms, marginal splines and quadratics, Gaussian naive Bayes, ExtraTrees, histogram boosting, LightGBM, and CatBoost. The features were essentially marginally independent, and Gaussian naive Bayes was the clear five-fold winner (about 0.883 ROC AUC and 0.226 log loss before regularization, versus about 0.849/0.246 for the best linear baseline). Shrinking class means 15% toward the pooled means and class variances 25% toward pooled within-class variances improved log loss to about 0.222. I attacked this result as possible fold leakage or noisy variance fitting: I repeated shuffled CV over five seeds, held out contiguous row-id blocks, used strict forward validations, measured effect stability across blocks, checked class-conditional dependence, and trained research-vs-transfer domain classifiers. Repeated AUC averaged about 0.884 with 0.0013 SD, contiguous-block AUC was about 0.883, the domain classifiers were at chance (AUC about 0.50), and no suspicious dependence or row-id leakage appeared. Variance effects were noisier than mean effects, which justified retaining the shrinkage; residual boosting failed to improve the naive-Bayes offset, arguing against strong missed interactions. I therefore used a conservative blend of the shrinkage naive-Bayes fits using the top 180 and all 200 features, plus only 10% prior-adjusted CatBoost log-odds; that small tree component improved repeated and blocked validation while leaving the dominant stable independent-feature structure in control.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1592",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8963691736658022
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 200 features, including missingness, uniqueness, marginal target signal, feature correlations, row order, duplicates, and research-to-transfer shift. The features were nearly mutually independent and no single column was strong (best univariate AUC about 0.58), but weak location effects were broad and the positive class had systematically larger within-feature spread. A pooled standardized row-magnitude statistic alone had AUC about 0.74. I compared regularized linear/rank-linear models, LDA, Gaussian and binned naive Bayes, Extra Trees, LightGBM, CatBoost, and additive polynomial logistic models. Trees/boosting and binned likelihoods were inferior. Shrinkage Gaussian likelihoods captured mean and variance shifts, while a strongly regularized cubic additive model plus the pooled row-scale feature gave the best ranking. The final predictor stacks four complementary views: cubic-plus-pooled-scale, linear-plus-pooled-scale, linear-plus-several robust row summaries, and featurewise Gaussian likelihood with shrunken class means/variances. Meta-calibration averages two nearby ridge settings and transfer scores are bagged over five independently repeated stratified 5-fold runs. Fully nested validation, with training-size-adjusted ridge strength, produced roughly 0.891-0.894 AUC and 0.213-0.214 log loss; contiguous-ID folds and forward holdouts were similar. I attacked the approach as possible fold leakage, row-order leakage, a spurious high-dimensional variance effect, or train/transfer drift. Labels permuted through the same architecture fell to chance, there were no exact duplicates, no row_id feature was used, a flexible adversarial research-vs-transfer classifier was at chance (AUC 0.492), only 1/200 marginal KS shifts exceeded 0.05, and the pooled effect and performance persisted in contiguous and forward validation. The attack therefore did not uncover convincing leakage or instability, so I retained the broad additive/pooled ensemble rather than a narrow feature-selected model.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1703",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.90363201598896
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I audited all 200 continuous features (5,000 labeled rows; 10.5% positives): there were no missing values, duplicate rows, or dominant single feature, and pairwise correlations were near zero. I compared standardized logistic regression/LDA, Gaussian and quadratic naive Bayes, histogram boosting, LightGBM, and CatBoost. Plain Gaussian naive Bayes was the first strong result (5-fold OOF AUC 0.885, log loss 0.224), well ahead of linear and tree models, indicating many nearly independent weak class-conditional effects. The conditionals were symmetric but shorter-tailed than Gaussian, and the positive class had a highly stable global variance inflation. I therefore used a diagonal generalized-normal likelihood, shrinking class mean differences to 0.8 of their estimates and feature-specific log-variance deviations to 0.4 while retaining the well-estimated across-feature variance component. A conservative logit ensemble of shape 2.3 and Gaussian neighboring specifications achieved OOF AUC 0.894 and log loss 0.214. I attacked this approach as possible high-dimensional estimation noise, fold/order leakage, and research-only population fit. Mean and log-variance effects replicated across disjoint halves (r=0.77 and 0.46); a new random split, contiguous-block CV, forward holdout, and reverse holdout gave AUCs 0.892, 0.893, 0.904, and 0.888 with log losses 0.216, 0.214, 0.207, and 0.224. Finally, adversarial research-vs-transfer classifiers were at chance (logistic AUC 0.507; LightGBM 0.492). Those attacks did not support leakage or meaningful transfer drift, so I fit the regularized ensemble on all labeled rows.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1814",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.9033227057507911
+    }
+  ],
+  "reference_baseline_transfer_auc": 0.8347985914487616,
+  "study": "v044-full-feature-suite",
+  "suite_id": "v044-suite-b05",
+  "version": "0.4.4"
+}

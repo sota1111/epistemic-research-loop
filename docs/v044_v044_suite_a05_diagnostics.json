@@ -1,0 +1,113 @@
+{
+  "competition_id": "ieee-cis",
+  "per_run": [
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "Profiled all 106 features, including cardinality, missingness, univariate signal, correlated families, duplicate structure, and research-to-transfer shift. The target is rare (3.38%), and the strongest structure came from zero-inflated activity/count families, amount-like nonlinearities, and interactions with four repeated identifier/code fields. I compared regularized logistic, extremely randomized trees, histogram boosting, LightGBM, numeric and categorical CatBoost, unsafe and cross-fitted target encodings, and feature-frequency encodings under repeated 5-fold stratified CV plus three forward-in-order holdouts. I rejected row_id and target encodings because they did not transfer reliably. The final model is a multi-seed blend: 60% 31-leaf LightGBM using all raw features plus block summaries, amount transforms, and label-free identifier/composite frequencies; 25% regularized logistic regression on log, zero, and missing indicators; and 15% CatBoost with the four identifier/code fields treated categorically. This blend balanced ranking, rare-event precision, and log loss across random and forward validation. A small out-of-fold log-odds intercept correction restores probability calibration without changing ranks.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1481",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8382322077520408
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I audited all 106 anonymized features for types, missingness, cardinality, duplicates, target prevalence, row-order stability, and research/transfer shift. The positive class was rare (3.38%) but stable over row-id bins, and univariate KS comparisons showed little transfer drift. I compared regularized raw and threshold-expanded logistic regression, ExtraTrees, CatBoost, and regularized LightGBM under five-fold stratified CV, then checked alternate split seeds and forward row-ordered holdouts. The important structure was interaction-driven: rare count elevations in the mid feature blocks raised risk most strongly when combined with high activity in the early block, so several early variables with weak marginal correlations became dominant nonlinear split features. LightGBM was clearly strongest (roughly 0.106 CV log loss, 0.86 ROC AUC, versus 0.148 for the prevalence baseline), and temporal holdouts retained useful discrimination. The final prediction is a seed-averaged blend of three nearby regularized LightGBM capacities (60%), a model augmented with nonzero/elevated/log-sum block summaries (20%), and a 25-feature gain-selected model whose selection procedure was validated inside each CV fold (20%). Cross-fitted probability recalibration slightly worsened log loss, so I retained the native blended probabilities with only conservative numerical clipping.",
+      "beats_reference_baseline": false,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1592",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8236515668665981
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "Profiled all 106 anonymized features for missingness, cardinality, redundancy, target association, and train/transfer shift. The target was rare (169/5000), so I compared regularized log-linear, ExtraTrees, histogram boosting, LightGBM, and CatBoost models with stratified out-of-fold ROC AUC, average precision, log loss, and Brier score, then checked forward chronological holdouts because transfer row IDs occur later. Sparse count/amount families and several rare-value subpopulations were predictive; engineered amount-per-count ratios improved only the extreme top ranking and were not robust overall. The key reusable structure was x_102: a high-cardinality repeated code with about 81% of transfer rows taking values already seen in research. Native smoothed categorical LightGBM splits on x_102 consistently improved repeated-fold and forward-holdout discrimination. The final probabilities combine seed-bagged categorical LightGBM (70%), numeric LightGBM (10%), and log1p-scaled regularized logistic regression (20%) on the log-odds scale. Models are primarily fit on all labeled rows with a smaller five-fold bag for variance reduction, and a final slope/intercept calibration is learned exclusively from repeated out-of-fold predictions.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1703",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8406733605063459
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "Profiled all 106 anonymized features, including distribution shift, missingness, redundancy, sparse-event thresholds, row-order stability, and exact duplicate patterns. Compared regularized log-count logistic models, ExtraTrees, CatBoost with numeric and categorical treatments, and LightGBM depth/leaf/feature-block grids under stratified, repeated, and contiguous-block validation. Signal was distributed across correlated count blocks; shallow/moderate boosted trees ranked best, while an engineered linear model made complementary errors. The final predictor averages 12 regularized LightGBM fits spanning two raw-feature shapes and a target-free block-summary representation, blends that average 75/25 with a standardized log-count/zero-indicator logistic model, and uses a small prior-preserving log-odds calibration correction supported by the distribution audit and out-of-fold calibration.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P1",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p1",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s1814",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8363212601208426
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I audited all 106 features, missingness, duplicate structure, target balance, univariate/binwise behavior, feature correlations, and research-to-transfer shift. The 169/5000 positive labels made accuracy unsuitable, so I compared models by stratified out-of-fold ROC-AUC, average precision, log loss, and Brier score. The main reproducible structure was a set of heavy-tailed, zero-inflated count blocks: risk depended on contrasts among neighboring correlated counts (well represented by a ridge model on log1p values), while low-cardinality counts and several tail features supplied nonlinear modifiers. I tried regularized log-count logistic models, feature selection, quantile bins, random forests, Extra Trees, histogram boosting, LightGBM, CatBoost, categorical reinterpretations, and blends. The final fixed blend (20% log-count ridge, 20% conservative histogram booster, 30% LightGBM, 30% CatBoost) was more stable than any component: across multiple random, duplicate-grouped, and contiguous-fold validations it gave roughly 0.843-0.858 AUC and 0.1054-0.1065 log loss; a modest calibration transform was stable across these checks. I attacked this result as possible random-fold leakage or reliance on a shifted/spurious feature. I forced exact duplicate vectors into one fold, used contiguous row-id blocks, tested the last 1500 research rows as an extrapolative holdout, trained a multivariate research-vs-transfer domain classifier, ran a label-permutation sanity check, and ablated the leading count block, high-shift variables, and important tail variables. Grouped and contiguous validation did not deteriorate, the last-1500 AUC remained about 0.834, the domain-classifier AUC was 0.490, and the structural ablations hurt materially. Thus the attack did not support leakage or detectable distribution shift. I fitted the four models on all research rows, averaged five random seeds for each stochastic booster, applied the conservative fixed calibration, and used those probabilities for transfer.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1481",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8309529332493842
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I audited all 106 anonymized features for types, missingness, uniqueness, duplicate rows, univariate signal, feature redundancy, and research/transfer distribution shift. I compared log-transformed regularized logistic regression, ExtraTrees, CatBoost, native-categorical variants, several regularized LightGBM capacities, and ensembles. I also tried unsupervised block summaries, nonzero counts, frequency encodings, and log-differences between highly correlated features; these engineered variants did not improve robust validation. The useful signal was distributed across sparse activity/count blocks, amount blocks, and the final code-like features, with nonlinear interactions outperforming the additive log model. I attacked the best tree approach as possible random-fold leakage from 58 duplicate rows, arbitrary code ordering, a few dominant features, temporal fold artifacts, and research-specific covariate shift. Exact-duplicate grouped CV remained strong (blend ROC AUC 0.858); contiguous-block CV was 0.863 and strictly forward validation was 0.850; research-vs-transfer adversarial AUC was 0.496; removing the leading single feature barely changed performance, while removing the five leading features still left AUC 0.824; and independent shuffled-label controls showed no positive signal. Repeated shuffled stratified CV gave the chosen neighborhood about 0.850 mean AUC, so I rejected higher-capacity and engineered alternatives and averaged two nearby low-capacity LightGBM models over four seeds and five folds. Finally I used an out-of-fold intercept-only probability calibration to correct rare-class underprediction without changing ranks.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1592",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.829815201422717
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 106 anonymized numeric features and the 169/5000 positive class, then compared shallow and deeper LightGBM, CatBoost, ExtraTrees, histogram boosting, quantile-linear and binned-additive models under repeated stratified and contiguous-block validation. The strongest stable structure was nonlinear interaction among the early/count-like blocks and the last four features; a 21-column high-magnitude block (x_081 through x_101) was largely redundant with earlier columns and removing it improved both random and blocked validation. The final blend uses twelve-seed bags of 11-leaf/650-tree and 7-leaf/350-tree LightGBM models plus a regularized five-quantile-bin additive logistic model, weighted 0.50/0.25/0.25. Its repeated-stratified OOF AUC was about 0.865 and its contiguous-block OOF AUC about 0.867; a +0.20 log-odds intercept correction improved OOF log loss and restored the rare-class base rate. I attacked the result as possible duplicate/group leakage and row-order shift: exact and blockwise recurring patterns were common, but leakage-safe target encodings collapsed to roughly 0.78-0.80 AUC and were excluded; complete-row lookup adjustments also worsened OOF. The last chronological block was weaker, but research-vs-transfer adversarial AUC was 0.497, target prevalence was stable across ID blocks, and blocked validation still supported the blend. I therefore excluded row_id, group target encodings, engineered ratios, and the noisy monetary block rather than trusting the tempting recurrent-pattern signal.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1703",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8424186190365731
+    },
+    {
+      "actual_confirmation_calls": 0,
+      "approach_summary": "I profiled all 106 anonymized features, including missingness, cardinality, duplicate rows, rank correlations, low-cardinality conditional rates, feature-block redundancy, and research/transfer shift. The useful structure was distributed: sparse count/presence features in the early block, a large 185-valued subpopulation in x_104_700c834 (research target rate 11.97% versus 2.46% for its 150-valued majority), and interactions with row-level feature density. Several later blocks were near-duplicate measurements of earlier blocks. I compared log-linear, histogram boosting, random/extra forests, CatBoost, LightGBM depths, feature-block ablations, categorical reinterpretations, and a subpopulation mixture. A shallow regularized LightGBM was strongest; adding label-free per-block sums, maxima, standard deviations, nonzero/>1 counts, and count shares improved five-fold OOF average precision from about 0.383 to 0.398-0.402 and log loss from 0.1074 to 0.1059-0.1060 across five shuffle seeds. I attacked this result as possible fold leakage, exact-row duplication, arbitrary numeric-code ordering, single-feature dependence, and time/population drift. Keeping exact duplicates in the same fold gave AUC 0.863; contiguous-block CV gave 0.859; forward-only holdouts remained predictive; a research-vs-transfer classifier was chance (AUC 0.492); and treating suspected codes as categorical worsened CV. Block ablations also showed no single feature block explained the result. The attack therefore found no convincing leakage or detectable transfer shift. Final probabilities average five seeds of the aggregate model (50%), five seeds of a raw-feature model (40%), and a regularized log-linear model with common-code one-hot terms (10%). These fixed weights improved repeated-CV mean AUC to about 0.858 and log loss to about 0.1046; a small fixed log-odds offset corrects the ensemble's mild OOF underprediction.",
+      "beats_reference_baseline": true,
+      "config_id": "F5-full-nofb-P3",
+      "confirmation_call_auc_median": null,
+      "confirmation_score_trajectory_improved": null,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-02-s1814",
+      "self_reported_confirmation_calls": null,
+      "transfer_auc": 0.8396571340203908
+    }
+  ],
+  "reference_baseline_transfer_auc": 0.8251648606554661,
+  "study": "v044-full-feature-suite",
+  "suite_id": "v044-suite-a05",
+  "version": "0.4.4"
+}
