@@ -51,7 +51,44 @@ reasoning effort に対して単調」という素朴な予想に対する明確
 
 ## taxonomy 一致・探索幅分析
 
-追記予定(promoted パックの技術クラス照合結果を取得次第)。
+21件の promoted パック全てを layer1/layer2 taxonomy に照合した結果:
+
+| config_id | promoted | Layer1 | Layer2#1(プーリング) | Layer2#2(occurrence/sparsity) | 未分類 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| SD-medium-P1 | 4 | 0 | 4 | 0 | 0 |
+| SD-high-P1 | 4 | 0 | 4 | 0 | 0 |
+| SD-xhigh-P1 | 4 | 0 | 4 | 0 | 0 |
+| SD-medium-P3 | 3 | 0 | 3 | 0 | 0 |
+| SD-high-P3 | 3 | 0 | **0** | **3** | 0 |
+| SD-xhigh-P3 | 3 | 0 | 3 | 0 | 0 |
+| **合計** | **21** | **0** | **18(86%)** | **3(14%)** | **0** |
+
+**発見(3):layer1(コンペ固有・列意味論依存)に一致した promoted パックは 0 件。**
+匿名化により列意味論依存の技術クラス(UID復元・カテゴリエンコーディング等)への到達経路が
+構造的に塞がれているという既存の解釈([best-of-population遡及分析](v042_best_of_population_ieee_cis_retrospective.md))が、sol・reasoning effort を変えても揺るがないことを追加確認した。
+
+**発見(4):reasoning effort は「発見するか否か」を左右するが、「何を発見するか」は
+ほぼ左右しない——ただし1つの例外(`SD-high-P3`)がある。** promoted に到達した6構成中
+5構成(medium-P1・high-P1・xhigh-P1・medium-P3・xhigh-P3)は全て layer2#1(context
+プーリング)に収束した。唯一 `SD-high-P3` の3パック全てが独立に layer2#2
+(occurrence/sparsity 集約、代表的claim:「行はスムーズな独立測定値ではなく
+zero-state/heavy-tail の activity bundle として扱うべきで、これは観測単位・特徴生成・
+検証層別化・誤差分解の全てを変える」)に到達し、プーリングという「アトラクタ」から
+唯一脱出した run だった。この脱出は effort に対して単調ではない(xhigh-P3 は再び
+プーリングに戻った)——「high effort × P3」という特定の組み合わせでのみ観測された
+一回性の逸脱であり、effort を上げれば必ず多様性が増す、とは言えない。
+
+**v0.4.3-f の3つの価値基準への回答(IEEE-CIS 側、暫定):**
+
+1. **解法多様性:** 21 promoted 中、技術クラスの種類は 2 種(プーリング・occurrence
+   集約)に限られる——元の 12-run 混合構成バッチ(opus 含む、多様性指数6)より明確に
+   低い。sol・reasoning-effort のみを振っても、opus を含めた場合ほどの多様性は
+   再現されなかった。
+2. **上位解法相当の存在:** 0件(layer1 一致なし)——元のバッチと同じ結果。
+3. **未知構造探索エージェント:** `SD-high-P3` が該当——プーリング以外の構造
+   (occurrence/sparsity)に到達した唯一の run。効果の単調性を示さない一回性の
+   発見であり、reasoning effort を安易に「上げれば良い」という単純な結論を退ける
+   材料になる。
 
 ## 正本
 
