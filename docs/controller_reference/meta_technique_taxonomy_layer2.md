@@ -33,6 +33,26 @@ discovery ログの事後分析([cross-competition synthesis](../verification/v0
    v041-trackb-01 の `opus×P3` run)。実務的な fraud detection 技術(非欠損列数等)と
    構造的に近いが、匿名化された任意の疎な表形式データ一般に適用できる水準の記述。
 
+## 候補クラス(未昇格、追加確認待ち)
+
+3. **加法性/特徴独立性の限界("beyond additive marginals")。** 「特徴ごとの寄与を
+   加法的に足し合わせるモデルでは不十分で、特徴間の joint な非線形相互作用こそが
+   構造の本質である」という claim——layer2#1(プーリング。context を跨いだ機構の
+   共有)や layer2#2(occurrence/sparsity。値の有無パターン)とは異なる、**単一
+   context 内での特徴間関係の形**についての対抗仮説。v0.4.3-f の sol reasoning-effort
+   多様性ラウンドで、事後の全数検索により**独立4件**が確認された:
+   `v042-mc-c01/agent-01-s42`(IEEE-CIS、SD-medium-P1、7パック中4件promoted)・
+   `v042-mc-c02/agent-01-s17`(Santander、SD-low-P1、8パック中2件promoted)・
+   `v042-mc-d02/agent-02-s186`(Santander、SD-low-P1、8パック中0件promoted——claim
+   自体は再現したが検証には失敗)・`v042-mc-e01/agent-01-s402`(IEEE-CIS、SD-high-P3、
+   8パック中4件promoted)。両コンペで確認され、単一の effort/prompt arm には
+   紐づかない。
+   **未昇格の理由:** 4件全てが **sol(codex/gpt-5.6-sol)単独ラウンドでのみ**観測され、
+   元の opus+sol 混合バッチ(`v041-trackb-03`・`v042-mc-b02`)には1件も出現しなかった
+   ——「データ形式非依存の構造発見パターン」ではなく「sol 特有の仮説生成スタイル」
+   である可能性を否定できない。opus での再現が確認されるまでは正式な層2クラスに
+   昇格せず、候補のまま保持する。
+
 ## 使用方法(新規コンペへの適用)
 
 新規コンペ(Rossmann 含む、[v0.4.3-c](../c_lite_v043_policy.md) 参照)の taxonomy 文書は、
