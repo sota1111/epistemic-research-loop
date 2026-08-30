@@ -1,0 +1,61 @@
+{
+  "competition_id": "ieee-cis",
+  "per_run": [
+    {
+      "actual_confirmation_calls": 19,
+      "approach_summary": "I profiled all 106 anonymized features and all three splits. The research target was rare (3.62% positive), many columns were heavy-tailed counts or missing-valued, and the last fields behaved like repeated code variables. I compared five-fold stratified CV with five contiguous row-id-block folds. Representative shuffled/block AUCs were about 0.808/0.800 for rank-transformed logistic regression, 0.809/0.815 for ExtraTrees, 0.832/0.836 for CatBoost, 0.849/0.850 for random forest, and 0.848-0.852/0.842-0.847 for numerical LightGBM variants. Native categorical treatment of two low-cardinality codes reached 0.856 in shuffled CV but scored only 0.9196 on confirmation, while categorizing the sparse high-cardinality code and adding leakage-safe smoothed target encodings were less stable and were rejected. The initial 7-leaf LightGBM scored 0.9348 on confirmation; a leaf/iteration/regularization sweep gave 0.9334-0.9371, with a 9-leaf, 250-tree model at 0.9371. Removing the weak x_042 through x_080 blocks slightly improved both shuffled CV (0.8530) and confirmation (0.9386); a much smaller 40-feature stress model still scored 0.9335. The submitted prediction is a rank ensemble: 60% of the 9-leaf block-ablated LightGBM, 25% of a 5-leaf/600-tree LightGBM, and 15% of the random forest, followed by monotone out-of-fold logistic calibration. It scored 0.9386 on confirmation (calibration does not alter ranking). I attacked the result as possible confirmation-specific overfit because confirmation AUC was far above internal CV and the best-score differences were tiny. Target rates were stable across research row chunks; adversarial split classifiers produced AUC 0.483 for research-vs-confirmation, 0.481 for research-vs-transfer, and 0.497 for confirmation-vs-transfer; maximum univariate KS gaps were small, and contiguous-block validation did not collapse. Exact-vector overlap was also not explanatory: only one repeated group containing a positive research row was found. The attack did reveal a more extreme predicted-risk tail in confirmation than transfer, consistent with an easier confirmation sample, and 19 score calls create winner-selection risk. I therefore did not submit the single confirmation winner unchanged: I removed the weak blocks and used the capacity-diverse ensemble above, which preserved the best confirmation score while reducing reliance on any one confirmation-tuned fit.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.9346689655172414,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s512",
+      "self_reported_confirmation_calls": 19,
+      "transfer_auc": 0.8684302894829211
+    },
+    {
+      "actual_confirmation_calls": 20,
+      "approach_summary": "I profiled all 106 anonymized features and found a 181/5000 positive class, mixed sparse counts, low-cardinality fields, continuous amounts, missing values, and several near-deterministic count/amount pairs. I compared signed-log and quantile logistic regression, ExtraTrees, random forest, histogram boosting, LightGBM, and CatBoost with five-fold stratified out-of-fold predictions. OOF AUCs were about 0.807 for logistic regression, 0.839 for random forest, 0.844 for the initial larger LightGBM, and 0.853 for a shorter, regularized 15-leaf LightGBM. Confirmation feedback agreed that shallow boosting was strongest: representative scores were 0.9051 logistic, 0.9183 random forest, 0.9275 larger LightGBM, 0.9266 CatBoost, and 0.9356 shorter LightGBM. Explicit block ratios and row aggregates did not improve confirmation (0.9280), although they remained modestly useful as a diverse ensemble component. I also tested nominal treatment and fold-safe encodings of recurring price/context codes; CatBoost's regularized categorical treatment was stable, while a manual target-encoding variant overfit and was rejected. For the required adversarial attack, I investigated whether the unusually high confirmation scores reflected split shift, row-order artifacts, duplicates, or a spurious high-cardinality feature. Train-vs-confirmation and train-vs-transfer domain classifiers were chance (approximately 0.49-0.50 AUC), marginal KS distances were small, row-id had no target signal, and the final OOF signal appeared across all row quintiles and major context subpopulations. However, raw x_102 had high tree gain despite essentially no incremental OOF value; removing it raised confirmation from 0.9356 to 0.9408. That was convincing evidence of ordinal high-cardinality overfit, so I revised the main learner to exclude raw x_102 while retaining only regularized categorical information in the CatBoost component. The submitted score is a rank ensemble of 65% short LightGBM without x_102, 25% categorical CatBoost, and 10% engineered-feature LightGBM, averaged across folds. It reached 0.8546 research OOF AUC and the best confirmation AUC, 0.9410; an OOF-maximized alternative scored 0.9364 confirmation and was rejected. Finally, 19 transfer rows exactly matched full research feature vectors whose observed labels were uniformly zero, so those high-confidence exact matches were assigned the minimum rank.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.9278758620689656,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s634",
+      "self_reported_confirmation_calls": 20,
+      "transfer_auc": 0.8744342428552955
+    },
+    {
+      "actual_confirmation_calls": 18,
+      "approach_summary": "I audited all 106 features for types, missingness, cardinality, marginal signal, correlations, exact repeated rows, and research/confirmation/transfer shift. The target was rare (181/5000). ExtraTrees split-classifiers could not distinguish research from confirmation (AUC 0.504), research from transfer (0.494), or confirmation from transfer (0.508). Exact duplicates were uncommon; I kept duplicate feature rows together in StratifiedGroupKFold validation. I benchmarked regularized LightGBM, CatBoost, ExtraTrees, categorical variants, class weighting, feature-block models, and ensembles. Grouped 5-fold OOF AUC was about 0.849-0.860 for the useful LightGBM variants versus about 0.844 mean-fold for CatBoost and 0.803 for ExtraTrees. Confirmation calls agreed on the broad ordering: shallow LightGBM scored 0.9376, CatBoost 0.9174, and ExtraTrees 0.8864. I found repeated count/amount feature pairs with identical nonzero masks and engineered log row aggregates and per-event amount ratios; this variant scored 0.9400. Native categorical handling improved OOF but not confirmation (0.9303-0.9361), while a separately trained subpopulation mixture scored only 0.9291. Seed/fold and structural rank ensembles reached 0.9404. Before finalizing I attacked the leading result as possible fold, duplicate, split, or dominant-feature leakage. Contiguous non-random folds retained 0.850 OOF AUC and scored 0.9392; deleting the strongest code-like feature retained 0.851 OOF and scored 0.9398; a much narrower first-block-plus-tail model still scored 0.9360. The near-chance shift tests, group-held-out duplicates, stable block validation, and successful feature ablations gave no convincing evidence of a confirmation-only artifact, while the more aggressive specialist revision was worse. I therefore used the best attacked ensemble: an equal mean of within-split prediction ranks from eight shallow LightGBM variants covering three grouped fold seeds, two aggregate-feature versions, contiguous folds, dominant-feature deletion, and the restricted feature block. It scored 0.9409 on confirmation. Final transfer predictions are fold-averaged model predictions converted to ranks and averaged, which targets AUC and reduces calibration differences.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.9369310344827586,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s777",
+      "self_reported_confirmation_calls": 18,
+      "transfer_auc": 0.8647724963514437
+    },
+    {
+      "actual_confirmation_calls": 19,
+      "approach_summary": "I audited all 106 features for type/cardinality, missingness, marginal signal, correlations, duplicates, row-order effects, and split shift. The target was rare (181/5000); individual features reached only about 0.67 AUC, while useful signal was distributed across count/activity features 0-14, low-cardinality state features, related scaled blocks, and metadata-like features 102-105. I compared log-count logistic regression, ExtraTrees, random forests, LightGBM, and CatBoost with five-fold stratified CV plus chronological block holdouts. Random forests were strongest internally (about 0.86 OOF AUC); removing redundant scaled copies preserved or improved CV, indicating that the underlying count/state interactions rather than duplicated columns drove the result. Confirmation calls then showed 0.9249 for that compact forest and 0.9283 for full-feature LightGBM; their 50/50 percentile-rank blend scored 0.9355, better than broader blends (roughly 0.9307-0.9349), and tilting the pair 40/60 either way did not improve it. I attacked this result as possibly confirmation-specific: cross-validated domain classifiers could not distinguish confirmation from transfer (AUC 0.508), the largest feature-level KS distance was 0.043, candidate score distributions were close, labels were uniform over research row blocks, and exact-row overlap was sparse. This found no convincing confirmation-only artifact. Exact duplicate feature vectors did have perfectly consistent research labels; propagating labels only for exact matches raised confirmation AUC slightly to 0.9357. The final transfer scores are the stable equal forest/LightGBM rank blend with that exact-match adjustment.",
+      "beats_reference_baseline": true,
+      "config_id": "F4-xhigh-P3",
+      "confirmation_call_auc_median": 0.9307310344827586,
+      "confirmation_score_trajectory_improved": true,
+      "prompt_arm": "p3",
+      "reasoning_effort": "xhigh",
+      "run_id": "agent-01-s901",
+      "self_reported_confirmation_calls": 19,
+      "transfer_auc": 0.8656407603776025
+    }
+  ],
+  "reference_baseline_transfer_auc": 0.8444329496961076,
+  "study": "v044-full-feature-suite",
+  "suite_id": "v044-suite-a03",
+  "version": "0.4.4"
+}
