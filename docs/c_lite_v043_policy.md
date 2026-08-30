@@ -209,12 +209,16 @@ IEEE-CIS 向け `v042-mc-c01`・Santander 向け `v042-mc-c02` として build-o
 Santander の順、バックグラウンドで逐次実行)→ lock → finalize → 上記3軸での分析・
 [クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)への追記。
 
-**status(2026-08-30、完了):** screening(n=1、8run×2コンペ)→ 確認ラウンド(n=4、
+**status(2026-08-30、完了):** screening(n=1、8run×2コンペ)→ 確認ラウンド2(n=4、
 6run×2コンペ、この過程で ps -ef 盲検リークを発見・修正——不変条件8参照)→
-population 拡大ラウンド(n=8、4run×2コンペ)の計3ラウンド・28 run を実施し完了した。
-最終結果は[クロスコンペ統合分析の総括](verification/v042_cross_competition_synthesis.md#追記v043-f総括sol-reasoning-effort多様性ラウンド3ラウンド28-runを終えて)
+population 拡大ラウンド3(n=8、4run×2コンペ)→ 確認漏れセルを埋めるラウンド4
+(n=4、3run×2コンペ)の計4ラウンド・34 run を実施し完了した。最終結果は
+[クロスコンペ統合分析の総括](verification/v042_cross_competition_synthesis.md#追記v043-f総括sol-reasoning-effort多様性ラウンド3ラウンド28-runを終えて)
 を参照。主要な結論:(1) 単一seedのnovel-structure発見は再現しないことが多く過大評価
 禁物、(2) しかしpopulationを広げると新しい技術クラスが実際に出現する(IEEE-CIS)、
-(3) これはコンペの構造的複雑さに依存する(Santanderでは効果なし)、(4) 頑健な sol
-単独構成(IEEE-CIS `SD-high-P3`・Santander `SD-high-P1`、いずれも n=8中6/8でP2達成)
-を確定した。
+(3) これはコンペの構造的複雑さに依存する(Santanderでは効果なし)、(4) 両コンペとも
+2つずつの頑健な sol 単独構成を確定した(IEEE-CIS:`SD-high-P3` n=8中6/8・
+`SD-high-P1` n=4中4/4。Santander:`SD-high-P1` n=8中6/8・`SD-xhigh-P3` n=4中4/4)、
+(5) taxonomy 候補「加法性の限界」は5件独立観測まで積み上がったが、Santander では
+低effortにのみ紐づくという新しいコンペ固有の条件依存性が判明した(未昇格のまま、
+opus での確認待ち)。
