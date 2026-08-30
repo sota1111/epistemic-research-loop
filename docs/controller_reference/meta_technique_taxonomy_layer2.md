@@ -45,8 +45,10 @@ discovery ログの事後分析([cross-competition synthesis](../verification/v0
    `v042-mc-c02/agent-01-s17`(Santander、SD-low-P1、8パック中2件promoted)・
    `v042-mc-d02/agent-02-s186`(Santander、SD-low-P1、8パック中0件promoted——claim
    自体は再現したが検証には失敗)・`v042-mc-e01/agent-01-s402`(IEEE-CIS、SD-high-P3、
-   8パック中4件promoted)。両コンペで確認され、単一の effort/prompt arm には
-   紐づかない。
+   8パック中4件promoted)・`v042-mc-f01/agent-01-s512`(IEEE-CIS、SD-high-P1、
+   4パック全てpromoted、うち3件は`validated_actionable_transferred`まで到達)。
+   両コンペ・4種の effort/arm 構成(medium-P1・low-P1・high-P3・high-P1)で確認され、
+   単一の effort/prompt arm には紐づかない。
    **未昇格の理由:** 4件全てが **sol(codex/gpt-5.6-sol)単独ラウンドでのみ**観測され、
    元の opus+sol 混合バッチ(`v041-trackb-03`・`v042-mc-b02`)には1件も出現しなかった
    ——「データ形式非依存の構造発見パターン」ではなく「sol 特有の仮説生成スタイル」
