@@ -596,7 +596,7 @@ def _sha256_file(path: Path) -> str:
 
 
 def _auc(targets: Sequence[float], predictions: Sequence[float]) -> float:
-    if len(targets) != len(predictions) or not targets:
+    if len(targets) != len(predictions) or len(targets) == 0:
         raise ValueError("AUC inputs must be non-empty and aligned")
     positives = sum(targets)
     negatives = len(targets) - positives
