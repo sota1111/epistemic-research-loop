@@ -18,13 +18,24 @@ from statistics import median
 from cryptography.fernet import Fernet
 
 from epistemic_loop.benchmark.v037_repro_suite import _auc
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_SOL_EFFORT_CONFIGS, V044_SOL_EFFORT_RUN_IDS
+from epistemic_loop.benchmark.v044_full_feature_pilot import (
+    V044_R2_CONFIGS,
+    V044_R2_RUN_IDS,
+    V044_SOL_EFFORT_CONFIGS,
+    V044_SOL_EFFORT_RUN_IDS,
+)
+
+_CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
+    "screening": (V044_SOL_EFFORT_CONFIGS, V044_SOL_EFFORT_RUN_IDS),
+    "confirm": (V044_R2_CONFIGS, V044_R2_RUN_IDS),
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--competition-id", required=True)
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="screening", choices=sorted(_CONFIG_SETS))
     parser.add_argument("--truth-root", type=Path, default=Path(".controller_truth/v044"))
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v044/agent_outputs"))
@@ -47,7 +58,8 @@ def main() -> None:
         reference_baseline_auc = lock_payload["result"]["reference_baseline_transfer_auc"]
 
     per_run: list[dict[str, object]] = []
-    for run_id in V044_SOL_EFFORT_RUN_IDS:
+    configs, run_ids = _CONFIG_SETS[arguments.config_set]
+    for run_id in run_ids:
         submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         if not submission_path.exists():
             continue
@@ -69,9 +81,9 @@ def main() -> None:
         per_run.append(
             {
                 "run_id": run_id,
-                "config_id": V044_SOL_EFFORT_CONFIGS[run_id]["config_id"],
-                "reasoning_effort": V044_SOL_EFFORT_CONFIGS[run_id]["reasoning_effort"],
-                "prompt_arm": V044_SOL_EFFORT_CONFIGS[run_id]["prompt_arm"],
+                "config_id": configs[run_id]["config_id"],
+                "reasoning_effort": configs[run_id]["reasoning_effort"],
+                "prompt_arm": configs[run_id]["prompt_arm"],
                 "transfer_auc": transfer_auc,
                 "beats_reference_baseline": (
                     transfer_auc > reference_baseline_auc if reference_baseline_auc is not None else None

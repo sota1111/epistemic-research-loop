@@ -25,7 +25,13 @@ import subprocess
 import time
 from pathlib import Path
 
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_MAX_SCORER_CALLS, V044_SOL_EFFORT_CONFIGS
+from epistemic_loop.benchmark.v044_full_feature_pilot import (
+    V044_MAX_SCORER_CALLS,
+    V044_R2_CONFIGS,
+    V044_SOL_EFFORT_CONFIGS,
+)
+
+_ALL_CONFIGS = {**V044_SOL_EFFORT_CONFIGS, **V044_R2_CONFIGS}
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 
@@ -56,9 +62,9 @@ def main() -> None:
     parser.add_argument("--workdir-root", type=Path, default=Path.home() / "erl-v044-runs")
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    if arguments.run_id not in V044_SOL_EFFORT_CONFIGS:
+    if arguments.run_id not in _ALL_CONFIGS:
         raise SystemExit(f"run id {arguments.run_id!r} has no preregistered v0.4.4 execution configuration")
-    reasoning_effort = V044_SOL_EFFORT_CONFIGS[arguments.run_id]["reasoning_effort"]
+    reasoning_effort = _ALL_CONFIGS[arguments.run_id]["reasoning_effort"]
 
     view_root = arguments.suite_root / arguments.suite_id / "agent_views" / arguments.run_id
     if not (view_root / "agent_packet.json").exists():

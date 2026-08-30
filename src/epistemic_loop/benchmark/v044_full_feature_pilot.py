@@ -77,6 +77,38 @@ V044_SOL_EFFORT_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V044_SOL_EFFORT_RUN_IDS = tuple(V044_SOL_EFFORT_CONFIGS)
 
+#: Round 2 (confirmatory): the screening round succeeded in all 8/8 cells for both
+#: competitions (unlike v0.4.3-f's mixed results under the 10-column constraint), so this
+#: confirms (a) the single strongest cell (F4-xhigh-P1, best in both competitions) and
+#: (b) a P3 cell to test reproducibility of the adversarial-validation finding (present in
+#: all 4/4 P3 runs in both competitions) -- same two cells for both competitions, unlike
+#: v0.4.3-f's per-competition R2 sets, since the screening pattern was symmetric here. New
+#: seeds (271/314/358) do not overlap the screening round's (17/42/93/124).
+V044_R2_SEEDS = (271, 314, 358)
+V044_R2_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "F4-xhigh-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R2_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "F4-xhigh-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "xhigh",
+        }
+        for seed in V044_R2_SEEDS
+    },
+}
+V044_R2_RUN_IDS = tuple(V044_R2_CONFIGS)
+
 
 @dataclass(frozen=True)
 class V044RunBuildResult:

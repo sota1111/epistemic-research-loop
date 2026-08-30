@@ -15,7 +15,12 @@ import argparse
 import json
 from pathlib import Path
 
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_SOL_EFFORT_RUN_IDS
+from epistemic_loop.benchmark.v044_full_feature_pilot import V044_R2_RUN_IDS, V044_SOL_EFFORT_RUN_IDS
+
+_RUN_ID_SETS: dict[str, tuple[str, ...]] = {
+    "screening": V044_SOL_EFFORT_RUN_IDS,
+    "confirm": V044_R2_RUN_IDS,
+}
 
 _GENERIC_FORBIDDEN_TOKENS = (
     ".controller_truth",
@@ -56,6 +61,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--competition-id", required=True, choices=sorted(_COMPETITION_FORBIDDEN_TOKENS))
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="screening", choices=sorted(_RUN_ID_SETS))
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v044"))
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v044/agent_outputs"))
     arguments = parser.parse_args()
@@ -63,7 +69,7 @@ def main() -> None:
 
     view_findings: list[str] = []
     audited_views = 0
-    for run_id in V044_SOL_EFFORT_RUN_IDS:
+    for run_id in _RUN_ID_SETS[arguments.config_set]:
         view_root = arguments.suite_root / arguments.suite_id / "agent_views" / run_id
         if not view_root.exists():
             continue
@@ -76,7 +82,7 @@ def main() -> None:
 
     transcript_findings: list[str] = []
     audited_transcripts = 0
-    for run_id in V044_SOL_EFFORT_RUN_IDS:
+    for run_id in _RUN_ID_SETS[arguments.config_set]:
         transcript_root = arguments.submission_root / arguments.suite_id / run_id
         for transcript in sorted(transcript_root.glob("transcript-attempt-*.stream.jsonl")):
             audited_transcripts += 1

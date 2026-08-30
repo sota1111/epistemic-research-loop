@@ -14,23 +14,30 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_SOL_EFFORT_RUN_IDS
+from epistemic_loop.benchmark.v044_full_feature_pilot import V044_R2_RUN_IDS, V044_SOL_EFFORT_RUN_IDS
+
+_RUN_ID_SETS: dict[str, tuple[str, ...]] = {
+    "screening": V044_SOL_EFFORT_RUN_IDS,
+    "confirm": V044_R2_RUN_IDS,
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="screening", choices=sorted(_RUN_ID_SETS))
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v044"))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v044/agent_outputs"))
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
+    run_ids = _RUN_ID_SETS[arguments.config_set]
     pending = [
         run
-        for run in V044_SOL_EFFORT_RUN_IDS
+        for run in run_ids
         if not (arguments.output_root / arguments.suite_id / run / "agent_submission.json").exists()
     ]
-    print(f"{len(pending)} of {len(V044_SOL_EFFORT_RUN_IDS)} runs pending", flush=True)
+    print(f"{len(pending)} of {len(run_ids)} runs pending", flush=True)
     failures: list[str] = []
     with ThreadPoolExecutor(max_workers=arguments.parallel) as pool:
         futures = {pool.submit(_run_one, run, arguments): run for run in pending}
