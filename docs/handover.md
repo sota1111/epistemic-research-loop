@@ -72,6 +72,25 @@ store.csv 結合・missingness 閾値緩和・暦分解を足しても現実的�
 今回のセッションでは実施していない。詳細:
 [Rossmann preregistration](verification/v043_rossmann_regression_preregistration.md) §7。
 
+**v0.4.3-f(sol reasoning-effort 多様性ラウンド)完了(2026-08-30)。** Claude(opus)
+クォータ枯渇を受け、モデル多様性のレバーを reasoning-effort 多様性(sol/codex単独、
+low〜xhigh × p1/p3)に置き換え、IEEE-CIS・Santander で計3ラウンド(screening n=1 →
+確認 n=4 → population拡大 n=8)・28 run を実施。**最重要の教訓:単一 seed の
+novel-structure 発見(IEEE-CIS の occurrence/sparsity 脱出・Santander の非線形多変量
+脱出、いずれも screening ラウンドで観測)は n=4 の確認では再現しなかった**——単発の
+discovery を過大評価してはならない。**ただし population を n=8 まで広げると、
+IEEE-CIS では実際に新しい未分類パターンが2件出現し(うち1件は Santander の当初の
+脱出claimと構造的にほぼ同一の「加法性の限界」)、多様性は population サイズに応じて
+伸びうることが確認された**(Santander では効果なし、コンペの構造的複雑さに依存)。
+頑健な sol 単独構成(IEEE-CIS `SD-high-P3`・Santander `SD-high-P1`、いずれも n=8中6/8
+でP2達成)を確定。**副産物として、バッチオーケストレータの起動引数(`--config-set`)
+経由の新しい盲検リーク経路(`ps -ef` でホスト全体のプロセス一覧が見える)を発見・
+修正し、新しい不変条件として記録した。** 詳細:
+[クロスコンペ統合分析の総括](verification/v042_cross_competition_synthesis.md) /
+[IEEE-CIS側](verification/v043_sol_effort_diversity_ieee_cis.md) /
+[Santander側](verification/v043_sol_effort_diversity_santander.md) /
+[ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)。
+
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -427,9 +446,12 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   計算量フィルタ
 - **[v0.4.3 方針](c_lite_v043_policy.md)** — 現行の正本。ユーザー承認済み(優先順位・
   検証/追加実験の無承認進行)。v0.4.3-a(pooling 由来検証)・b(taxonomy 2層化)・
-  d(P3 系既定化)完了。v0.4.3-c(Rossmann 回帰対応)は metric/oracle/permutation/
-  agent 契約の実装・テストまで完了、実データ実行は共有基盤ブロッカーで次ラウンド持ち越し
-  (§9 参照)
+  d(P3 系既定化)・f(sol reasoning-effort 多様性ラウンド)完了。v0.4.3-c(Rossmann
+  回帰対応)は metric/oracle/permutation/agent 契約の実装・テストまで完了、実データ
+  実行は共有基盤ブロッカーで次ラウンド持ち越し(§9 参照)
+- [sol reasoning-effort 多様性ラウンド:IEEE-CIS](verification/v043_sol_effort_diversity_ieee_cis.md) /
+  [Santander](verification/v043_sol_effort_diversity_santander.md) /
+  [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
 - **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
   — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
   および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)

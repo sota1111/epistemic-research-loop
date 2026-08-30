@@ -208,3 +208,13 @@ IEEE-CIS 向け `v042-mc-c01`・Santander 向け `v042-mc-c02` として build-o
 **実行順序:** build-only preflight(完了)→ 盲検監査(完了)→ 8-run batch(IEEE-CIS →
 Santander の順、バックグラウンドで逐次実行)→ lock → finalize → 上記3軸での分析・
 [クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)への追記。
+
+**status(2026-08-30、完了):** screening(n=1、8run×2コンペ)→ 確認ラウンド(n=4、
+6run×2コンペ、この過程で ps -ef 盲検リークを発見・修正——不変条件8参照)→
+population 拡大ラウンド(n=8、4run×2コンペ)の計3ラウンド・28 run を実施し完了した。
+最終結果は[クロスコンペ統合分析の総括](verification/v042_cross_competition_synthesis.md#追記v043-f総括sol-reasoning-effort多様性ラウンド3ラウンド28-runを終えて)
+を参照。主要な結論:(1) 単一seedのnovel-structure発見は再現しないことが多く過大評価
+禁物、(2) しかしpopulationを広げると新しい技術クラスが実際に出現する(IEEE-CIS)、
+(3) これはコンペの構造的複雑さに依存する(Santanderでは効果なし)、(4) 頑健な sol
+単独構成(IEEE-CIS `SD-high-P3`・Santander `SD-high-P1`、いずれも n=8中6/8でP2達成)
+を確定した。
