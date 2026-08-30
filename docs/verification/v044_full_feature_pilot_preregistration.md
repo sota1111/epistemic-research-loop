@@ -1,9 +1,9 @@
 # v0.4.4 全特徴量 + 疑似採点ループ pilot — 事前登録
 
 **作成日:** 2026-08-30
-**status:** 設計凍結(preregister)。まず1エージェント・1回のみの実行で、
-「全特徴量を渡し、ローカル疑似採点ツールで submit→score を繰り返せるか」という
-**機構そのものの実現可能性**を確認する(本格スタディではない)。
+**status(2026-08-30、pilot完了):** 1エージェント・1回の実行(`v044-pilot-a01`)で
+機構の実現可能性を確認し、3目標全て達成——結果は
+[v044_full_feature_pilot_results.md](v044_full_feature_pilot_results.md)を参照。
 
 **背景:** ユーザーからの指摘(該当ターン参照)により、既存 v0.4.1〜v0.4.3 の Track B/
 multi-competition pipeline が `CANONICAL_FEATURES`(固定10スロット)という、元々は

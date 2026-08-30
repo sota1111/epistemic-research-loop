@@ -21,8 +21,12 @@ _GENERIC_FORBIDDEN_TOKENS = (
     "manifest.enc",
     "labels.enc",
     "/workspaces/epistemic-research-loop",
-    "erl-v044-runs",
 )
+#: NOT forbidden: "erl-v044-runs" (the agent's own workdir-root name) -- by design the
+#: agent knows its own cwd (RUNNER.md tells it to work "in this directory"), and that
+#: sandbox path reveals nothing about the real repo location, competition identity, or
+#: solution content. An earlier version of this list included it and flagged 10 entirely
+#: benign occurrences (the agent's own file-write paths) as findings; removed.
 
 _COMPETITION_FORBIDDEN_TOKENS: dict[str, tuple[str, ...]] = {
     "ieee-cis": (

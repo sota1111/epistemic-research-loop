@@ -91,6 +91,23 @@ IEEE-CIS では実際に新しい未分類パターンが2件出現し(うち1�
 [Santander側](verification/v043_sol_effort_diversity_santander.md) /
 [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)。
 
+**v0.4.4 全特徴量 + 疑似採点ループ pilot 完了(2026-08-30)。** ユーザーからの指摘
+(「10列だけでは上位解法に繋がる発見は無理では」)を受け、既存 v0.4.0〜v0.4.3 の
+全 Suite が合成 Track A 由来の固定10列制約を real データにも無検討で継承していた
+ことを認め、その制約を撤廃する別トラックを新設した。IEEE-CIS で1エージェント・
+1回のみの feasibility pilot(`v044-pilot-a01`)を実施:全106列(既存の10倍以上)を
+渡し、confirmation 領域への予測をローカル疑似採点ツールで繰り返し提出→採点できる
+ようにした(実 Kaggle 提出はしない、との指示に基づく代替設計)。**結果:機構は
+完全に機能した**——疑似採点を20回(上限まで)使い切り、内部CVとforward validation
+の矛盾を疑似採点で解消するという実際の意思決定に使われ、封印済み transfer 領域の
+最終 AUC は 0.8315(reference baseline 0.7739 を +0.0576 上回る)。盲検監査もクリーン
+(監査スクリプト自体の初期の偽陽性1件を修正済み)。ただし列を増やしても
+layer1(上位解法技術クラス)への到達は未確認のまま——匿名化により列の意味論が
+分からない以上、列数を増やすだけでは UID復元等には直結しないことが示唆される。
+詳細:[preregistration](verification/v044_full_feature_pilot_preregistration.md) /
+[結果](verification/v044_full_feature_pilot_results.md)。次段階(複数seed確認・
+Santander横展開・layer1一致率の明示検証)は未着手。
+
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -452,6 +469,9 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
 - [sol reasoning-effort 多様性ラウンド:IEEE-CIS](verification/v043_sol_effort_diversity_ieee_cis.md) /
   [Santander](verification/v043_sol_effort_diversity_santander.md) /
   [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
+- **[v0.4.4 全特徴量 + 疑似採点ループ pilot](verification/v044_full_feature_pilot_preregistration.md)**
+  — 現行の正本。10列制約の撤廃(106列)・[結果](verification/v044_full_feature_pilot_results.md):
+  機構完全動作、transfer AUC 0.8315(baseline比+0.0576)
 - **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
   — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
   および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)
