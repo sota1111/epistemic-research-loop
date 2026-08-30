@@ -14,11 +14,12 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v044_full_feature_pilot import V044_R2_RUN_IDS, V044_SOL_EFFORT_RUN_IDS
+from epistemic_loop.benchmark.v044_full_feature_pilot import V044_R2_RUN_IDS, V044_R3_RUN_IDS, V044_SOL_EFFORT_RUN_IDS
 
 _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
     "screening": V044_SOL_EFFORT_RUN_IDS,
     "confirm": V044_R2_RUN_IDS,
+    "scale": V044_R3_RUN_IDS,
 }
 
 

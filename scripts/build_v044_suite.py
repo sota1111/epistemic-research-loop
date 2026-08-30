@@ -19,6 +19,8 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_MASTER_SEED,
     V044_R2_CONFIGS,
     V044_R2_RUN_IDS,
+    V044_R3_CONFIGS,
+    V044_R3_RUN_IDS,
     V044_SOL_EFFORT_CONFIGS,
     V044_SOL_EFFORT_RUN_IDS,
     build_v044_suite,
@@ -29,6 +31,7 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
 _CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
     "screening": (V044_SOL_EFFORT_CONFIGS, V044_SOL_EFFORT_RUN_IDS),
     "confirm": (V044_R2_CONFIGS, V044_R2_RUN_IDS),
+    "scale": (V044_R3_CONFIGS, V044_R3_RUN_IDS),
 }
 
 

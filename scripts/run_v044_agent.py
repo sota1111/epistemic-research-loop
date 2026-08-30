@@ -28,10 +28,11 @@ from pathlib import Path
 from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_MAX_SCORER_CALLS,
     V044_R2_CONFIGS,
+    V044_R3_CONFIGS,
     V044_SOL_EFFORT_CONFIGS,
 )
 
-_ALL_CONFIGS = {**V044_SOL_EFFORT_CONFIGS, **V044_R2_CONFIGS}
+_ALL_CONFIGS = {**V044_SOL_EFFORT_CONFIGS, **V044_R2_CONFIGS, **V044_R3_CONFIGS}
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 

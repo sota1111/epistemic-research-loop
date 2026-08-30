@@ -109,6 +109,28 @@ V044_R2_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V044_R2_RUN_IDS = tuple(V044_R2_CONFIGS)
 
+#: Round 3 (population scale-up): round 2 confirmed the P3-arm/adversarial-validation
+#: pattern is deterministic (7/7 vs 0/7 per competition), and screening/round 2 both found
+#: that Santander's actual dominant public techniques (frequency/count encoding,
+#: real-vs-synthetic row detection) never appeared even with all 200 columns visible.
+#: v0.4.3-f found that population scale-up (not effort/arm tuning) is what surfaces new
+#: technique classes once a config is confirmed robust -- this round tests whether that
+#: holds here too: does a larger F4-xhigh-P3 population (now n=11 combined) finally
+#: surface Santander's missing techniques, or new diversity for IEEE-CIS? New seeds
+#: (512/634/777/901) do not overlap rounds 1-2.
+V044_R3_SEEDS = (512, 634, 777, 901)
+V044_R3_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "F4-xhigh-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "xhigh",
+    }
+    for seed in V044_R3_SEEDS
+}
+V044_R3_RUN_IDS = tuple(V044_R3_CONFIGS)
+
 
 @dataclass(frozen=True)
 class V044RunBuildResult:
