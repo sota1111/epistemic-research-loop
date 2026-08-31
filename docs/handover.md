@@ -1,15 +1,24 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-31
-**進行中:** v0.4.7(実Kaggle late submission検証環境、1日5件×2競技)——ユーザー指示に基づき
-基盤実装完了。競技あたりsol 4体(low/xhigh×P1/P3、各1体)を実行し、4体全てを個別submit+
-1件はブレンドという「除外なしsubmit+ブレンド」方式を採用(理由:過去の
-`docs/progress.md`の知見「Local CV had no rank correlation with the public
-leaderboard」を踏まえ、不確かなローカルスコアによる選抜を避けた)。実データ
-(IEEE-CIS 506,691行・Santander 200,000行の実test.csv)でbuild→盲検監査→ダミー予測→
-submission.csv生成まで検証済み、`sample_submission.csv`とスキーマ完全一致を確認。
-**実際の`kaggle competitions submit`はまだ一度も呼んでいない**——ユーザーの最終確認
-待ち。詳細:[c_lite_v047_policy.md](c_lite_v047_policy.md)。
+**進行中:** v0.4.7(実Kaggle late submission検証環境)——世代1(1競技あたりsol 8体+
+opus 4体=12体、探索population)を実行完了(23/24、IEEE-CIS opus 1体は3時間
+タイムアウト)。**最重要発見:Santanderの核心公開技術(#1 real/synthetic行判定、
+100,000/100,000の正確な比率まで言い当てた)に、opus 2体が本プロジェクト初めて
+独立到達した**——[v0.4.4-b](verification/v044_cross_competition_synthesis.md)〜
+[v0.4.6](verification/v046_low_effort_opus_results.md)で列数・population・effort・
+モデルのいずれを変えても崩れなかった決定的否定結果(n=26)が、v0.4.7で初めて
+実Kaggle test.csv全行を見せたことで解消した——この技術は実test.csv固有の性質で
+train.csvには存在しないため、過去のローカル封印済みtransferでは原理的に発見
+不可能だったと判明。sol 8体は1体も到達せず、opus限定の発見。他にIEEE-CISで
+初めて「本物の」train/test分布シフトを検出・診断した例(`agent-05-r2`、
+測定バグの自己発見付き)も観測。**副産物として実インシデント1件を発見・修正**
+——opusエージェント1体が`env`確認で実リポジトリの絶対パス・採点キーの場所を
+露出させた(悪用の証拠なし、[インシデント記録](verification/v047_env_var_blindness_incident.md)
+参照、RUNNER.mdに明示的な禁止事項を追加済み)。**実際の`kaggle competitions
+submit`はまだ一度も呼んでいない**——ユーザーが明示的に「まだ許可しない」と回答済み。
+詳細:[世代1結果](verification/v047_generation1_results.md) /
+[c_lite_v047_policy.md](c_lite_v047_policy.md)。
 
 **直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
 指定の制約(effort=low固定・フィードバック両方維持・全列のみ・少数opus)で新規36 run
