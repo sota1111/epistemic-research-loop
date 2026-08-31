@@ -28,6 +28,10 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_R5_RUN_IDS,
     V044_SOL_EFFORT_CONFIGS,
     V044_SOL_EFFORT_RUN_IDS,
+    V046_LOW_FB_CONFIGS,
+    V046_LOW_FB_RUN_IDS,
+    V046_LOW_NOFB_CONFIGS,
+    V046_LOW_NOFB_RUN_IDS,
     build_v044_suite,
 )
 
@@ -51,6 +55,10 @@ _CONFIG_SETS: dict[str, _ConfigSet] = {
     "scale": _ConfigSet(V044_R3_CONFIGS, V044_R3_RUN_IDS),
     "10col-fb": _ConfigSet(V044_R4_CONFIGS, V044_R4_RUN_IDS, column_limit=10, enable_confirmation_scoring=True),
     "full-nofb": _ConfigSet(V044_R5_CONFIGS, V044_R5_RUN_IDS, column_limit=None, enable_confirmation_scoring=False),
+    "low-nofb": _ConfigSet(
+        V046_LOW_NOFB_CONFIGS, V046_LOW_NOFB_RUN_IDS, column_limit=None, enable_confirmation_scoring=False
+    ),
+    "low-fb": _ConfigSet(V046_LOW_FB_CONFIGS, V046_LOW_FB_RUN_IDS, column_limit=None, enable_confirmation_scoring=True),
 }
 
 

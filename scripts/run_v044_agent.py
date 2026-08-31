@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Execute one v0.4.4 full-feature suite run through codex (sol).
+"""Execute one v0.4.4 full-feature suite run through the configured CLI.
 
-One invocation = one (suite, run_id) pair = one fresh sol context (see
+One invocation = one (suite, run_id) pair = one fresh context (see
 docs/verification/v044_full_feature_pilot_preregistration.md and c_lite_v044_policy.md).
-Mirrors run_v040_agent.py's codex invocation mechanics (danger-full-access, pinned
-reasoning effort, isolation via workdir-copy + instructions + post-hoc audit only, exactly
-the same posture -- see that script's comments for why). Sol/codex only -- this study never
-uses claude or glm. Two additions beyond run_v040_agent.py: this copies
-scripts/v044_score_confirmation.py into the agent's own workdir (as score_confirmation.py,
-a relative-path tool, never told the real repo location) and injects the two paths it
-needs (V044_TRUTH_ROOT, V044_KEY_FILE) via environment variables rather than writing them
-into any agent-visible file -- see that script's own docstring for why. run_id's execution
-config (reasoning_effort, prompt_arm) is resolved from V044_SOL_EFFORT_CONFIGS, not passed
-on the command line, matching every other suite in this project.
+Every study through v0.4.5 used sol/codex exclusively; v0.4.6 (docs/c_lite_v046_policy.md)
+adds a small opus/claude screening arm, so this runner now dispatches on each run_id's
+``cli`` field via ``_command()`` -- mirroring run_v040_agent.py's codex/claude branches
+(danger-full-access for codex, --dangerously-skip-permissions + a workdir-scoped
+.claude/settings.json deny-list for claude; isolation for both is workdir-copy +
+instructions + post-hoc audit only, no OS sandbox). Two additions beyond
+run_v040_agent.py, CLI-agnostic: this copies scripts/v044_score_confirmation.py into the
+agent's own workdir (as score_confirmation.py, a relative-path tool, never told the real
+repo location) and injects the two paths it needs (V044_TRUTH_ROOT, V044_KEY_FILE) via
+environment variables rather than writing them into any agent-visible file -- see that
+script's own docstring for why. run_id's execution config (cli, model, reasoning_effort,
+prompt_arm) is resolved from the merged config registry below, not passed on the command
+line, matching every other suite in this project.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Mapping
 from pathlib import Path
 
 from epistemic_loop.benchmark.v044_full_feature_pilot import (
@@ -32,6 +36,8 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_R4_CONFIGS,
     V044_R5_CONFIGS,
     V044_SOL_EFFORT_CONFIGS,
+    V046_LOW_FB_CONFIGS,
+    V046_LOW_NOFB_CONFIGS,
 )
 
 _ALL_CONFIGS = {
@@ -40,6 +46,28 @@ _ALL_CONFIGS = {
     **V044_R3_CONFIGS,
     **V044_R4_CONFIGS,
     **V044_R5_CONFIGS,
+    **V046_LOW_NOFB_CONFIGS,
+    **V046_LOW_FB_CONFIGS,
+}
+
+#: Same deny-list as scripts/run_v040_agent.py's CLAUDE_SETTINGS. v0.4.4/v0.4.6 workdirs
+#: live under $HOME/erl-v044-runs/..., outside the real repo (/workspaces/**), so this
+#: pattern is safe to reuse verbatim -- it blocks the agent from ever reading the real repo
+#: while leaving its own sandboxed workdir untouched.
+CLAUDE_SETTINGS = {
+    "permissions": {
+        "deny": [
+            "Read(//workspaces/**)",
+            "Glob(//workspaces/**)",
+            "Grep(//workspaces/**)",
+            "Read(//home/*/.erl-controller/**)",
+            "WebFetch",
+            "WebSearch",
+            "Bash(curl:*)",
+            "Bash(wget:*)",
+            "Bash(git:*)",
+        ]
+    }
 }
 
 RUNNER_INSTRUCTIONS = """# Operational rules for this research run
@@ -73,7 +101,8 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.run_id not in _ALL_CONFIGS:
         raise SystemExit(f"run id {arguments.run_id!r} has no preregistered v0.4.4 execution configuration")
-    reasoning_effort = _ALL_CONFIGS[arguments.run_id]["reasoning_effort"]
+    config = _ALL_CONFIGS[arguments.run_id]
+    reasoning_effort = config.get("reasoning_effort")
 
     view_root = arguments.suite_root / arguments.suite_id / "agent_views" / arguments.run_id
     if not (view_root / "agent_packet.json").exists():
@@ -97,22 +126,12 @@ def main() -> None:
         if scoring_enabled:
             scorer_script = Path(__file__).parent / "v044_score_confirmation.py"
             shutil.copy2(scorer_script, workdir / "score_confirmation.py")
+        if config["cli"] == "claude":
+            claude_dir = workdir / ".claude"
+            claude_dir.mkdir()
+            (claude_dir / "settings.json").write_text(json.dumps(CLAUDE_SETTINGS, indent=2) + "\n")
     submission_path = workdir / "agent_submission.json"
-    command = [
-        "codex",
-        "exec",
-        "--skip-git-repo-check",
-        "--json",
-        "-m",
-        "gpt-5.6-sol",
-        "-c",
-        f'model_reasoning_effort="{reasoning_effort}"',
-        "-s",
-        "danger-full-access",
-        "-C",
-        str(workdir),
-        KICKOFF,
-    ]
+    command = _command(config, KICKOFF, workdir)
     transcript = workdir / "transcript-attempt-1.stream.jsonl"
     environment = _environment(arguments.truth_root, arguments.scorer_key_file, scoring_enabled=scoring_enabled)
     started = time.time()
@@ -149,6 +168,41 @@ def main() -> None:
         raise SystemExit(1)
     shutil.copy2(submission_path, output_dir / "agent_submission.json")
     print(json.dumps({"ok": True, "output": str(output_dir / "agent_submission.json"), "meta": meta}, indent=2))
+
+
+def _command(config: Mapping[str, str], prompt: str, workdir: Path) -> list[str]:
+    if config["cli"] == "codex":
+        effort = config.get("reasoning_effort", "xhigh")
+        return [
+            "codex",
+            "exec",
+            "--skip-git-repo-check",
+            "--json",
+            "-m",
+            config["model"],
+            "-c",
+            f'model_reasoning_effort="{effort}"',
+            "-s",
+            "danger-full-access",
+            "-C",
+            str(workdir),
+            prompt,
+        ]
+    if config["cli"] == "claude":
+        return [
+            "claude",
+            "-p",
+            prompt,
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--dangerously-skip-permissions",
+            "--model",
+            config["model"],
+            "--max-turns",
+            "1000",
+        ]
+    raise SystemExit(f"unknown cli {config['cli']!r}")
 
 
 def _validate(submission_path: Path, packet: dict[str, object]) -> tuple[str, ...]:

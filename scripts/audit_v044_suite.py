@@ -21,6 +21,8 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_R4_RUN_IDS,
     V044_R5_RUN_IDS,
     V044_SOL_EFFORT_RUN_IDS,
+    V046_LOW_FB_RUN_IDS,
+    V046_LOW_NOFB_RUN_IDS,
 )
 
 _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
@@ -29,6 +31,8 @@ _RUN_ID_SETS: dict[str, tuple[str, ...]] = {
     "scale": V044_R3_RUN_IDS,
     "10col-fb": V044_R4_RUN_IDS,
     "full-nofb": V044_R5_RUN_IDS,
+    "low-nofb": V046_LOW_NOFB_RUN_IDS,
+    "low-fb": V046_LOW_FB_RUN_IDS,
 }
 
 _GENERIC_FORBIDDEN_TOKENS = (
