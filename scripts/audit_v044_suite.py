@@ -49,6 +49,32 @@ _GENERIC_FORBIDDEN_TOKENS = (
 #: solution content. An earlier version of this list included it and flagged 10 entirely
 #: benign occurrences (the agent's own file-write paths) as findings; removed.
 
+_SCORER_SCRIPT = Path("scripts/v044_score_confirmation.py")
+
+
+def _strip_known_scorer_source(text: str) -> str:
+    """Remove the scorer tool's own (expected, legitimate-to-read) source text.
+
+    v0.4.6 opus runs `cat score_confirmation.py` as routine orientation (a file that lives
+    in their own workdir -- fully legitimate to read), and that script's docstring/source
+    literally contains ".controller_truth"/"labels.enc" as descriptive prose and string
+    literals (docs/verification/v044_full_feature_pilot_preregistration.md SS3). Scanning
+    naively flagged this as 3 findings across 8 opus runs (docs/verification/
+    v046_low_effort_opus_results.md SS0) -- traced via the transcript's tool_use_id back to
+    a `cat agent_packet.json && cat RUNNER.md && cat score_confirmation.py` orientation
+    command, not an env-var dump or directory listing of the real truth root. Stripping the
+    script's own known text (JSON-escaped, matching how it appears in a tool_result blob)
+    before token-counting keeps the check sensitive to an ACTUAL leak (e.g. the resolved
+    env var value, or a listing of .controller_truth's real contents) while not flagging
+    the agent reading its own tool.
+    """
+
+    source = _SCORER_SCRIPT.read_text()
+    for variant in (source, source.rstrip("\n")):
+        text = text.replace(json.dumps(variant)[1:-1], "")
+    return text
+
+
 _COMPETITION_FORBIDDEN_TOKENS: dict[str, tuple[str, ...]] = {
     "ieee-cis": (
         "isFraud",
@@ -88,6 +114,7 @@ def main() -> None:
             continue
         audited_views += 1
         text = "\n".join(path.read_text(errors="ignore") for path in view_root.rglob("*") if path.is_file())
+        text = _strip_known_scorer_source(text)
         for token in forbidden_tokens:
             count = text.count(token)
             if count:
@@ -101,6 +128,7 @@ def main() -> None:
             audited_transcripts += 1
             text = transcript.read_text(errors="ignore")
             text = text.replace("/workspaces/epistemic-research-loop/.venv/", "<interpreter-venv>/")
+            text = _strip_known_scorer_source(text)
             for token in forbidden_tokens:
                 count = text.count(token)
                 if count:
