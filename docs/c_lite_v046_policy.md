@@ -1,7 +1,18 @@
 # C-lite v0.4.6 方針 — reasoning effort=low での「全列×フィードバック×アーム」再検証
 
 **作成日:** 2026-08-31
-**status:** 方針草案(ユーザー指定の制約に基づき起案。実験計画のみ、実行は未承認)
+**status:** **v0.4.6-a〜d 完了(2026-08-31)。** 新規36 run(sol 28 + opus 8)、両コンペ、
+全run成功・0件失敗。post-hoc盲検監査でopus 3runに誤検出(採点ツール自身のソース
+コードを`cat`したことによる false positive)を発見・修正(コミット`2964a00`)、
+最終的に4 suite全てクリーン。**最重要結果:(1) IEEE-CIS opusの4 run全てが独立に
+実データの意味論的構造(count/amountペア・compositional比率)を再構築し、うち1 runは
+技術クラス#1(UID/エンティティ復元)に本プロジェクトで初めて到達した。(2) P3が
+adversarial validationの絶対的必要条件である、という150 run超で崩れなかった知見が
+本ラウンドで初めて破れた(P1アームで2件出現、ただしP3出現率33%はP1の11%の約3倍で
+依然強い相関)。(3) 低effort+feedbackの性能はIEEE-CISではxhigh水準に匹敵/超過したが
+Santanderでは一貫してxhighに届かなかった——effort軸でも列数・feedback軸と同じ
+コンペ依存の非対称性が確認された。** late submission上位到達可能性の考察(実提出は
+せず)含め、詳細:[v0.4.6結果](verification/v046_low_effort_opus_results.md)。
 **前提:** [v0.4.5 方針](c_lite_v045_policy.md) / [v0.4.5 要因計画結果](verification/v045_factorial_design_results.md)、
 [v0.4.4 方針](c_lite_v044_policy.md)
 
@@ -177,15 +188,15 @@ opus新規実行数 = 4セル × n=1 × 2競技 = **8 run**。
 ## 7. 実行順序(案)
 
 ```text
-v0.4.6-a  基盤整備:run_v044_agent.pyのCLI一般化(codex/claude分岐、単体テスト追加)+
+v0.4.6-a  [完了] 基盤整備:run_v044_agent.pyのCLI一般化(codex/claude分岐、単体テスト追加)+
           config辞書追加(sol・opus)・CLI配線
-v0.4.6-b  セルI・J構築(全列×フィードバックなし×low、P1・P3、sol+opus混在)
-          → build-only preflight → 盲検監査 → 実行(sol 8run + opus 2run/競技)
-v0.4.6-c  セルK・L構築(全列×フィードバックあり×low、P1・P3、sol+opus混在)
-          → 同上(sol 6run[既存n=1/競技と合算しn=4に] + opus 2run/競技)
-v0.4.6-d  分析:4象限(low/xhigh × no-fb/fb)のAUC比較・adversarial validation
-          出現率比較(sol、n=4基準)+ opus screening(n=1、定性確認のみ)。
-          問い1〜4への回答をレポート化。
+v0.4.6-b  [完了] セルI・J構築(全列×フィードバックなし×low、P1・P3、sol+opus混在)
+          → build-only preflight → 盲検監査 → 実行(sol 8run + opus 2run/競技、全成功)
+v0.4.6-c  [完了] セルK・L構築(全列×フィードバックあり×low、P1・P3、sol+opus混在)
+          → 同上(sol 6run[既存n=1/競技と合算しn=4に] + opus 2run/競技、全成功)
+v0.4.6-d  [完了] 分析:4象限(low/xhigh × no-fb/fb)のAUC比較・adversarial validation
+          出現率比較 + opus screeningの定性確認。結果:
+          [v0.4.6結果](verification/v046_low_effort_opus_results.md)。
 ```
 
 ## 8. 不変条件
