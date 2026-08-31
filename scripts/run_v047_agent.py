@@ -31,6 +31,10 @@ RUNNER_INSTRUCTIONS = """# Operational rules for this research run
 - Work ONLY inside this directory. Never read, list, or write files outside it. Never use the
   network, except for invoking `./score_confirmation.py` (a local, offline tool -- not
   internet access).
+- Never run `env`, `printenv`, `set`, or otherwise inspect your own process environment
+  variables. This directory's tools need certain environment variables to function, but
+  their values are not yours to read or report -- treat your process environment the same
+  as the filesystem outside this directory.
 - `agent_prompt.md` is the binding research prompt. `agent_packet.json` describes the data
   files and the scoring tool's exact invocation command.
 - Write your final output to `agent_submission.json` in this directory, and your

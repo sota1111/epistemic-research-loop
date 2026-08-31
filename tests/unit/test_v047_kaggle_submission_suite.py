@@ -161,7 +161,7 @@ def test_build_v047_suite_adds_real_test_to_every_run(tmp_path: Path, monkeypatc
     )
 
     assert {run.run_id for run in result.suite_build.runs} == set(V047_CANDIDATE_CONFIGS)
-    assert len(result.real_test_results) == 4
+    assert len(result.real_test_results) == 12
     for real_test_result in result.real_test_results:
         assert real_test_result.row_count == 40
         real_test = pd.read_csv(real_test_result.real_test_path)

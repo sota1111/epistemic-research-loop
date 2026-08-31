@@ -53,40 +53,73 @@ V047_TEST_DATA_PATHS: dict[str, Path] = {
 #: start far above that so the two ranges can never collide or be confused.
 V047_REAL_TEST_ROW_ID_OFFSET = 1_000_000
 
-#: One sol candidate per (reasoning_effort, prompt_arm) cell, docs/c_lite_v047_policy.md
-#: SS2 -- low/xhigh in equal number (2/2), P1/P3 in equal number (2/2), no replicates.
-#: Unlike every earlier suite in this project, run_ids here carry no "-s{seed}" suffix:
-#: there is exactly one candidate per cell per day, and the day-varying suite_id (embedding
-#: a date, e.g. "v047-ieee-2026-09-01") already provides the row-sample/salt variation a
-#: seed would otherwise encode -- a fixed extra seed would be redundant.
+#: Generation-1 (exploration) population, docs/c_lite_v047_policy.md SS2.1 -- revised
+#: after the user asked for a larger population that includes opus and serves both
+#: "evolution" (exploitation, SS2.2/SS2.3) and exploration. Sol: low/xhigh in equal number
+#: (4/4), P1/P3 in equal number (4/4), n=2 replicates/cell (don't trust a single
+#: replicate's novelty, docs/c_lite_v043_policy.md). Opus: P1/P3 equal (2/2), n=2
+#: replicates -- no reasoning-effort dial exists for claude in this harness. run_ids carry
+#: no "-s{seed}" suffix (unlike earlier rounds): there is a fixed replicate count per cell
+#: per invocation, and the suite_id (embedding a date/run label) already provides the
+#: row-sample/salt variation a seed would otherwise encode.
 V047_CANDIDATE_CONFIGS: Mapping[str, Mapping[str, str]] = {
-    "agent-01": {
-        "config_id": "F7-low-P1",
-        "cli": "codex",
-        "model": "gpt-5.6-sol",
-        "prompt_arm": "p1",
-        "reasoning_effort": "low",
+    **{
+        f"agent-01-r{rep}": {
+            "config_id": "F7-low-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "low",
+        }
+        for rep in (1, 2)
     },
-    "agent-02": {
-        "config_id": "F7-low-P3",
-        "cli": "codex",
-        "model": "gpt-5.6-sol",
-        "prompt_arm": "p3",
-        "reasoning_effort": "low",
+    **{
+        f"agent-02-r{rep}": {
+            "config_id": "F7-low-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "low",
+        }
+        for rep in (1, 2)
     },
-    "agent-03": {
-        "config_id": "F7-xhigh-P1",
-        "cli": "codex",
-        "model": "gpt-5.6-sol",
-        "prompt_arm": "p1",
-        "reasoning_effort": "xhigh",
+    **{
+        f"agent-03-r{rep}": {
+            "config_id": "F7-xhigh-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "xhigh",
+        }
+        for rep in (1, 2)
     },
-    "agent-04": {
-        "config_id": "F7-xhigh-P3",
-        "cli": "codex",
-        "model": "gpt-5.6-sol",
-        "prompt_arm": "p3",
-        "reasoning_effort": "xhigh",
+    **{
+        f"agent-04-r{rep}": {
+            "config_id": "F7-xhigh-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "xhigh",
+        }
+        for rep in (1, 2)
+    },
+    **{
+        f"agent-05-r{rep}": {
+            "config_id": "F7-opus-P1",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p1",
+        }
+        for rep in (1, 2)
+    },
+    **{
+        f"agent-06-r{rep}": {
+            "config_id": "F7-opus-P3",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p3",
+        }
+        for rep in (1, 2)
     },
 }
 V047_CANDIDATE_RUN_IDS = tuple(V047_CANDIDATE_CONFIGS)
