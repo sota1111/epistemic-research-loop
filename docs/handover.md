@@ -520,8 +520,10 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   無承認継承の経緯・影響範囲の記録
 - **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — v0.4.3-f を全特徴量
   設計でやり直し完了(v0.4.4-b)
-- **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 現行の正本。列数×フィードバックの
+- **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 列数×フィードバックの
   交絡を分離する2×2×2要因計画、完了。[結果](verification/v045_factorial_design_results.md)
+- **[c_lite_v046_policy.md](c_lite_v046_policy.md)** — 現行の正本(方針草案、実行未承認)。
+  reasoning effort=low断面での「全列×フィードバック×アーム」2×2再検証
 - **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
   — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
   [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が
