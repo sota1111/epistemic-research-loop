@@ -1,23 +1,24 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-31
-**進行中:** v0.4.7(実Kaggle late submission検証環境)——世代1(1競技あたりsol 8体+
-opus 4体=12体、探索population)を実行完了(23/24、IEEE-CIS opus 1体は3時間
-タイムアウト)。**最重要発見:Santanderの核心公開技術(#1 real/synthetic行判定、
-100,000/100,000の正確な比率まで言い当てた)に、opus 2体が本プロジェクト初めて
-独立到達した**——[v0.4.4-b](verification/v044_cross_competition_synthesis.md)〜
-[v0.4.6](verification/v046_low_effort_opus_results.md)で列数・population・effort・
-モデルのいずれを変えても崩れなかった決定的否定結果(n=26)が、v0.4.7で初めて
-実Kaggle test.csv全行を見せたことで解消した——この技術は実test.csv固有の性質で
-train.csvには存在しないため、過去のローカル封印済みtransferでは原理的に発見
-不可能だったと判明。sol 8体は1体も到達せず、opus限定の発見。他にIEEE-CISで
-初めて「本物の」train/test分布シフトを検出・診断した例(`agent-05-r2`、
-測定バグの自己発見付き)も観測。**副産物として実インシデント1件を発見・修正**
-——opusエージェント1体が`env`確認で実リポジトリの絶対パス・採点キーの場所を
-露出させた(悪用の証拠なし、[インシデント記録](verification/v047_env_var_blindness_incident.md)
-参照、RUNNER.mdに明示的な禁止事項を追加済み)。**実際の`kaggle competitions
-submit`はまだ一度も呼んでいない**——ユーザーが明示的に「まだ許可しない」と回答済み。
-詳細:[世代1結果](verification/v047_generation1_results.md) /
+**直近の完了:** v0.4.7(実Kaggle late submission検証環境)——世代1(1競技あたりsol
+8体+opus 4体、探索population、23/24完了)→選定基準を巡るユーザーとの複数往復の
+議論(taxonomy一致・エージェント一致・Controller独自検証など5つの候補案を全て
+却下し、機械的なローカルAUC上位4体+ブレンドという基準に確定)→ユーザー許可の下、
+両競技合計10件を**実際にKaggleへ提出完了**。**最重要発見(2つ):**
+(1) Santanderの核心公開技術(#1 real/synthetic行判定、100,000/100,000の正確な
+比率)に opus 2体が本プロジェクト初めて独立到達——[v0.4.4-b](verification/v044_cross_competition_synthesis.md)〜
+[v0.4.6](verification/v046_low_effort_opus_results.md)のn=26決定的否定結果を、
+実test.csv全行を見せたことで初めて解消(train.csvには存在しない実test.csv固有の
+性質だったと判明)。(2) **ローカルsealed transfer AUC順位と実public score順位の
+相関が、IEEE-CISでは ρ=-1.000(完全逆転)、Santanderでは ρ=+1.000(完全一致)**
+——`docs/progress.md`(ERL v0.3.x時代)以来の「ローカル検証はリーダーボードを
+予測できるか」という問いに、独立検証済みの機序(IEEE-CISには実train/test分布
+シフトがある、Santanderにはない)込みで決定的な答えを与えた。副産物として実
+盲検インシデント1件も発見・修正(opusが`env`確認で実リポジトリパスを露出、
+悪用の証拠なし、[インシデント記録](verification/v047_env_var_blindness_incident.md))。
+詳細:[実提出結果](verification/v047_real_submission_results.md) /
+[世代1結果](verification/v047_generation1_results.md) /
 [c_lite_v047_policy.md](c_lite_v047_policy.md)。
 
 **直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
@@ -555,8 +556,12 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   設計でやり直し完了(v0.4.4-b)
 - **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 列数×フィードバックの
   交絡を分離する2×2×2要因計画、完了。[結果](verification/v045_factorial_design_results.md)
-- **[c_lite_v046_policy.md](c_lite_v046_policy.md)** — 現行の正本。reasoning effort=low
+- **[c_lite_v046_policy.md](c_lite_v046_policy.md)** — reasoning effort=low
   断面 + 少数opus screening、完了。[結果](verification/v046_low_effort_opus_results.md)
+- **[c_lite_v047_policy.md](c_lite_v047_policy.md)** — 現行の正本。実Kaggle late
+  submission検証環境、完了(実提出まで完遂)。[世代1結果](verification/v047_generation1_results.md) /
+  [実提出結果](verification/v047_real_submission_results.md) /
+  [env var盲検インシデント](verification/v047_env_var_blindness_incident.md)
 - **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
   — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
   [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が

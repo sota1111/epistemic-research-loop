@@ -1,15 +1,17 @@
 # C-lite v0.4.7 方針 — 実Kaggle late submission検証環境(1日5件×2競技)
 
 **作成日:** 2026-08-31
-**status:** 世代1(sol 8体+opus 4体×2競技)実行完了(23/24、詳細:
-[世代1結果](verification/v047_generation1_results.md))。選定基準を巡るユーザーとの
-議論の末(§2.3、複数の却下案を経て確定)、世代2(crossover)は見送り、機械的な
-AUC上位4体+ブレンドという基準(§2.4)で両競技とも**5枠分のsubmission.csvを
-準備・検証済み**(スキーマ・行数・値域を確認、`.runs/v047/submissions/`)。
-**実際の`kaggle competitions submit`はまだ一度も実行していない**——ユーザーが
-明示的に「まだ許可しない」と回答済み、次の提出許可確認を待っている。運用形態は
-「継続的な日次運用ではなく、今回の検証のみ(1回か数回)」とユーザーが確認済み
-——cron等のスケジューリング基盤は構築しない。
+**status:** **完了。実Kaggle提出まで完遂した。** 世代1(sol 8体+opus 4体×2競技)
+実行(23/24、[世代1結果](verification/v047_generation1_results.md))→選定基準を
+巡るユーザーとの議論(§2.3、5つの却下案を経て機械的基準に確定)→ユーザーの
+明示的許可(「提出してください」)を得て、両競技合計10件を実際に
+`kaggle competitions submit`——**全件`SubmissionStatus.COMPLETE`、public/private
+スコア判明。最重要結果:ローカルsealed transfer AUC順位と実public score順位の
+相関が、IEEE-CISでは ρ=-1.000(完全逆転)、Santanderでは ρ=+1.000(完全一致)
+——本プロジェクトが`docs/progress.md`以来問い続けた「ローカル検証はリーダーボードを
+予測できるか」に、独立検証済みの機序(IEEE-CISには実train/test分布シフトがあり、
+Santanderにはない)込みで決定的な答えを与えた。** 詳細:
+[実提出結果](verification/v047_real_submission_results.md)。
 **前提:** [v0.4.6結果](verification/v046_low_effort_opus_results.md)、
 [c_lite_v046_policy.md](c_lite_v046_policy.md)
 
