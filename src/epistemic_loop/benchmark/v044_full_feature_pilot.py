@@ -355,18 +355,38 @@ def _visible_column_map_generic(key: bytes, suite_id: str, run_id: str, columns:
 def _sample_split(
     spec: CompetitionSpec, columns: Sequence[str], *, master_seed: int, suite_id: str
 ) -> dict[str, pd.DataFrame]:
+    """Split into research/confirmation/transfer.
+
+    For time-ordered competitions (``spec.time_column`` set), this must produce a
+    genuinely temporally-contiguous split -- research earliest, transfer latest -- so the
+    sealed transfer region actually mimics being chronologically closer to a real held-out
+    test set. A prior version sorted by time_column and then called
+    ``frame.sample(n=total, ...)`` on the sorted frame; pandas' ``sample()`` returns rows
+    in randomized order regardless of the input's order, which silently discarded the sort
+    and made transfer a random (not temporal) holdout for every suite built through v0.4.7
+    -- see docs/verification/v047_temporal_split_bug.md. Fixed here by slicing a
+    contiguous, seed-selected window directly from the time-sorted frame instead of
+    re-randomizing it.
+    """
+
     total = V044_RESEARCH_ROWS + V044_CONFIRMATION_ROWS + V044_TRANSFER_ROWS
     usecols = sorted(set(columns) | spec.excluded_raw_columns)
     frame = pd.read_csv(spec.data_path, usecols=usecols)
+    if len(frame) < total:
+        raise ValueError(f"need {total} rows, only {len(frame)} available")
     if spec.time_column:
         frame = frame.sort_values(spec.time_column, kind="mergesort").reset_index(drop=True)
+        # A contiguous window of `total` rows, its start position seeded (not always row 0)
+        # so different suite_ids/master_seeds see different slices of history, but within
+        # any one suite research < confirmation < transfer in time -- never re-randomized.
+        max_start = len(frame) - total
+        start = _derive_int(master_seed, suite_id, "row-window-start") % (max_start + 1)
+        sampled = frame.iloc[start : start + total].reset_index(drop=True)
     else:
         seed = _derive_int(master_seed, suite_id, "row-order") % (2**32)
         frame = frame.sample(frac=1.0, random_state=seed).reset_index(drop=True)
-    if len(frame) < total:
-        raise ValueError(f"need {total} rows, only {len(frame)} available")
-    sample_seed = _derive_int(master_seed, suite_id, "row-sample") % (2**32)
-    sampled = frame.sample(n=total, random_state=sample_seed).reset_index(drop=True)
+        sample_seed = _derive_int(master_seed, suite_id, "row-sample") % (2**32)
+        sampled = frame.sample(n=total, random_state=sample_seed).reset_index(drop=True)
     sampled["row_id"] = sampled.index.astype(int)
     return {
         "research": sampled.iloc[:V044_RESEARCH_ROWS].reset_index(drop=True),

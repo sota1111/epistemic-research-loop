@@ -21,6 +21,16 @@
 [世代1結果](verification/v047_generation1_results.md) /
 [c_lite_v047_policy.md](c_lite_v047_policy.md)。
 
+**進行中:** v0.4.8(次のエージェント計画、方針草案)。実スコアの相関逆転を追う
+過程で**`_sample_split`の時系列分割バグを発見・修正**(IEEE-CISの`time_column`
+指定が`sort_values`後の`.sample()`呼び出しで無効化されており、v0.4.4以降
+research/confirmation/transferが時系列分離されずランダム分割のままだった、
+[発見記録](verification/v047_temporal_split_bug.md)、実データで修正確認済み・
+回帰テスト追加済み)。次の計画は2トラック:Track A(IEEE-CIS、修正版で
+ローカル-実相関が回復するか検証)・Track B(Santander、実スコアで裏付け済みの
+2系統を実スコア情報込みで深掘り)。**エージェント実行はまだ行っていない**——
+ユーザーの確認待ち。詳細:[c_lite_v048_policy.md](c_lite_v048_policy.md)。
+
 **直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
 指定の制約(effort=low固定・フィードバック両方維持・全列のみ・少数opus)で新規36 run
 (sol 28 + opus 8)を両コンペで実行、全run成功。post-hoc盲検監査でopus 3runに誤検出
