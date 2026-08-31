@@ -1,6 +1,16 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-31
+**進行中:** v0.4.7(実Kaggle late submission検証環境、1日5件×2競技)——ユーザー指示に基づき
+基盤実装完了。競技あたりsol 4体(low/xhigh×P1/P3、各1体)を実行し、4体全てを個別submit+
+1件はブレンドという「除外なしsubmit+ブレンド」方式を採用(理由:過去の
+`docs/progress.md`の知見「Local CV had no rank correlation with the public
+leaderboard」を踏まえ、不確かなローカルスコアによる選抜を避けた)。実データ
+(IEEE-CIS 506,691行・Santander 200,000行の実test.csv)でbuild→盲検監査→ダミー予測→
+submission.csv生成まで検証済み、`sample_submission.csv`とスキーマ完全一致を確認。
+**実際の`kaggle competitions submit`はまだ一度も呼んでいない**——ユーザーの最終確認
+待ち。詳細:[c_lite_v047_policy.md](c_lite_v047_policy.md)。
+
 **直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
 指定の制約(effort=low固定・フィードバック両方維持・全列のみ・少数opus)で新規36 run
 (sol 28 + opus 8)を両コンペで実行、全run成功。post-hoc盲検監査でopus 3runに誤検出
