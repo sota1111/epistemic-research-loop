@@ -12,8 +12,10 @@ from epistemic_loop.benchmark.v037_repro_suite import _auc
 from epistemic_loop.benchmark.v042_multi_competition_suite import CompetitionSpec
 from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_CONFIRMATION_ROWS,
+    V044_MASTER_SEED,
     V044_RESEARCH_ROWS,
     V044_TRANSFER_ROWS,
+    _sample_split,
     _visible_column_map_generic,
     build_v044_suite,
     select_all_generic_columns,
@@ -211,3 +213,46 @@ def test_build_v044_suite_confirmation_scoring_disabled_omits_scorer_surface(tmp
     assert "confirmation_rows" not in packet_p1
     assert packet_p1["research_rows"] == V044_RESEARCH_ROWS
     assert packet_p1["transfer_rows"] == V044_TRANSFER_ROWS
+
+
+def test_sample_split_with_time_column_is_genuinely_temporal(tmp_path: Path) -> None:
+    """Regression test for the bug in docs/verification/v047_temporal_split_bug.md:
+    sort_values(time_column) followed by frame.sample(n=total, ...) silently discarded
+    the sort (pandas .sample() returns rows in randomized order regardless of input
+    order), so research/confirmation/transfer were never actually temporally ordered for
+    any time_column-configured competition (IEEE-CIS) through v0.4.7.
+    """
+
+    csv_path = tmp_path / "train.csv"
+    total_rows = V044_RESEARCH_ROWS + V044_CONFIRMATION_ROWS + V044_TRANSFER_ROWS + 500
+    rng = np.random.RandomState(3)
+    # shuffle the underlying row order so a correct implementation MUST sort, not just
+    # happen to already be time-ordered on disk
+    order = rng.permutation(total_rows)
+    data = pd.DataFrame(
+        {
+            "row_key": range(total_rows),
+            "event_time": np.arange(total_rows)[order],
+            "target": rng.randint(0, 2, size=total_rows),
+            "var_0": rng.standard_normal(total_rows),
+        }
+    )
+    data.to_csv(csv_path, index=False)
+
+    spec = CompetitionSpec(
+        competition_id="synthetic-temporal",
+        data_path=csv_path,
+        target_column="target",
+        id_columns=frozenset({"row_key"}),
+        time_column="event_time",
+    )
+
+    splits = _sample_split(spec, ["var_0"], master_seed=V044_MASTER_SEED, suite_id="temporal-suite")
+
+    research_max = splits["research"]["event_time"].max()
+    confirmation_min = splits["confirmation"]["event_time"].min()
+    confirmation_max = splits["confirmation"]["event_time"].max()
+    transfer_min = splits["transfer"]["event_time"].min()
+
+    assert research_max < confirmation_min, "research must be entirely earlier than confirmation"
+    assert confirmation_max < transfer_min, "confirmation must be entirely earlier than transfer"
