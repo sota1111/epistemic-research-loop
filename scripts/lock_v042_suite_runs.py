@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and hash-lock Track B's 12 runs before the truth manifest is opened."""
+"""Validate and hash-lock a v0.4.2 suite's 12 runs before the truth manifest is opened."""
 
 from __future__ import annotations
 
@@ -8,22 +8,22 @@ import hashlib
 import json
 from pathlib import Path
 
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS
 from epistemic_loop.controller.v040_agent import load_v040_submission, validate_v040_submission
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
-    parser.add_argument("--suite-root", type=Path, default=Path(".runs/v041"))
-    parser.add_argument("--submission-root", type=Path, default=Path(".runs/v041/agent_outputs"))
+    parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--suite-root", type=Path, default=Path(".runs/v042"))
+    parser.add_argument("--submission-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     arguments = parser.parse_args()
     lock_file = arguments.suite_root / f"{arguments.suite_id}_agent_runs.lock.json"
     if lock_file.exists():
-        raise SystemExit(f"Track B outputs for {arguments.suite_id} are already locked")
+        raise SystemExit(f"suite outputs for {arguments.suite_id} are already locked")
     records: list[dict[str, object]] = []
     errors: list[str] = []
-    for run_id in V041_TRACKB_RUN_IDS:
+    for run_id in V042_RUN_IDS:
         packet_path = arguments.suite_root / arguments.suite_id / "agent_views" / run_id / "agent_packet.json"
         submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         try:
@@ -50,7 +50,7 @@ def main() -> None:
         raise SystemExit(1)
     payload = {
         "version": "0.4.2",
-        "study": "track-b-ieee-cis-blind-bridge",
+        "study": "v042-multi-competition-blind-bridge",
         "suite_id": arguments.suite_id,
         "all_outputs_locked_before_hidden_evaluation": True,
         "agent_run_count": len(records),

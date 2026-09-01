@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Open Track B's truth manifest and score the locked runs against the P2 criteria.
+"""Open a v0.4.2 suite's truth manifest and score the locked runs against the P2 criteria.
 
-P2 (docs/c_lite_v040_policy.md SS4.2, unchanged for Track B):
+P2 (docs/c_lite_v040_policy.md SS4.2, unchanged since Track B):
   1. locked translation's hidden transfer-region gain beats the controller's
      capacity-matched baseline (independently recomputed here from the agent's own
      submitted transfer predictions vs the true hidden labels -- not self-reported).
   2. structure-destruction probe: the promoted candidate's matched-negative twin must
      not also be promoted (in this suite design, criteria 2 and 3 coincide by
      construction -- a matched-negative pack IS the destruction probe for its twin).
-  3. no real-data matched-negative pack promoted at all in that run (FSPR control).
+  3. no matched-negative pack promoted at all in that run (FSPR control).
   4. evidence bundle valid under the v037/v040 contract (checked at lock time already).
 
 Reproducibility bar: >=2 of 4 runs of the same execution configuration must satisfy all
-of P2 on at least one candidate pack, matching the synthetic-side P1 bar.
+of P2 on at least one candidate pack.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from pathlib import Path
 from statistics import median
 
 from epistemic_loop.benchmark.v037_repro_suite import V037AliasTruth, _auc, decrypt_v037_suite
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_CONFIGS, V041_TRACKB_SUITE_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import V042_EXECUTION_CONFIGS
 from epistemic_loop.controller.v037_agent import V037Resolution
 from epistemic_loop.controller.v040_agent import load_v040_submission
 
@@ -36,21 +36,22 @@ _PROMOTED = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
+    parser.add_argument("--competition-id", required=True)
+    parser.add_argument("--suite-id", required=True)
     parser.add_argument("--truth-manifest", type=Path, default=None)
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
     parser.add_argument("--lock-file", type=Path, default=None)
-    parser.add_argument("--submission-root", type=Path, default=Path(".runs/v041/agent_outputs"))
+    parser.add_argument("--submission-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     parser.add_argument("--output", type=Path, default=None)
     arguments = parser.parse_args()
     if arguments.truth_manifest is None:
-        arguments.truth_manifest = Path(f".controller_truth/v041/{arguments.suite_id}.manifest.enc")
+        arguments.truth_manifest = Path(f".controller_truth/v042/{arguments.suite_id}.manifest.enc")
     if arguments.lock_file is None:
-        arguments.lock_file = Path(f".runs/v041/{arguments.suite_id}_agent_runs.lock.json")
+        arguments.lock_file = Path(f".runs/v042/{arguments.suite_id}_agent_runs.lock.json")
     if arguments.output is None:
         arguments.output = Path(f"docs/{arguments.suite_id.replace('-', '_')}_diagnostics.json")
     if not arguments.lock_file.exists():
-        raise SystemExit("Track B outputs must be locked (scripts/lock_v041_track_b_runs.py) before opening truth")
+        raise SystemExit("v0.4.2 suite outputs must be locked (scripts/lock_v042_suite_runs.py) before opening truth")
 
     key = arguments.key_file.read_bytes().strip()
     truth = decrypt_v037_suite(arguments.truth_manifest, key)
@@ -60,7 +61,7 @@ def main() -> None:
         aliases_by_run.setdefault(alias.run_id, []).append(alias)
 
     per_run: list[dict[str, object]] = []
-    for run_id in V041_TRACKB_CONFIGS:
+    for run_id in V042_EXECUTION_CONFIGS:
         submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         loaded = load_v040_submission(submission_path)
         alias_by_pack_context = {(a.opaque_pack_id, a.opaque_context_id): a for a in aliases_by_run[run_id]}
@@ -70,11 +71,6 @@ def main() -> None:
             canonical_pack_id = first_alias.canonical_pack_id
             first_truth = next(t for (p, _c), t in context_truth_by_key.items() if p == canonical_pack_id)
             promoted = pack.resolution in _PROMOTED
-            # Computed for every pack (candidate and matched-negative alike): the agent's own
-            # submitted transfer-region AUC, independently recomputed from their predictions vs
-            # the true hidden labels. For matched-negative packs this is the primary signal for
-            # whether the v0.4.2 baseline-model fix actually destroyed learnable structure (it
-            # should sit at chance, ~0.5) -- see docs/v042_trackb_matched_negative_fix_preregistration.json.
             agent_aucs: list[float] = []
             baseline_aucs: list[float] = []
             for context in pack.contexts:
@@ -132,7 +128,7 @@ def main() -> None:
         per_run.append(
             {
                 "run_id": run_id,
-                "config_id": V041_TRACKB_CONFIGS[run_id]["config_id"],
+                "config_id": V042_EXECUTION_CONFIGS[run_id]["config_id"],
                 "packs": pack_records,
                 "matched_negatives_promoted": negatives_promoted,
                 "fspr_clean": fspr_clean,
@@ -154,7 +150,8 @@ def main() -> None:
     }
     payload = {
         "version": "0.4.2",
-        "study": "track-b-ieee-cis-blind-bridge",
+        "study": "v042-multi-competition-blind-bridge",
+        "competition_id": arguments.competition_id,
         "suite_id": arguments.suite_id,
         "per_run": per_run,
         "per_config": config_summary,

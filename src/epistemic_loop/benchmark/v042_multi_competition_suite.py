@@ -1,25 +1,28 @@
-"""Track B: a single real-data (IEEE-CIS) blind bridge suite.
+"""v0.4.2: a competition-agnostic generalization of Track B's real-data blind bridge.
 
-Reuses the v0.3.7 truth/alias/packet schema and opaque-view helpers unchanged (see
-``v037_repro_suite``): only the canonical-pack construction differs from the synthetic
-Track A suites -- rows come from ``train_transaction.csv`` instead of a generator, feature
-columns are a seeded-random partition of the low-missingness numeric column pool instead
-of a fixed synthetic vocabulary, and the "oracle" reference is a controller-fitted
-capacity-matched baseline model instead of a known ground-truth formula.
+``v041_track_b_suite`` hardcoded IEEE-CIS's file layout (``train_transaction.csv``,
+``TransactionID``/``isFraud``/``TransactionDT``). This module factors those choices out
+into a :class:`CompetitionSpec` so a new closed Kaggle competition can be added by
+declaring its data path, target column, and (if it has one) a time column -- everything
+else (pack/context/truth schema, opaque view, encrypted truth, matched-negative
+construction via full random permutation of the target within each segment,
+identifiability preflight with retry) is unchanged from Track B.
 
-Each pack still has 3 independent contexts, matching Track A: a context is an
-independently-sampled real-data draw (its own baseline fit, its own research/confirmation/
-transfer rows), and cross-context agreement is what an agent's own protocol tests for
-generalization -- only the row source differs from synthetic.
+Two split strategies are supported, chosen automatically by whether ``time_column`` is
+set:
 
-Each suite id in ``V041_TRACKB_SUITE_IDS`` is a full, independent re-verification (not a
-Track-A-style parallel replicate): unlike the synthetic side, only one real dataset exists,
-so the replicate dimension within a single suite lives in its run_id slots. A new suite id
-is only minted to re-verify a corrected design (e.g. v041-trackb-02 after the matched-
-negative construction fix), never reused, matching the project's discard-and-rebuild
-discipline. See docs/v041_track_b_preregistration.json (v041-trackb-01) and
-docs/v042_trackb_matched_negative_fix_preregistration.json (v041-trackb-02) for the design
-rationale, each frozen before its suite was generated.
+- ``temporal``: rows are sorted by the time column, then cut 60/20/20 into
+  research/confirmation/transfer (IEEE-CIS's original design -- transfer tests
+  forward-looking generalization).
+- ``iid_random``: no time column exists (e.g. Santander, whose rows are not temporally
+  ordered). Rows are deterministically shuffled once per suite, then cut 60/20/20 the
+  same way -- transfer here tests iid generalization rather than forward-looking
+  generalization, matching the actual structure of that competition's test set.
+
+Regression targets (e.g. Rossmann's continuous ``Sales``) are out of scope for this
+module: the whole pipeline (AUC-based preflight/scoring, permutation of a binary
+target) assumes a binary target. A regression-metric variant would need its own
+oracle/permutation design and is deferred -- see docs/c_lite_v042_policy.md SS3.
 """
 
 from __future__ import annotations
@@ -28,8 +31,9 @@ import hashlib
 import json
 import random
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
+from statistics import median
 from typing import Any
 
 import numpy as np
@@ -55,36 +59,52 @@ from epistemic_loop.benchmark.v037_repro_suite import (
 )
 from epistemic_loop.controller.v037_agent import MAX_CYCLES_PER_PACK
 
-V041_TRACKB_SUITE_ID = "v041-trackb-01"
-#: v041-trackb-01 is the original (flawed matched-negative construction: linear baseline,
-#: decile-stratified permutation) suite, kept as a historical artifact -- see
-#: docs/verification/v041_track_b_qualification.md.
-#: v041-trackb-02 re-verified with a strengthened baseline model (HistGradientBoosting) but
-#: kept the decile-stratified permutation, and reproduced the same matched-negative
-#: false-promotion pattern (0/12 runs met P2 reproducibility) -- proving the flaw was in the
-#: permutation's stratification, not the baseline's capacity. See
-#: docs/v042_trackb_matched_negative_fix_preregistration.json for the (incomplete) v02 fix
-#: and docs/verification/v041_track_b_qualification.md for the root-cause derivation.
-#: v041-trackb-03 re-verifies again with the corrected permutation (full random, no
-#: stratification -- see _destroy_target_structure). New suite ids are appended here, never
-#: reused, matching the project's discard-and-rebuild discipline.
-V041_TRACKB_SUITE_IDS = ("v041-trackb-01", "v041-trackb-02", "v041-trackb-03")
-V041_TRACKB_MASTER_SEED = 20261001
-V041_TRACKB_MAX_CYCLES_PER_PACK = 4
-V041_TRACKB_CONTEXTS_PER_PACK = 3
 
-V041_TRACKB_CONFIGS: Mapping[str, Mapping[str, str]] = {
+@dataclass(frozen=True)
+class CompetitionSpec:
+    """Everything competition-specific that ``build_v042_suite`` needs.
+
+    ``id_columns`` must include every non-feature identifier/leakage column (row ids,
+    fold ids, anything derived from the target). ``time_column`` is ``None`` for
+    competitions with no meaningful row ordering (selects ``iid_random`` split).
+    """
+
+    competition_id: str
+    data_path: Path
+    target_column: str
+    id_columns: frozenset[str]
+    time_column: str | None = None
+    missingness_threshold: float = 0.02
+
+    @property
+    def excluded_raw_columns(self) -> frozenset[str]:
+        extra = {self.target_column} | ({self.time_column} if self.time_column else set())
+        return self.id_columns | extra
+
+    @property
+    def split_strategy(self) -> str:
+        return "temporal" if self.time_column else "iid_random"
+
+
+V042_MASTER_SEED = 20261001
+V042_MAX_CYCLES_PER_PACK = 4
+V042_CONTEXTS_PER_PACK = 3
+
+#: The same 3-execution-config x 4-seed diversity design validated in Track B
+#: (docs/c_lite_v041_policy.md SS2.1 / c_lite_v042_policy.md SS2): reused verbatim across
+#: every competition -- it is a diversity-lever choice, not a dataset property.
+V042_EXECUTION_CONFIGS: Mapping[str, Mapping[str, str]] = {
     **{
-        f"agent-01-s{seed}": {"config_id": "TB-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1"}
+        f"agent-01-s{seed}": {"config_id": "MC-opus-P1", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1"}
         for seed in (17, 42, 93, 124)
     },
     **{
-        f"agent-02-s{seed}": {"config_id": "TB-opus-P3", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3"}
+        f"agent-02-s{seed}": {"config_id": "MC-opus-P3", "cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3"}
         for seed in (17, 42, 93, 124)
     },
     **{
         f"agent-03-s{seed}": {
-            "config_id": "TB-sol-P3",
+            "config_id": "MC-sol-P3",
             "cli": "codex",
             "model": "gpt-5.6-sol",
             "prompt_arm": "p3",
@@ -93,34 +113,47 @@ V041_TRACKB_CONFIGS: Mapping[str, Mapping[str, str]] = {
         for seed in (17, 42, 93, 124)
     },
 }
-V041_TRACKB_RUN_IDS = tuple(V041_TRACKB_CONFIGS)
+V042_RUN_IDS = tuple(V042_EXECUTION_CONFIGS)
 
-_EXCLUDED_RAW_COLUMNS = frozenset({"TransactionID", "isFraud", "TransactionDT"})
-_MISSINGNESS_THRESHOLD = 0.02
+#: Every suite id ever built under this generalized module, across all competitions. New
+#: ids are appended here, never reused (matches the project's discard-and-rebuild
+#: discipline) and must be kept in sync with scripts/run_v040_agent.py's _CONFIG_REGISTRY
+#: before any run through that runner (not required for a build-only preflight check).
+#:
+#: Suite ids MUST NOT contain a competition-identifying string: ``suite_id`` is written
+#: verbatim into the agent-visible packet (``agent_packet.json``'s ``suite_id`` field), so
+#: a name like ``v042-mc-santander-01`` would leak the dataset identity straight into the
+#: agent's context -- exactly the blindness violation audit_v042_blindness.py exists to
+#: catch (and did, on the first Santander build attempt, 2026-08-29). Use opaque letters
+#: (a, b, c, ...) for competition order instead.
+V042_MC_SUITE_IDS: tuple[str, ...] = (
+    "v042-mc-a01",  # IEEE-CIS, build-only regression check for the generalized builder
+    "v042-mc-b01",  # Santander, flawed: decile-stratified permutation (see v041-trackb-02)
+    "v042-mc-b02",  # Santander, corrected permutation (_destroy_target_structure)
+)
+
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature
 _ROWS_PER_CONTEXT_SEGMENT = {"research": 1080, "confirmation": 360, "transfer": 360}
 _INDEPENDENT_IDENTIFIABILITY = {True: 0.24, False: 0.0}
 
 
-def select_generic_feature_groups(data_root: Path, *, master_seed: int, suite_id: str) -> list[list[str]]:
+def select_generic_feature_groups(spec: CompetitionSpec, *, master_seed: int, suite_id: str) -> list[list[str]]:
     """Partition the low-missingness numeric column pool into disjoint groups, one per attempt.
 
     Selection is generic (dtype + missingness threshold, then a seeded shuffle) rather
-    than hand-picked, per docs/v041_track_b_preregistration.json's feature_exposure_design.
-    Returns as many disjoint groups as the pool supports (used as an ordered sequence of
-    identifiability-preflight attempts, not all of which need to be kept -- see
-    build_v041_track_b_suite's retry-until-identifiable loop).
+    than hand-picked, matching Track B's blindness discipline: nothing about which
+    columns carry the competition's known predictive structure is used to choose them.
     """
 
-    header = pd.read_csv(data_root / "train_transaction.csv", nrows=1)
+    header = pd.read_csv(spec.data_path, nrows=1)
     numeric_columns = [
         column
         for column, dtype in header.dtypes.items()
-        if column not in _EXCLUDED_RAW_COLUMNS and pd.api.types.is_numeric_dtype(dtype)
+        if column not in spec.excluded_raw_columns and pd.api.types.is_numeric_dtype(dtype)
     ]
-    missingness = pd.read_csv(data_root / "train_transaction.csv", usecols=numeric_columns).isna().mean()
-    pool = sorted(column for column in numeric_columns if missingness[column] < _MISSINGNESS_THRESHOLD)
+    missingness = pd.read_csv(spec.data_path, usecols=numeric_columns).isna().mean()
+    pool = sorted(column for column in numeric_columns if missingness[column] < spec.missingness_threshold)
     order = list(pool)
     random.Random(_derive_int(master_seed, suite_id, "feature-pool-shuffle")).shuffle(order)
     group_count = len(order) // _COLUMNS_PER_PACK
@@ -131,8 +164,6 @@ def select_generic_feature_groups(data_root: Path, *, master_seed: int, suite_id
 
 
 def _pack_is_identifiable(contexts: Sequence[V037ContextTruth]) -> bool:
-    from statistics import median
-
     research = median(
         _auc(item.research_targets, item.oracle_research_predictions)
         - _auc(item.research_targets, item.control_research_predictions)
@@ -152,15 +183,22 @@ def _pack_is_identifiable(contexts: Sequence[V037ContextTruth]) -> bool:
     return research > 0.02 and confirmation > 0 and transfer > 0 and independent > 0.05
 
 
-def _load_time_sorted_frame(data_root: Path, columns: Sequence[str]) -> pd.DataFrame:
-    usecols = sorted(set(columns) | {"TransactionID", "isFraud", "TransactionDT"})
-    frame = pd.read_csv(data_root / "train_transaction.csv", usecols=usecols)
-    frame = frame.sort_values("TransactionDT", kind="mergesort").reset_index(drop=True)
+def _load_frame(spec: CompetitionSpec, columns: Sequence[str], *, master_seed: int, suite_id: str) -> pd.DataFrame:
+    usecols = sorted(set(columns) | spec.excluded_raw_columns)
+    frame = pd.read_csv(spec.data_path, usecols=usecols)
+    if spec.time_column:
+        frame = frame.sort_values(spec.time_column, kind="mergesort").reset_index(drop=True)
+    else:
+        # iid_random: no natural row ordering exists, so fix one deterministically (once
+        # per suite, independent of which column group is attempted) before segmenting --
+        # otherwise the 60/20/20 cut would be an artifact of file order.
+        seed = _derive_int(master_seed, suite_id, "row-order") % (2**32)
+        frame = frame.sample(frac=1.0, random_state=seed).reset_index(drop=True)
     frame["row_id"] = frame.index.astype(int)
     return frame
 
 
-def _time_segments(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def _segments(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
     n = len(frame)
     cut1, cut2 = int(n * 0.60), int(n * 0.80)
     return {
@@ -177,8 +215,8 @@ def _sample_segment(segment: pd.DataFrame, *, count: int, seed: int) -> pd.DataF
 
 
 def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) -> HistGradientBoostingClassifier:
-    # Gradient-boosted trees are the dominant real-world top-solution model class for tabular
-    # Kaggle competitions; native NaN handling means no imputer/scaler is needed.
+    # Gradient-boosted trees are the dominant real-world top-solution model class for
+    # tabular Kaggle competitions; native NaN handling means no imputer/scaler is needed.
     model = HistGradientBoostingClassifier(random_state=0)
     model.fit(features, target)
     return model
@@ -187,32 +225,37 @@ def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) ->
 def _destroy_target_structure(target: np.ndarray, *, seed: int) -> np.ndarray:
     """Full random permutation of the target within a segment.
 
-    Replaces an earlier decile-stratified-by-risk permutation (v041-trackb-01/02): shuffling
-    labels only *within* each risk-decile bucket preserves the *between*-decile positive-rate
-    correlation with risk exactly (bucket membership, and therefore each bucket's positive
-    count, is invariant under a within-bucket shuffle). Since AUC is a rank statistic, that
-    coarse (10-level) correlation alone is enough for any model that can approximately recover
-    decile membership from raw features -- which is almost guaranteed, since deciles were
-    defined by a model fit on the same features -- to score well above chance. This was
-    empirically confirmed: negative-pack agent-submitted transfer AUC sat at 0.55-0.73 in both
-    v041-trackb-01 (linear baseline) and v041-trackb-02 (HistGradientBoosting baseline),
-    unmoved by the baseline-capacity fix -- because the flaw was in the permutation's
-    stratification, not the baseline's expressive power. A full (unstratified) permutation
-    preserves the segment's marginal positive rate exactly (same count of positives,
-    reassigned uniformly at random) while making risk statistically independent of target, so
-    AUC(any risk score, permuted target) -> 0.5 in expectation. See
-    docs/verification/v041_track_b_qualification.md SS(reverification) for the derivation and
-    a synthetic reproduction.
+    Replaces an earlier decile-stratified-by-risk permutation (v041-trackb-01/02, and this
+    module's own first Santander build): shuffling labels only *within* each risk-decile
+    bucket preserves the *between*-decile positive-rate correlation with risk exactly (bucket
+    membership, and therefore each bucket's positive count, is invariant under a within-bucket
+    shuffle). Since AUC is a rank statistic, that coarse (10-level) correlation alone is enough
+    for any model that can approximately recover decile membership from raw features -- which
+    is almost guaranteed, since deciles were defined by a model fit on the same features -- to
+    score well above chance. This was empirically confirmed on the IEEE-CIS side: negative-pack
+    agent-submitted transfer AUC sat at 0.55-0.73 in both v041-trackb-01 (linear baseline) and
+    v041-trackb-02 (HistGradientBoosting baseline), unmoved by the baseline-capacity fix --
+    because the flaw was in the permutation's stratification, not the baseline's expressive
+    power. A full (unstratified) permutation preserves the segment's marginal positive rate
+    exactly (same count of positives, reassigned uniformly at random) while making risk
+    statistically independent of target, so AUC(any risk score, permuted target) -> 0.5 in
+    expectation. See docs/verification/v041_track_b_qualification.md for the derivation and a
+    synthetic reproduction.
     """
 
     rng = np.random.RandomState(seed)
     return target[rng.permutation(len(target))]
 
 
+def _coordinate_column(spec: CompetitionSpec) -> str:
+    return spec.time_column if spec.time_column else "row_id"
+
+
 def _build_row_dicts(
     frame: pd.DataFrame,
     feature_columns: Sequence[str],
     *,
+    spec: CompetitionSpec,
     segment_bounds: tuple[float, float],
     targets: np.ndarray,
     oracle: np.ndarray,
@@ -220,11 +263,12 @@ def _build_row_dicts(
 ) -> list[dict[str, Any]]:
     segment_min, segment_max = segment_bounds
     span = max(segment_max - segment_min, 1.0)
+    coordinate_column = _coordinate_column(spec)
     rows: list[dict[str, Any]] = []
     real_slots = [name for name in CANONICAL_FEATURES if name != "sequence_coordinate"]
     for position, (_, record) in enumerate(frame.iterrows()):
         row: dict[str, Any] = {"row_id": int(record["row_id"])}
-        row["sequence_coordinate"] = float((record["TransactionDT"] - segment_min) / span)
+        row["sequence_coordinate"] = float((record[coordinate_column] - segment_min) / span)
         for slot, column in zip(real_slots, feature_columns, strict=True):
             value = record[column]
             row[slot] = None if pd.isna(value) else float(value)
@@ -240,6 +284,7 @@ def build_context_rows(
     segments: Mapping[str, pd.DataFrame],
     feature_columns: Sequence[str],
     *,
+    spec: CompetitionSpec,
     pack_index: int,
     context_index: int,
     master_seed: int,
@@ -252,22 +297,29 @@ def build_context_rows(
         sampled[name] = _sample_segment(segment, count=_ROWS_PER_CONTEXT_SEGMENT[name], seed=seed)
 
     research_X = sampled["research"][list(feature_columns)]
-    research_y = sampled["research"]["isFraud"].to_numpy(dtype=int)
+    research_y = sampled["research"][spec.target_column].to_numpy(dtype=int)
     baseline = _fit_capacity_matched_baseline(research_X, research_y)
     control_rate = float(research_y.mean())
 
+    coordinate_column = _coordinate_column(spec)
     candidate_rows: list[dict[str, Any]] = []
     negative_rows: list[dict[str, Any]] = []
     for name in ("research", "confirmation", "transfer"):
         segment_frame = sampled[name]
         features = segment_frame[list(feature_columns)]
-        targets = segment_frame["isFraud"].to_numpy(dtype=int)
+        targets = segment_frame[spec.target_column].to_numpy(dtype=int)
         oracle = baseline.predict_proba(features)[:, 1]
         control = np.full(len(segment_frame), control_rate, dtype=float)
-        bounds = (float(segment_frame["TransactionDT"].min()), float(segment_frame["TransactionDT"].max()))
+        bounds = (float(segment_frame[coordinate_column].min()), float(segment_frame[coordinate_column].max()))
         candidate_rows.extend(
             _build_row_dicts(
-                segment_frame, feature_columns, segment_bounds=bounds, targets=targets, oracle=oracle, control=control
+                segment_frame,
+                feature_columns,
+                spec=spec,
+                segment_bounds=bounds,
+                targets=targets,
+                oracle=oracle,
+                control=control,
             )
         )
         perm_seed = _derive_int(master_seed, "permute", str(pack_index), str(context_index), name) % (2**32)
@@ -276,6 +328,7 @@ def build_context_rows(
             _build_row_dicts(
                 segment_frame,
                 feature_columns,
+                spec=spec,
                 segment_bounds=bounds,
                 targets=permuted_targets,
                 oracle=control,
@@ -337,30 +390,27 @@ def _context_truth(
     )
 
 
-def build_v041_track_b_suite(
+def build_v042_suite(
+    spec: CompetitionSpec,
     *,
-    data_root: Path,
     output_root: Path,
     truth_root: Path,
     key: bytes,
     prompt_paths: Mapping[str, Path],
     policy_contract: Mapping[str, Any],
-    suite_id: str = V041_TRACKB_SUITE_ID,
-    suite_ids: Sequence[str] = V041_TRACKB_SUITE_IDS,
-    master_seed: int = V041_TRACKB_MASTER_SEED,
-    configs: Mapping[str, Mapping[str, str]] = V041_TRACKB_CONFIGS,
-    run_ids: Sequence[str] = V041_TRACKB_RUN_IDS,
-    max_cycles_per_pack: int = V041_TRACKB_MAX_CYCLES_PER_PACK,
-    contexts_per_pack: int = V041_TRACKB_CONTEXTS_PER_PACK,
+    suite_id: str,
+    master_seed: int = V042_MASTER_SEED,
+    configs: Mapping[str, Mapping[str, str]] = V042_EXECUTION_CONFIGS,
+    run_ids: Sequence[str] = V042_RUN_IDS,
+    max_cycles_per_pack: int = V042_MAX_CYCLES_PER_PACK,
+    contexts_per_pack: int = V042_CONTEXTS_PER_PACK,
 ) -> V037SuiteBuildResult:
-    if suite_id not in suite_ids:
-        raise ValueError("Track B requires a preregistered suite identity")
     if contexts_per_pack < 3:
         raise ValueError("aggregate promotion requires at least three independent contexts per pack")
     if not 1 <= max_cycles_per_pack <= MAX_CYCLES_PER_PACK:
         raise ValueError(f"max_cycles_per_pack must be in [1,{MAX_CYCLES_PER_PACK}] to match the agent contract")
     if output_root.exists() or (truth_root / f"{suite_id}.manifest.enc").exists():
-        raise FileExistsError("Track B's suite is immutable once built; delete both roots to rebuild deliberately")
+        raise FileExistsError("a v0.4.2 suite is immutable once built; delete both roots to rebuild deliberately")
     Fernet(key)
     required_arms = {config["prompt_arm"] for config in configs.values()}
     if not required_arms <= set(prompt_paths):
@@ -368,9 +418,9 @@ def build_v041_track_b_suite(
     prompt_hashes = {name: _sha256_file(path) for name, path in sorted(prompt_paths.items())}
     policy_hash = hashlib.sha256(json.dumps(policy_contract, sort_keys=True).encode()).hexdigest()
     if not policy_contract.get("null_policy", {}).get("provenance_required"):
-        raise ValueError("Track B requires per-replicate null provenance in the locked policy contract")
+        raise ValueError("v0.4.2 suites require per-replicate null provenance in the locked policy contract")
 
-    feature_groups = select_generic_feature_groups(data_root, master_seed=master_seed, suite_id=suite_id)
+    feature_groups = select_generic_feature_groups(spec, master_seed=master_seed, suite_id=suite_id)
     pack_defs = _pack_definitions()
     canonical: dict[str, list[tuple[str, list[dict[str, Any]], V037ContextTruth]]] = {}
     attempts: list[dict[str, Any]] = []
@@ -380,8 +430,8 @@ def build_v041_track_b_suite(
             break
         candidate_def, negative_def = pack_defs[kept]
         index = kept + 1
-        frame = _load_time_sorted_frame(data_root, columns)
-        segments = _time_segments(frame)
+        frame = _load_frame(spec, columns, master_seed=master_seed, suite_id=suite_id)
+        segments = _segments(frame)
         candidate_pack_id = f"pack-c{index:02d}"
         negative_pack_id = f"pack-n{index:02d}"
         candidate_contexts: list[tuple[str, list[dict[str, Any]], V037ContextTruth]] = []
@@ -389,7 +439,13 @@ def build_v041_track_b_suite(
         for context_number in range(1, contexts_per_pack + 1):
             context_id = f"context-{context_number:02d}"
             candidate_rows, negative_rows = build_context_rows(
-                frame, segments, columns, pack_index=index, context_index=context_number, master_seed=master_seed
+                frame,
+                segments,
+                columns,
+                spec=spec,
+                pack_index=index,
+                context_index=context_number,
+                master_seed=master_seed,
             )
             research_end = _ROWS_PER_CONTEXT_SEGMENT["research"]
             confirmation_end = research_end + _ROWS_PER_CONTEXT_SEGMENT["confirmation"]

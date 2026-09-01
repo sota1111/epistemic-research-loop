@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Run Track B's 12 runs (3 execution configs x 4 replicates) with bounded parallelism.
+"""Run one v0.4.2 suite's 12 runs (3 execution configs x 4 replicates) with bounded parallelism.
 
-Same resumable pattern as the other v0.4.0/v0.4.1 batch runners: each (suite, run) pair
-goes through `scripts/run_v040_agent.py` as its own fresh process; a recorded
-agent_submission.json means the pair is skipped on a re-run.
+Generic across competitions; same resumable pattern as run_v041_track_b_batch.py.
 """
 
 from __future__ import annotations
@@ -15,18 +13,18 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v041_track_b_suite import V041_TRACKB_RUN_IDS, V041_TRACKB_SUITE_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite-id", default=V041_TRACKB_SUITE_IDS[-1], choices=V041_TRACKB_SUITE_IDS)
+    parser.add_argument("--suite-id", required=True)
     parser.add_argument("--parallel", type=int, default=3)
-    parser.add_argument("--suite-root", type=Path, default=Path(".runs/v041"))
-    parser.add_argument("--output-root", type=Path, default=Path(".runs/v041/agent_outputs"))
+    parser.add_argument("--suite-root", type=Path, default=Path(".runs/v042"))
+    parser.add_argument("--output-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    pairs = [(arguments.suite_id, run) for run in V041_TRACKB_RUN_IDS]
+    pairs = [(arguments.suite_id, run) for run in V042_RUN_IDS]
     pending = [
         (suite, run)
         for suite, run in pairs
@@ -43,7 +41,7 @@ def main() -> None:
             print(f"[{suite}/{run}] {status}", flush=True)
             if code != 0:
                 failures.append(f"{suite}/{run}")
-    summary = {"study": "track-b-ieee-cis-blind-bridge", "pending": len(pending), "failures": failures}
+    summary = {"study": "v042-multi-competition-blind-bridge", "pending": len(pending), "failures": failures}
     print(json.dumps(summary, indent=2))
     if failures:
         raise SystemExit(1)
