@@ -1,0 +1,76 @@
+# データ形式非依存メタ技術taxonomy(層2)— Controller専有
+
+**分類:** Controller専有・エージェント非開示。[c_lite_v043_policy.md](../c_lite_v043_policy.md)
+§2(v0.4.3-b)で定義した2層構造の層2。個別コンペの
+[technique taxonomy](.)(層1、列意味論・データ形式に依存する具体技術)を補完する、
+**コンペを跨いで繰り返し観測された、データ形式に依存しない技術クラス**。discovery 後の
+post-hoc スコアリングにのみ使う。プロンプト・契約・データ・エージェント可視のいかなる
+ファイルにも複製しないこと。
+
+**出典:** v0.4.2 で完了した IEEE-CIS(`v041-trackb-03`)・Santander(`v042-mc-b02`)の
+discovery ログの事後分析([cross-competition synthesis](../verification/v042_cross_competition_synthesis.md))。
+**layer2 のこの2クラスは、それが観測されたラウンド自体のスコアリングには遡及適用していない**
+(taxonomy はスコアリング前に固定されるべきという原則に基づく——circular を避けるため)。
+本ドキュメントは、それ以降に preregister される新規コンペの taxonomy に**当初から**組み込む
+ためのものである。
+
+## 層2 技術クラス
+
+1. **Context プーリング/leave-one-context-out 汎化。** パック内の複数(通常3つ)の独立に
+   抽出された context が、別々の regime ではなく単一の共有機構に支配されているという
+   claim。エージェントは pack-level の観測単位ではなく、context を跨いで安定な
+   risk mapping / 係数 / 変換を仮定し、leave-one-context-out で汎化を検証する。
+   IEEE-CIS では promoted 27件中 17件(63%)、Santander では promoted 38件中 38件
+   (100%)がこの claim を含んでいた——[v0.4.3-a 検証](../verification/v042_cross_competition_synthesis.md#追記v043-acontext-プーリング発見は-artifact-か実データの構造か)
+   により、この claim は Matched Negative(構造破壊済み)データではほぼ確実に正しく
+   falsified される(IEEE-CIS 100%・Santander 98%)ことを確認済み——**artifact ではなく、
+   実データに構造が存在する場合にのみ通過する健全な発見パターン**と判定した。
+2. **Occurrence/sparsity-profile 集約。** 個々の特徴の値そのものではなく、「どの特徴が
+   非ゼロ/非欠損か」という occurrence パターン自体を予測力のある集約特徴として使う
+   (hurdle 型 occurrence/log-magnitude 分解、active-channel breadth count、
+   identity-free row-profile aggregate 等)。IEEE-CIS で複数 run・複数モデル・複数
+   seed にわたり独立に再現(`agent-01-s42`・`agent-02-s42`・`agent-02-s93`、および
+   v041-trackb-01 の `opus×P3` run)。実務的な fraud detection 技術(非欠損列数等)と
+   構造的に近いが、匿名化された任意の疎な表形式データ一般に適用できる水準の記述。
+
+## 候補クラス(未昇格、追加確認待ち)
+
+3. **加法性/特徴独立性の限界("beyond additive marginals")。** 「特徴ごとの寄与を
+   加法的に足し合わせるモデルでは不十分で、特徴間の joint な非線形相互作用こそが
+   構造の本質である」という claim——layer2#1(プーリング。context を跨いだ機構の
+   共有)や layer2#2(occurrence/sparsity。値の有無パターン)とは異なる、**単一
+   context 内での特徴間関係の形**についての対抗仮説。v0.4.3-f の sol reasoning-effort
+   多様性ラウンドで、事後の全数検索により**独立4件**が確認された:
+   `v042-mc-c01/agent-01-s42`(IEEE-CIS、SD-medium-P1、7パック中4件promoted)・
+   `v042-mc-c02/agent-01-s17`(Santander、SD-low-P1、8パック中2件promoted)・
+   `v042-mc-d02/agent-02-s186`(Santander、SD-low-P1、8パック中0件promoted——claim
+   自体は再現したが検証には失敗)・`v042-mc-e01/agent-01-s402`(IEEE-CIS、SD-high-P3、
+   8パック中4件promoted)・`v042-mc-f01/agent-01-s512`(IEEE-CIS、SD-high-P1、
+   4パック全てpromoted、うち3件は`validated_actionable_transferred`まで到達)。
+   両コンペ・4種の effort/arm 構成(medium-P1・low-P1・high-P3・high-P1)で確認され、
+   単一の effort/prompt arm には普遍的には紐づかない——ただし**コンペごとに条件が
+   異なる**:IEEE-CIS では medium/high 双方の effort・P1/P3 両 arm で出現する一方、
+   **Santander ではこのパターンが `SD-low-P1`(低effort)にのみ観測され、高effort
+   構成(`SD-high-P1`・`SD-xhigh-P3`、いずれも n=4 で確認済み)では一貫して不在**
+   (`SD-xhigh-P3` の11 promoted パック全てが、逆に「加法的な」機構を明示的に
+   主張していた)。
+   **未昇格の理由:** 5件全てが **sol(codex/gpt-5.6-sol)単独ラウンドでのみ**観測され、
+   元の opus+sol 混合バッチ(`v041-trackb-03`・`v042-mc-b02`)には1件も出現しなかった
+   ——「データ形式非依存の構造発見パターン」ではなく「sol 特有の仮説生成スタイル」
+   である可能性を否定できない。opus での再現が確認されるまでは正式な層2クラスに
+   昇格せず、候補のまま保持する。
+
+## 使用方法(新規コンペへの適用)
+
+新規コンペ(Rossmann 含む、[v0.4.3-c](../c_lite_v043_policy.md) 参照)の taxonomy 文書は、
+preregister 時点から層1(コンペ固有)と層2(本ドキュメントへの参照)の両方を持つ形式で
+作成すること。層2は固定リストとして扱い、新規コンペの discovery ログ照合でも同じ2クラスを
+まず適用する——コンペ跨ぎで別の層2パターンが独立に複数回観測された場合のみ、次ラウンドの
+taxonomy 更新候補として追加検討する(単一コンペでの初出だけでは層2に昇格させない)。
+
+## 正本
+
+- [クロスコンペ統合分析](../verification/v042_cross_competition_synthesis.md)
+- [IEEE-CIS technique taxonomy(層1)](ieee_cis_technique_taxonomy.md)
+- [Santander technique taxonomy(層1)](santander_technique_taxonomy.md)
+- [Rossmann technique taxonomy(層1)](rossmann_technique_taxonomy.md)

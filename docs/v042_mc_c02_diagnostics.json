@@ -1,0 +1,919 @@
+{
+  "any_configuration_reproducibility_met": false,
+  "competition_id": "santander-customer-transaction-prediction",
+  "per_config": {
+    "SD-high-P1": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-high-P3": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-low-P1": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-low-P3": {
+      "p2_satisfied_runs": 0,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-medium-P1": {
+      "p2_satisfied_runs": 0,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-medium-P3": {
+      "p2_satisfied_runs": 0,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-xhigh-P1": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 1
+    },
+    "SD-xhigh-P3": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 1
+    }
+  },
+  "per_run": [
+    {
+      "config_id": "SD-low-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c01"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5138939011187297,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-ff35db7a9d5b67bb3e17",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5029772645254421,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-0f41a3c5cd31c3519716",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4880909418982317,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-819a4eec689586f082d2",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5718152291591483,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-6261fcdd7fcd895b95c2",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6531080357825522,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-c30d317bc656ac1397e2",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4486772486772487,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-a73673e44258981a9cf7",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5753600823045267,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-932dcd5264f1e7f92490",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5621989448734612,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-5d7342ca57c5aa44e092",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s17"
+    },
+    {
+      "config_id": "SD-medium-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5588235294117647,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-a6a0ec2e2998033be0c5",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6180998137072262,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-eb06adadf7317ddaddf1",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5670922853429161,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d8ee60f557c484352a37",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5759245946161834,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-cb818a5f2231190971e8",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.42006495849873693,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-df82377157caf4c80c18",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4987384356602187,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-776d4e548ed3c4e66911",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5734739368998628,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-2193ba4ae48395c17df7",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5495590828924162,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e785f61dc67ce7540570",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-01-s42"
+    },
+    {
+      "config_id": "SD-high-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c04",
+        "pack-c01",
+        "pack-c02",
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5138939011187297,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-f8eae99f755317cbcbdf",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5992421508480693,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-da461c07563d6c3927b4",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5577846364883402,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-8b4d997cb37baa4ee026",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4878202814868279,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-c49068a15302aaf4bf1b",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6189311109412035,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-b677c0b04a6f60b32d32",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5030674846625767,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-7d83b557de9cfc6afff3",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4109347442680776,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-0b8345b178b74bee69e2",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.67124227865477,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-94a51052828f0e8d37b2",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s93"
+    },
+    {
+      "config_id": "SD-xhigh-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c02",
+        "pack-c03",
+        "pack-c01"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5534979423868313,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-3154aec1d057e51cf31c",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4742717333129444,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-682d650859059bdaf747",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6525149524463183,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-bdaac0a4a0368a59f01a",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4595548583194431,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-b9aaf73eb5aa1961d999",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.545831829664381,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-416ed8bb6244ce26d3db",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4527246481414652,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-5089e3ef60bd88ac08a0",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6291952363767593,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-f50e77cef22fcac774eb",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4913388668350776,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-203ca7eeddcef662e558",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-01-s124"
+    },
+    {
+      "config_id": "SD-low-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5036990256225189,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-563285aa7cb6dbe4660a",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5614399133886684,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-770ec873806fd75a2af0",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4183743504265124,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-f90ec908d61ab9a198e1",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6735954505343661,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-88f21ecfc248fb2e5a54",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4440635149765428,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-1f903874f5394d06d033",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5067665102850957,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-97dfb287816e1bb2d1ce",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5594993141289437,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-2accc7a416ac21dab258",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5603639421974157,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-3c04d006236c751f37f2",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-02-s17"
+    },
+    {
+      "config_id": "SD-medium-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.5027968242511729,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-1d58dfe8f5081dd9b5f5",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4592607118344936,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-b650e2214d47143cf78a",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6474164133738601,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-421ce17342140cafdb1b",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5510116598079561,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-1f33f530c5bee6ed88e6",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6132731860233963,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-1208d24f1021c31905a6",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.527878022374594,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-0def53f13ba03c6b5790",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.45245398773006135,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-79d2a3849e3c850f1375",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.611060988812703,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-8cc1cdabac4359a119f4",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-02-s42"
+    },
+    {
+      "config_id": "SD-high-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c01",
+        "pack-c03",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.471670876939733,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-c75a8c0d24471355b5c3",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4566098325560058,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-59a9973e540746238acf",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5657160333358819,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-0d79fa5366bc2298687c",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.584806928906532,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-2df237ac69f9d4023c53",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6668300813805275,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-503f01c1561e82d934cd",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5474965706447188,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-11d2ab3d25c420953096",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5283106292280604,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a32d2e58b029acf14459",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4788721143861331,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-88025639b60ed5211bc7",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s93"
+    },
+    {
+      "config_id": "SD-xhigh-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c03",
+        "pack-c02",
+        "pack-c01",
+        "pack-c04"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.67124227865477,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.564373897707231,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-f35a418fcad9d8385bfe",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5577846364883402,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5018771467369598,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-61ab2e53ab1ae41bfe97",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4109347442680776,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-da9746cef6f3dd502ded",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.4878202814868279,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-fe98384ea16d1e7cd631",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6189311109412035,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.5672140021652833,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-10a837825001cba24ac7",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5030674846625767,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-458a73e6687096887f15",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5992421508480693,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5263442800433057,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-8c07627cf818e2f14918",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5138939011187297,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d16b2371e641c869d48d",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s124"
+    }
+  ],
+  "study": "v042-multi-competition-blind-bridge",
+  "suite_id": "v042-mc-c02",
+  "version": "0.4.2"
+}

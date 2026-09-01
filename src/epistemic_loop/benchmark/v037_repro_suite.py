@@ -8,7 +8,7 @@ import json
 import math
 import os
 import random
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import median
@@ -345,25 +345,37 @@ def decrypt_v037_suite(path: Path, key: bytes) -> V037SuiteTruth:
     )
 
 
-def preflight_v037_suite(truth: V037SuiteTruth) -> tuple[V037PreflightResult, ...]:
+def preflight_v037_suite(
+    truth: V037SuiteTruth,
+    *,
+    metric: Callable[[Sequence[float], Sequence[float]], float] | None = None,
+) -> tuple[V037PreflightResult, ...]:
+    """``metric`` defaults to :func:`_auc` (the original, binary-target behaviour). A
+    regression suite passes :func:`_spearman` instead -- everything else (the gain formula,
+    identifiability thresholds) is metric-scale-agnostic by construction, see
+    docs/verification/v043_rossmann_regression_preregistration.md SS2.
+    """
+
+    if metric is None:
+        metric = _auc
     grouped: dict[str, list[V037ContextTruth]] = {}
     for context in truth.context_truth:
         grouped.setdefault(context.canonical_pack_id, []).append(context)
     output: list[V037PreflightResult] = []
     for pack_id, contexts in sorted(grouped.items()):
         research = median(
-            _auc(item.research_targets, item.oracle_research_predictions)
-            - _auc(item.research_targets, item.control_research_predictions)
+            metric(item.research_targets, item.oracle_research_predictions)
+            - metric(item.research_targets, item.control_research_predictions)
             for item in contexts
         )
         confirmation = median(
-            _auc(item.confirmation_targets, item.oracle_confirmation_predictions)
-            - _auc(item.confirmation_targets, item.control_confirmation_predictions)
+            metric(item.confirmation_targets, item.oracle_confirmation_predictions)
+            - metric(item.confirmation_targets, item.control_confirmation_predictions)
             for item in contexts
         )
         transfer = median(
-            _auc(item.transfer_targets, item.oracle_transfer_predictions)
-            - _auc(item.transfer_targets, item.control_transfer_predictions)
+            metric(item.transfer_targets, item.oracle_transfer_predictions)
+            - metric(item.transfer_targets, item.control_transfer_predictions)
             for item in contexts
         )
         first = contexts[0]
@@ -583,7 +595,7 @@ def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _auc(targets: Sequence[int], predictions: Sequence[float]) -> float:
+def _auc(targets: Sequence[float], predictions: Sequence[float]) -> float:
     if len(targets) != len(predictions) or not targets:
         raise ValueError("AUC inputs must be non-empty and aligned")
     positives = sum(targets)
@@ -600,6 +612,50 @@ def _auc(targets: Sequence[int], predictions: Sequence[float]) -> float:
         rank_sum += (start + 1 + end) / 2 * sum(target for _, target in ordered[start:end])
         start = end
     return (rank_sum - positives * (positives + 1) / 2) / (positives * negatives)
+
+
+def _rank(values: Sequence[float]) -> list[float]:
+    ordered = sorted(range(len(values)), key=lambda index: values[index])
+    ranks = [0.0] * len(values)
+    start = 0
+    while start < len(ordered):
+        end = start + 1
+        while end < len(ordered) and values[ordered[end]] == values[ordered[start]]:
+            end += 1
+        average_rank = (start + 1 + end) / 2
+        for position in range(start, end):
+            ranks[ordered[position]] = average_rank
+        start = end
+    return ranks
+
+
+def _spearman(targets: Sequence[float], predictions: Sequence[float]) -> float:
+    """Spearman rank correlation, for regression suites' identifiability/gain metric.
+
+    Companion to :func:`_auc` (which assumes a binary target and is not meaningful for a
+    continuous one). Ties are handled via average ranks, matching ``_auc``'s tie handling.
+    Degenerate case: a constant ``predictions`` series (e.g. the capacity-matched control,
+    which always predicts the training-segment mean) makes the correlation mathematically
+    undefined (zero variance -> 0/0). ``_auc`` resolves its own degenerate case (no positives
+    or no negatives) to the chance-level value ``0.5``; by the same logic this returns the
+    chance-level value ``0.0`` rather than raising or returning NaN.
+    """
+
+    if len(targets) != len(predictions) or len(targets) == 0:
+        raise ValueError("correlation inputs must be non-empty and aligned")
+    target_ranks = _rank(list(targets))
+    prediction_ranks = _rank(list(predictions))
+    n = len(target_ranks)
+    target_mean = sum(target_ranks) / n
+    prediction_mean = sum(prediction_ranks) / n
+    covariance = sum(
+        (t - target_mean) * (p - prediction_mean) for t, p in zip(target_ranks, prediction_ranks, strict=True)
+    )
+    target_variance = sum((t - target_mean) ** 2 for t in target_ranks)
+    prediction_variance = sum((p - prediction_mean) ** 2 for p in prediction_ranks)
+    if target_variance == 0 or prediction_variance == 0:
+        return 0.0
+    return covariance / math.sqrt(target_variance * prediction_variance)
 
 
 def _sigmoid(value: float) -> float:

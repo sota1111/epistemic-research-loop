@@ -41,6 +41,13 @@
 
 ## 本プロジェクトでの位置づけ
 
-回帰対応版の Suite 生成器(oracle として回帰モデルの予測値、permutation として残差または
-分位点ベースの構築が必要)が実装されるまで、本コンペは v0.4.2 の実行対象外。技術クラスの
-記録のみ先行して残す。
+回帰対応版の Suite 生成器(oracle として回帰モデルの予測値、`_destroy_target_structure` を
+連続値にそのまま流用した matched negative 構築が必要)が [v0.4.3-c](../c_lite_v043_policy.md)
+で実装される——技術クラスの記録のみ先行して残していたが、回帰対応が着手されたため近く
+実行対象になる。
+
+## 層2(データ形式非依存メタ技術)との照合
+
+[層2 taxonomy](meta_technique_taxonomy_layer2.md) は preregister 時点から本コンペにも
+適用する(context プーリング・occurrence/sparsity 集約の2クラス)。discovery ログが得られ
+次第、本セクションに照合結果を追記する。

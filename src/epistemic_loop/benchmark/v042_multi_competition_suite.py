@@ -19,10 +19,16 @@ set:
   same way -- transfer here tests iid generalization rather than forward-looking
   generalization, matching the actual structure of that competition's test set.
 
-Regression targets (e.g. Rossmann's continuous ``Sales``) are out of scope for this
-module: the whole pipeline (AUC-based preflight/scoring, permutation of a binary
-target) assumes a binary target. A regression-metric variant would need its own
-oracle/permutation design and is deferred -- see docs/c_lite_v042_policy.md SS3.
+Regression targets (e.g. Rossmann's continuous ``Sales``) are supported via
+``CompetitionSpec.task_type = "regression"`` (v0.4.3-c, see
+docs/verification/v043_rossmann_regression_preregistration.md): the oracle becomes a
+``HistGradientBoostingRegressor``, the identifiability/gain metric becomes
+:func:`_spearman` instead of :func:`_auc`, and ``_destroy_target_structure`` is reused
+unchanged (it never assumed a binary target). The agent-facing contract for regression
+suites is a *separate* module (``epistemic_loop.controller.v043_regression_agent``) --
+the classification contract in ``v037_agent.py`` hard-validates predictions and
+self-reported AUC-like statistics into ``[0,1]``, which is wrong for continuous
+predictions and a correlation statistic in ``[-1,1]``, and is left untouched.
 """
 
 from __future__ import annotations
@@ -30,7 +36,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import median
@@ -39,7 +45,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from cryptography.fernet import Fernet
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 
 from epistemic_loop.benchmark.v037_repro_suite import (
     CANONICAL_FEATURES,
@@ -53,6 +59,7 @@ from epistemic_loop.benchmark.v037_repro_suite import (
     _derive_int,
     _opaque_id,
     _sha256_file,
+    _spearman,
     _visible_column_map,
     _write_json,
     preflight_v037_suite,
@@ -75,6 +82,11 @@ class CompetitionSpec:
     id_columns: frozenset[str]
     time_column: str | None = None
     missingness_threshold: float = 0.02
+    task_type: str = "classification"
+
+    def __post_init__(self) -> None:
+        if self.task_type not in ("classification", "regression"):
+            raise ValueError(f"unknown task_type: {self.task_type!r}")
 
     @property
     def excluded_raw_columns(self) -> frozenset[str]:
@@ -84,6 +96,10 @@ class CompetitionSpec:
     @property
     def split_strategy(self) -> str:
         return "temporal" if self.time_column else "iid_random"
+
+    @property
+    def metric(self) -> Callable[[Sequence[float], Sequence[float]], float]:
+        return _spearman if self.task_type == "regression" else _auc
 
 
 V042_MASTER_SEED = 20261001
@@ -132,6 +148,185 @@ V042_MC_SUITE_IDS: tuple[str, ...] = (
     "v042-mc-b02",  # Santander, corrected permutation (_destroy_target_structure)
 )
 
+#: v0.4.3 sol-only reasoning-effort diversity round (2026-08-30). Claude/opus quota was
+#: exhausted mid-session; codex/gpt-5.6-sol quota was not, so this round trades the
+#: model-diversity lever (opus vs sol) for the reasoning-effort lever (low/medium/high/
+#: xhigh, matching V040_SOL_ABLATION_CONFIGS's precedent on synthetic data) crossed with
+#: prompt_arm (p1/p3), to keep growing the discovered-solution population on real data
+#: without spending exhausted budget. See docs/c_lite_v043_policy.md SS10.
+V043_SOL_EFFORT_MASTER_SEED = 20260830
+V043_SOL_EFFORT_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": f"SD-{effort}-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": effort,
+        }
+        for seed, effort in zip((17, 42, 93, 124), ("low", "medium", "high", "xhigh"), strict=True)
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": f"SD-{effort}-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": effort,
+        }
+        for seed, effort in zip((17, 42, 93, 124), ("low", "medium", "high", "xhigh"), strict=True)
+    },
+}
+V043_SOL_EFFORT_RUN_IDS = tuple(V043_SOL_EFFORT_CONFIGS)
+
+#: Round 2 (confirmatory): the screening round (V043_SOL_EFFORT_CONFIGS, n=1 seed/cell)
+#: surfaced, per competition, (a) its strongest P2-passing cell and (b) a single run that
+#: escaped the population's dominant technique class -- see
+#: docs/verification/v043_sol_effort_diversity_ieee_cis.md and
+#: docs/verification/v043_sol_effort_diversity_santander.md. Adding 3 more seeds to just
+#: those 2 cells per competition brings each to n=4, matching this project's standard
+#: reproducibility bar (>=2/4), and tests whether the "escape" was a real, reproducible
+#: alternative-discovery mode or a one-off draw. New seeds (155/186/217) do not overlap
+#: the screening round's (17/42/93/124).
+V043_SOL_EFFORT_R2_SEEDS = (155, 186, 217)
+#: IEEE-CIS: confirm SD-medium-P3 (best P2 rate, 3/3 beats_baseline) and SD-high-P3 (the
+#: only run to escape context-pooling into occurrence/sparsity aggregation).
+V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "SD-medium-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "medium",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "SD-high-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "high",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+}
+V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS)
+#: Santander: confirm SD-high-P1 (4/4 beats_baseline, the round's strongest single cell)
+#: and SD-low-P1 (the only run to escape the feature-independence/pooling story into a
+#: nonlinear multivariate claim).
+V043_SOL_EFFORT_R2_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "SD-high-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "high",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "SD-low-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "low",
+        }
+        for seed in V043_SOL_EFFORT_R2_SEEDS
+    },
+}
+V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R2_SANTANDER_CONFIGS)
+
+#: Round 3 (population scale-up): round 2 confirmed SD-high-P3 (IEEE-CIS) and SD-high-P1
+#: (Santander) as robust (4/4 P2) and confirmed that both competitions' sole round-1
+#: "escape" from the dominant technique class did NOT reproduce at n=4 -- i.e. single-seed
+#: "novelty" is not trustworthy evidence. The remaining open question from
+#: docs/c_lite_v043_policy.md's value framework (does solution diversity keep growing with
+#: population size, and does a large-enough population surface a *reproducible* escape
+#: rather than a one-off) requires scaling the one lever left unexplored: population size
+#: at a fixed, already-robust configuration, rather than another effort/arm sweep. Adds 4
+#: more seeds (271/314/358/402, no overlap with rounds 1-2) to each competition's confirmed
+#: cell, bringing each to n=8.
+V043_SOL_EFFORT_R3_SEEDS = (271, 314, 358, 402)
+V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R3_SEEDS
+}
+V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS)
+V043_SOL_EFFORT_R3_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R3_SEEDS
+}
+V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R3_SANTANDER_CONFIGS)
+
+#: Round 4 (fill remaining confirmatory gaps): rounds 2-3 only confirmed one P3 cell for
+#: IEEE-CIS (SD-high-P3) and one P1 cell for Santander (SD-high-P1), leaving two other
+#: round-1 screening results that looked strong (IEEE-CIS SD-high-P1, 1/4 beats_baseline
+#: in round 1 -- same rate as SD-high-P3 before its confirmation revealed it was actually
+#: robust; Santander SD-xhigh-P3, round 1's single strongest result, 4/4 beats_baseline)
+#: sitting at n=1, unconfirmed. Adds 3 new seeds (512/634/777, no overlap with rounds 1-3)
+#: to each, bringing both to n=4.
+V043_SOL_EFFORT_R4_SEEDS = (512, 634, 777)
+V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-high-P1",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p1",
+        "reasoning_effort": "high",
+    }
+    for seed in V043_SOL_EFFORT_R4_SEEDS
+}
+V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS = tuple(V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS)
+V043_SOL_EFFORT_R4_SANTANDER_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    f"agent-01-s{seed}": {
+        "config_id": "SD-xhigh-P3",
+        "cli": "codex",
+        "model": "gpt-5.6-sol",
+        "prompt_arm": "p3",
+        "reasoning_effort": "xhigh",
+    }
+    for seed in V043_SOL_EFFORT_R4_SEEDS
+}
+V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS = tuple(V043_SOL_EFFORT_R4_SANTANDER_CONFIGS)
+
+#: Opaque suite ids for the sol-effort diversity round -- "c" continues the per-competition
+#: letter sequence started by V042_MC_SUITE_IDS's a/b, kept in a separate tuple only because
+#: this round uses V043_SOL_EFFORT_CONFIGS instead of V042_EXECUTION_CONFIGS (see
+#: scripts/run_v040_agent.py's _CONFIG_REGISTRY, which maps suite ids to *one* config dict
+#: each). Still competition-name-free per the same blindness discipline.
+V043_SOL_EFFORT_SUITE_IDS: tuple[str, ...] = (
+    "v042-mc-c01",  # IEEE-CIS
+    "v042-mc-c02",  # Santander
+)
+#: Round 2 (confirmatory) suite ids -- "d" continues the letter sequence. Each uses its own
+#: config dict (V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS / V043_SOL_EFFORT_R2_SANTANDER_CONFIGS)
+#: since the two competitions confirm different cells.
+V043_SOL_EFFORT_R2_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-d01",)
+V043_SOL_EFFORT_R2_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-d02",)
+#: Round 3 (population scale-up) suite ids -- "e" continues the letter sequence.
+V043_SOL_EFFORT_R3_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-e01",)
+V043_SOL_EFFORT_R3_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-e02",)
+#: Round 4 (fill remaining confirmatory gaps) suite ids -- "f" continues the letter sequence.
+V043_SOL_EFFORT_R4_IEEE_CIS_SUITE_IDS: tuple[str, ...] = ("v042-mc-f01",)
+V043_SOL_EFFORT_R4_SANTANDER_SUITE_IDS: tuple[str, ...] = ("v042-mc-f02",)
+
 _CANDIDATE_PACK_COUNT = 4
 _COLUMNS_PER_PACK = len(CANONICAL_FEATURES) - 1  # one slot is the derived relative-time feature
 _ROWS_PER_CONTEXT_SEGMENT = {"research": 1080, "confirmation": 360, "transfer": 360}
@@ -163,20 +358,24 @@ def select_generic_feature_groups(spec: CompetitionSpec, *, master_seed: int, su
     return groups
 
 
-def _pack_is_identifiable(contexts: Sequence[V037ContextTruth]) -> bool:
+def _pack_is_identifiable(
+    contexts: Sequence[V037ContextTruth],
+    *,
+    metric: Callable[[Sequence[float], Sequence[float]], float],
+) -> bool:
     research = median(
-        _auc(item.research_targets, item.oracle_research_predictions)
-        - _auc(item.research_targets, item.control_research_predictions)
+        metric(item.research_targets, item.oracle_research_predictions)
+        - metric(item.research_targets, item.control_research_predictions)
         for item in contexts
     )
     confirmation = median(
-        _auc(item.confirmation_targets, item.oracle_confirmation_predictions)
-        - _auc(item.confirmation_targets, item.control_confirmation_predictions)
+        metric(item.confirmation_targets, item.oracle_confirmation_predictions)
+        - metric(item.confirmation_targets, item.control_confirmation_predictions)
         for item in contexts
     )
     transfer = median(
-        _auc(item.transfer_targets, item.oracle_transfer_predictions)
-        - _auc(item.transfer_targets, item.control_transfer_predictions)
+        metric(item.transfer_targets, item.oracle_transfer_predictions)
+        - metric(item.transfer_targets, item.control_transfer_predictions)
         for item in contexts
     )
     independent = median(item.independent_identifiability for item in contexts)
@@ -214,10 +413,13 @@ def _sample_segment(segment: pd.DataFrame, *, count: int, seed: int) -> pd.DataF
     return segment.sample(n=count, random_state=seed).sort_values("row_id").reset_index(drop=True)
 
 
-def _fit_capacity_matched_baseline(features: pd.DataFrame, target: pd.Series) -> HistGradientBoostingClassifier:
+def _fit_capacity_matched_baseline(
+    features: pd.DataFrame, target: pd.Series, *, task_type: str
+) -> HistGradientBoostingClassifier | HistGradientBoostingRegressor:
     # Gradient-boosted trees are the dominant real-world top-solution model class for
     # tabular Kaggle competitions; native NaN handling means no imputer/scaler is needed.
-    model = HistGradientBoostingClassifier(random_state=0)
+    model_cls = HistGradientBoostingRegressor if task_type == "regression" else HistGradientBoostingClassifier
+    model = model_cls(random_state=0)
     model.fit(features, target)
     return model
 
@@ -272,7 +474,7 @@ def _build_row_dicts(
         for slot, column in zip(real_slots, feature_columns, strict=True):
             value = record[column]
             row[slot] = None if pd.isna(value) else float(value)
-        row["target"] = int(targets[position])
+        row["target"] = targets[position].item()
         row["_oracle"] = float(oracle[position])
         row["_control"] = float(control[position])
         rows.append(row)
@@ -296,9 +498,10 @@ def build_context_rows(
         seed = _derive_int(master_seed, "sample", str(pack_index), str(context_index), name) % (2**32)
         sampled[name] = _sample_segment(segment, count=_ROWS_PER_CONTEXT_SEGMENT[name], seed=seed)
 
+    target_dtype = float if spec.task_type == "regression" else int
     research_X = sampled["research"][list(feature_columns)]
-    research_y = sampled["research"][spec.target_column].to_numpy(dtype=int)
-    baseline = _fit_capacity_matched_baseline(research_X, research_y)
+    research_y = sampled["research"][spec.target_column].to_numpy(dtype=target_dtype)
+    baseline = _fit_capacity_matched_baseline(research_X, research_y, task_type=spec.task_type)
     control_rate = float(research_y.mean())
 
     coordinate_column = _coordinate_column(spec)
@@ -307,8 +510,10 @@ def build_context_rows(
     for name in ("research", "confirmation", "transfer"):
         segment_frame = sampled[name]
         features = segment_frame[list(feature_columns)]
-        targets = segment_frame[spec.target_column].to_numpy(dtype=int)
-        oracle = baseline.predict_proba(features)[:, 1]
+        targets = segment_frame[spec.target_column].to_numpy(dtype=target_dtype)
+        oracle = (
+            baseline.predict(features) if spec.task_type == "regression" else baseline.predict_proba(features)[:, 1]
+        )
         control = np.full(len(segment_frame), control_rate, dtype=float)
         bounds = (float(segment_frame[coordinate_column].min()), float(segment_frame[coordinate_column].max()))
         candidate_rows.extend(
@@ -377,9 +582,9 @@ def _context_truth(
         matched_pair=definition.matched_pair,
         ladder_level=definition.ladder_level,
         generator_seed=generator_seed,
-        research_targets=tuple(int(row["target"]) for row in research),
-        confirmation_targets=tuple(int(row["target"]) for row in confirmation),
-        transfer_targets=tuple(int(row["target"]) for row in transfer),
+        research_targets=tuple(row["target"] for row in research),
+        confirmation_targets=tuple(row["target"] for row in confirmation),
+        transfer_targets=tuple(row["target"] for row in transfer),
         oracle_research_predictions=tuple(float(row["_oracle"]) for row in research),
         control_research_predictions=tuple(float(row["_control"]) for row in research),
         oracle_confirmation_predictions=tuple(float(row["_oracle"]) for row in confirmation),
@@ -469,7 +674,7 @@ def build_v042_suite(
                     transfer=transfer,
                 )
                 bucket.append((context_id, rows, truth))
-        identifiable = _pack_is_identifiable([item[2] for item in candidate_contexts])
+        identifiable = _pack_is_identifiable([item[2] for item in candidate_contexts], metric=spec.metric)
         attempts.append({"attempt": attempt_number, "columns": list(columns), "identifiable": identifiable})
         if identifiable:
             canonical[candidate_pack_id] = candidate_contexts
@@ -539,7 +744,7 @@ def build_v042_suite(
                 _write_json(pack_root / research_name, research)
                 _write_json(pack_root / confirmation_name, confirmation)
                 _write_json(pack_root / transfer_name, transfer)
-                target_by_row = {int(row["row_id"]): int(row["target"]) for row in rows}
+                target_by_row = {int(row["row_id"]): row["target"] for row in rows}
                 aliases.append(
                     V037AliasTruth(
                         run_id=run_id,
@@ -610,7 +815,7 @@ def build_v042_suite(
     encrypted_path = truth_root / f"{suite_id}.manifest.enc"
     encrypted_path.write_bytes(Fernet(key).encrypt(json.dumps(asdict(suite_truth), sort_keys=True).encode()))
     encrypted_path.chmod(0o600)
-    preflight = preflight_v037_suite(suite_truth)
+    preflight = preflight_v037_suite(suite_truth, metric=spec.metric)
     return V037SuiteBuildResult(
         suite_id=suite_id,
         run_roots={run_id: str(output_root / "agent_views" / run_id) for run_id in run_ids},

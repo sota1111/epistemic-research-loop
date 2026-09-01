@@ -23,7 +23,16 @@ from pathlib import Path
 from statistics import median
 
 from epistemic_loop.benchmark.v037_repro_suite import V037AliasTruth, _auc, decrypt_v037_suite
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_EXECUTION_CONFIGS
+from epistemic_loop.benchmark.v042_multi_competition_suite import (
+    V042_EXECUTION_CONFIGS,
+    V043_SOL_EFFORT_CONFIGS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
+    V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS,
+    V043_SOL_EFFORT_R3_SANTANDER_CONFIGS,
+    V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS,
+    V043_SOL_EFFORT_R4_SANTANDER_CONFIGS,
+)
 from epistemic_loop.controller.v037_agent import V037Resolution
 from epistemic_loop.controller.v040_agent import load_v040_submission
 
@@ -32,18 +41,30 @@ _PROMOTED = {
     V037Resolution.VALIDATED_ACTIONABLE_NOT_TRANSFERRED,
     V037Resolution.VALIDATED_NON_ACTIONABLE,
 }
+_CONFIG_SETS: dict[str, object] = {
+    "default": V042_EXECUTION_CONFIGS,
+    "sol-effort": V043_SOL_EFFORT_CONFIGS,
+    "sol-effort-r2-a": V043_SOL_EFFORT_R2_IEEE_CIS_CONFIGS,
+    "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_CONFIGS,
+    "sol-effort-r3-a": V043_SOL_EFFORT_R3_IEEE_CIS_CONFIGS,
+    "sol-effort-r3-b": V043_SOL_EFFORT_R3_SANTANDER_CONFIGS,
+    "sol-effort-r4-a": V043_SOL_EFFORT_R4_IEEE_CIS_CONFIGS,
+    "sol-effort-r4-b": V043_SOL_EFFORT_R4_SANTANDER_CONFIGS,
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--competition-id", required=True)
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="default", choices=sorted(_CONFIG_SETS))
     parser.add_argument("--truth-manifest", type=Path, default=None)
     parser.add_argument("--key-file", type=Path, default=Path(".state/v040/controller.key"))
     parser.add_argument("--lock-file", type=Path, default=None)
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     parser.add_argument("--output", type=Path, default=None)
     arguments = parser.parse_args()
+    execution_configs = _CONFIG_SETS[arguments.config_set]
     if arguments.truth_manifest is None:
         arguments.truth_manifest = Path(f".controller_truth/v042/{arguments.suite_id}.manifest.enc")
     if arguments.lock_file is None:
@@ -61,7 +82,7 @@ def main() -> None:
         aliases_by_run.setdefault(alias.run_id, []).append(alias)
 
     per_run: list[dict[str, object]] = []
-    for run_id in V042_EXECUTION_CONFIGS:
+    for run_id in execution_configs:
         submission_path = arguments.submission_root / arguments.suite_id / run_id / "agent_submission.json"
         loaded = load_v040_submission(submission_path)
         alias_by_pack_context = {(a.opaque_pack_id, a.opaque_context_id): a for a in aliases_by_run[run_id]}
@@ -128,7 +149,7 @@ def main() -> None:
         per_run.append(
             {
                 "run_id": run_id,
-                "config_id": V042_EXECUTION_CONFIGS[run_id]["config_id"],
+                "config_id": execution_configs[run_id]["config_id"],
                 "packs": pack_records,
                 "matched_negatives_promoted": negatives_promoted,
                 "fspr_clean": fspr_clean,

@@ -12,7 +12,27 @@ import json
 from pathlib import Path
 
 from epistemic_loop.benchmark.v037_repro_suite import audit_v037_agent_view
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import (
+    V042_RUN_IDS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_RUN_IDS,
+)
+
+_RUN_ID_SETS: dict[str, tuple[str, ...]] = {
+    "default": V042_RUN_IDS,
+    "sol-effort": V043_SOL_EFFORT_RUN_IDS,
+    "sol-effort-r2-a": V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    "sol-effort-r3-a": V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
+    "sol-effort-r3-b": V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    "sol-effort-r4-a": V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    "sol-effort-r4-b": V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
+}
 
 _GENERIC_FORBIDDEN_TOKENS = (
     ".controller_truth",
@@ -53,13 +73,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--competition-id", required=True, choices=sorted(_COMPETITION_FORBIDDEN_TOKENS))
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="default", choices=sorted(_RUN_ID_SETS))
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v042"))
     parser.add_argument("--submission-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     arguments = parser.parse_args()
     forbidden_tokens = _GENERIC_FORBIDDEN_TOKENS + _COMPETITION_FORBIDDEN_TOKENS[arguments.competition_id]
     view_findings: list[str] = []
     audited_views = 0
-    for run_id in V042_RUN_IDS:
+    for run_id in _RUN_ID_SETS[arguments.config_set]:
         root = arguments.suite_root / arguments.suite_id / "agent_views" / run_id
         if not root.exists():
             continue

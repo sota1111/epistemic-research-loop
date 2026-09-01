@@ -42,6 +42,15 @@ best-of-population claim の対象)でどう現れるかが未知——エージ
 データ拡張・アンサンブル設計)はエージェントの protocol でも到達可能性がある技術クラスとして
 discovery 後の照合対象とする。
 
-**ステータス(2026-08-29 時点):** データ取得が Kaggle 側のコンペ規約同意待ちでブロック中
-(`docs/handover.md` 参照)。本ドキュメントはデータ取得後すぐに Suite 構築・実行に進めるよう
-先行して作成した。
+**ステータス(2026-08-29 時点):** データ取得・Suite 構築・12-run batch(`v042-mc-b02`)完了
+済み。結果は [Santander qualification](../verification/v042_santander_qualification.md) と
+[クロスコンペ統合分析](../verification/v042_cross_competition_synthesis.md) を参照。
+
+## 層2(データ形式非依存メタ技術)との照合
+
+discovery ログは上記層1の技術クラス#2(特徴独立性前提のモデリング)と部分一致した
+(「単一の共有線形方向が context を跨いで汎化する」という発見)。[層2 taxonomy](meta_technique_taxonomy_layer2.md)
+との照合では、**promoted 38件全て(100%)が層2クラス#1(context プーリング)**に一致——
+Santander の実際の構造(200特徴のほぼ独立性・線形分離可能性)が単純であることの反映と
+考えられる。詳細は[クロスコンペ統合分析](../verification/v042_cross_competition_synthesis.md)
+を参照。

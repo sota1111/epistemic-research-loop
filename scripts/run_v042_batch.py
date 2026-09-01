@@ -13,18 +13,41 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from epistemic_loop.benchmark.v042_multi_competition_suite import V042_RUN_IDS
+from epistemic_loop.benchmark.v042_multi_competition_suite import (
+    V042_RUN_IDS,
+    V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
+    V043_SOL_EFFORT_RUN_IDS,
+)
+
+#: Mirrors build_v042_suite.py's --config-set: which run-id set this suite was built with.
+_RUN_ID_SETS: dict[str, tuple[str, ...]] = {
+    "default": V042_RUN_IDS,
+    "sol-effort": V043_SOL_EFFORT_RUN_IDS,
+    "sol-effort-r2-a": V043_SOL_EFFORT_R2_IEEE_CIS_RUN_IDS,
+    "sol-effort-r2-b": V043_SOL_EFFORT_R2_SANTANDER_RUN_IDS,
+    "sol-effort-r3-a": V043_SOL_EFFORT_R3_IEEE_CIS_RUN_IDS,
+    "sol-effort-r3-b": V043_SOL_EFFORT_R3_SANTANDER_RUN_IDS,
+    "sol-effort-r4-a": V043_SOL_EFFORT_R4_IEEE_CIS_RUN_IDS,
+    "sol-effort-r4-b": V043_SOL_EFFORT_R4_SANTANDER_RUN_IDS,
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite-id", required=True)
+    parser.add_argument("--config-set", default="default", choices=sorted(_RUN_ID_SETS))
     parser.add_argument("--parallel", type=int, default=3)
     parser.add_argument("--suite-root", type=Path, default=Path(".runs/v042"))
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v042/agent_outputs"))
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    pairs = [(arguments.suite_id, run) for run in V042_RUN_IDS]
+    run_ids = _RUN_ID_SETS[arguments.config_set]
+    pairs = [(arguments.suite_id, run) for run in run_ids]
     pending = [
         (suite, run)
         for suite, run in pairs

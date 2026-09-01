@@ -50,6 +50,47 @@ promoted パックの claim が構成・seedを問わず「context 間で共有�
 `agent_packet.json` へそのまま書き込まれエージェントへ漏洩する(盲検監査が検出・修正済み)。
 以後の suite_id はコンペ名を含まない opaque 命名(`v042-mc-a01`・`b01`・`b02`...)を使うこと。
 
+**v0.4.3 完了・部分完了(2026-08-29)。** ユーザーが優先順位を承認し、検証・追加実験を
+承認なしで進めることも許可。**v0.4.3-a(pooling 由来検証):** 既存データのみで検証し、
+「context プーリング」は Suite 設計の artifact ではなく、`leave_one_context_out_stable`
+→ `promotion_passed` の2段階ゲートに守られた本物の発見と判定(IEEE-CIS の負例パックでの
+プーリング主張は 100%、Santander は 98% が正しく falsify されており、IEEE-CIS の promoted
+27件中 37% は非プーリングで昇格——プーリングが唯一の抜け道ではないことが最も強い反証)。
+**v0.4.3-b(taxonomy 2層化):** [層2 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+を新設し3コンペの taxonomy に相互参照を追加。**v0.4.3-d:** 実行構成の既定を P3 系に
+(policy 上で明文化、コードは既に3構成保持のため変更不要)。**v0.4.3-c(Rossmann 回帰対応)
+は部分完了。** `_spearman`(regression 版 metric)・`HistGradientBoostingRegressor` oracle・
+`_destroy_target_structure` 流用・回帰用 agent 提出契約(`v043_regression_agent.py`、
+分類用 `v037_agent.py` は無改変のまま維持)・回帰用プロンプトを実装し単体テストで検証
+(`make ci` 相当 all green)。**Rossmann の実データ実行は未着手のまま次ラウンドへ持ち越し**
+——実装中に判明した新しいブロッカーとして、Rossmann の生の数値列数(train.csv 単体で5列、
+store.csv 結合・missingness 閾値緩和・暦分解を足しても現実的に15〜20列)が、現行 Suite
+アーキテクチャの暗黙の前提(`CANONICAL_FEATURES` 固定10スロット×disjoint 4パック=最低
+40列必要、IEEE-CIS/Santander が数百の匿名化列を持っていたために気づかれなかった前提)を
+構造的に満たせないことが判明した。この共有基盤(`v037_repro_suite.py`、v0.3.7〜v0.4.2の
+全 qualification 済み Suite が共有)を変更する可変長パック設計は、影響範囲が大きいため
+今回のセッションでは実施していない。詳細:
+[Rossmann preregistration](verification/v043_rossmann_regression_preregistration.md) §7。
+
+**v0.4.3-f(sol reasoning-effort 多様性ラウンド)完了(2026-08-30)。** Claude(opus)
+クォータ枯渇を受け、モデル多様性のレバーを reasoning-effort 多様性(sol/codex単独、
+low〜xhigh × p1/p3)に置き換え、IEEE-CIS・Santander で計3ラウンド(screening n=1 →
+確認 n=4 → population拡大 n=8)・28 run を実施。**最重要の教訓:単一 seed の
+novel-structure 発見(IEEE-CIS の occurrence/sparsity 脱出・Santander の非線形多変量
+脱出、いずれも screening ラウンドで観測)は n=4 の確認では再現しなかった**——単発の
+discovery を過大評価してはならない。**ただし population を n=8 まで広げると、
+IEEE-CIS では実際に新しい未分類パターンが2件出現し(うち1件は Santander の当初の
+脱出claimと構造的にほぼ同一の「加法性の限界」)、多様性は population サイズに応じて
+伸びうることが確認された**(Santander では効果なし、コンペの構造的複雑さに依存)。
+頑健な sol 単独構成(IEEE-CIS `SD-high-P3`・Santander `SD-high-P1`、いずれも n=8中6/8
+でP2達成)を確定。**副産物として、バッチオーケストレータの起動引数(`--config-set`)
+経由の新しい盲検リーク経路(`ps -ef` でホスト全体のプロセス一覧が見える)を発見・
+修正し、新しい不変条件として記録した。** 詳細:
+[クロスコンペ統合分析の総括](verification/v042_cross_competition_synthesis.md) /
+[IEEE-CIS側](verification/v043_sol_effort_diversity_ieee_cis.md) /
+[Santander側](verification/v043_sol_effort_diversity_santander.md) /
+[ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)。
+
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -401,10 +442,21 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
 - [v0.4.1 方針](c_lite_v041_policy.md) — P1 達成の宣言、Track B 起動計画
 - [Track B 初回 qualification](verification/v041_track_b_qualification.md) /
   [Matched Negative 修正 Preregistration](v042_trackb_matched_negative_fix_preregistration.json)
-- **[v0.4.2 方針](c_lite_v042_policy.md)** — 現行の正本。best-of-population + 未知構造発見の
-  複数コンペ検証、計算量フィルタ
+- [v0.4.2 方針](c_lite_v042_policy.md) — best-of-population + 未知構造発見の複数コンペ検証、
+  計算量フィルタ
+- **[v0.4.3 方針](c_lite_v043_policy.md)** — 現行の正本。ユーザー承認済み(優先順位・
+  検証/追加実験の無承認進行)。v0.4.3-a(pooling 由来検証)・b(taxonomy 2層化)・
+  d(P3 系既定化)・f(sol reasoning-effort 多様性ラウンド)完了。v0.4.3-c(Rossmann
+  回帰対応)は metric/oracle/permutation/agent 契約の実装・テストまで完了、実データ
+  実行は共有基盤ブロッカーで次ラウンド持ち越し(§9 参照)
+- [sol reasoning-effort 多様性ラウンド:IEEE-CIS](verification/v043_sol_effort_diversity_ieee_cis.md) /
+  [Santander](verification/v043_sol_effort_diversity_santander.md) /
+  [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
 - **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
-  — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見
+  — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
+  および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)
+- [Rossmann 回帰対応 preregistration(実装完了・実行は次ラウンド持ち越し)](verification/v043_rossmann_regression_preregistration.md)
+- [層2(データ形式非依存)メタ技術 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
 - [best-of-population 遡及分析(IEEE-CIS、v041-trackb-01 の限定データ、superseded)](verification/v042_best_of_population_ieee_cis_retrospective.md)
 - [Santander qualification(P2 3/3 構成達成)](verification/v042_santander_qualification.md) /
   [参考記録(v042-mc-b01)](verification/v042_santander_v1_informal_note.md)
