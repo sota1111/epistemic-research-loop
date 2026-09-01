@@ -73,7 +73,7 @@ CLAUDE_SETTINGS = {
 }
 
 
-def _kickoff(real_score_note: str | None) -> str:
+def _kickoff(real_score_note: str | None, merge_run_ids: list[str] | None) -> str:
     score_paragraph = ""
     if real_score_note:
         score_paragraph = (
@@ -82,15 +82,36 @@ def _kickoff(real_score_note: str | None) -> str:
             + " Use this as a genuine, real-world data point -- not a proxy score -- when "
             "deciding what to try next."
         )
+    if merge_run_ids:
+        sibling_list = ", ".join(f"sibling_attempts/{run_id}_agent_submission.json" for run_id in merge_run_ids)
+        merge_paragraph = (
+            f"\n\nSEVERAL OTHER INDEPENDENT RESEARCH ATTEMPTS took a broadly similar overall approach "
+            f"to your own first pass (same rough method family, arrived at independently, on the same "
+            f"underlying data). Their full submissions (approach_summary and confirmation history, no "
+            f"code) are provided at: {sibling_list}. Read every one of them. Your goal is NOT simply to "
+            "refine your own prior pass in isolation -- it is to produce ONE genuinely improved, unified "
+            "approach that combines whatever is actually best across your own attempt AND these siblings "
+            "(different feature engineering, different validation choices, different structural findings "
+            "any of them made that you did not). Do not simply average or ensemble their raw outputs "
+            "without understanding why each choice was made; where two attempts disagree, decide which is "
+            "right using your own analysis, not popularity. It is entirely fine to conclude your own prior "
+            "approach was already the best of the group and keep it unchanged -- but say explicitly why, "
+            "referencing what the siblings tried differently."
+        )
+        goal_paragraph = merge_paragraph
+    else:
+        goal_paragraph = (
+            "\n\nYour goal now: deliberately try to find a genuinely better approach than the one you "
+            "already submitted -- new features, different model families, a more careful attack on your "
+            "current best approach, better ensembling, whatever you judge promising."
+        )
     return (
         "You are continuing a research task in this SAME directory -- your own prior work is "
         "already here (copied from your own earlier attempt). Read agent_submission.json (your "
         "own approach_summary and confirmation results from your first pass) and inspect the "
-        "scripts/models you already left behind. Your goal now: deliberately try to find a "
-        "genuinely better approach than the one you already submitted -- new features, "
-        "different model families, a more careful attack on your own current best approach, "
-        "better ensembling, whatever you judge promising. Use ./score_confirmation.py again if "
-        "useful (it remembers your prior call count)."
+        "scripts/models you already left behind."
+        + goal_paragraph
+        + " Use ./score_confirmation.py again if useful (it remembers your prior call count)."
         + score_paragraph
         + " If, and only if, you find something that beats your prior confirmation score, "
         "overwrite agent_submission.json and final_predictions.csv with the improved approach "
@@ -110,15 +131,49 @@ def main() -> None:
         help="run_id for this refinement attempt's own workdir (defaults to --parent-run-id, i.e. in-place)",
     )
     parser.add_argument("--real-score-note", default=None, help="free text describing the parent's real Kaggle score")
+    parser.add_argument(
+        "--child-config-id",
+        default=None,
+        help=(
+            "run this refinement with a DIFFERENT preregistered config's cli/model/reasoning_effort "
+            "than the parent's own (e.g. evolve an opus parent's lineage via sol, or vice versa) -- "
+            "any existing key of V047_CANDIDATE_CONFIGS may be used purely to borrow its cli/model/"
+            "reasoning_effort/prompt_arm; it has no effect on which workdir is copied (still the "
+            "--parent-run-id's). Defaults to the parent's own config (same model as before)."
+        ),
+    )
+    parser.add_argument(
+        "--merge-run-ids",
+        nargs="+",
+        default=None,
+        help=(
+            "sibling run_ids (from the same --suite-id) whose completed agent_submission.json "
+            "(approach_summary + confirmation history only, no code) is placed into the child's "
+            "sibling_attempts/ directory, with the kickoff prompt asking the agent to read them and "
+            "produce one unified, genuinely-improved approach rather than just refining its own prior "
+            "pass in isolation. Use for consolidating several independently-generated candidates that "
+            "converged on a similar overall method family into a single evolved representative."
+        ),
+    )
     parser.add_argument("--output-root", type=Path, default=Path(".runs/v047/agent_outputs"))
     parser.add_argument("--truth-root", type=Path, default=Path(".controller_truth/v047"))
     parser.add_argument("--scorer-key-file", type=Path, default=Path(".state/v044/scorer.key"))
     parser.add_argument("--workdir-root", type=Path, default=Path.home() / "erl-v047-runs")
     parser.add_argument("--timeout-seconds", type=float, default=10800)
     arguments = parser.parse_args()
-    if arguments.parent_run_id not in V047_CANDIDATE_CONFIGS:
-        raise SystemExit(f"run id {arguments.parent_run_id!r} has no preregistered v0.4.7 execution configuration")
-    config = V047_CANDIDATE_CONFIGS[arguments.parent_run_id]
+    if arguments.child_config_id is not None:
+        if arguments.child_config_id not in V047_CANDIDATE_CONFIGS:
+            raise SystemExit(f"--child-config-id {arguments.child_config_id!r} has no preregistered configuration")
+        child_config = V047_CANDIDATE_CONFIGS[arguments.child_config_id]
+    elif arguments.parent_run_id in V047_CANDIDATE_CONFIGS:
+        child_config = V047_CANDIDATE_CONFIGS[arguments.parent_run_id]
+    else:
+        # A gen-2 child (e.g. "agent-05-r1-evo2") can itself become a parent in a later round;
+        # it has no preregistered config of its own, so the caller must say what to run with.
+        raise SystemExit(
+            f"parent run id {arguments.parent_run_id!r} has no preregistered configuration -- "
+            "pass --child-config-id to specify the cli/model/reasoning_effort to run with"
+        )
     child_run_id = arguments.child_run_id or arguments.parent_run_id
 
     parent_workdir = arguments.workdir_root / arguments.suite_id / arguments.parent_run_id
@@ -154,13 +209,24 @@ def main() -> None:
     # -- generation-1 workdirs were written before that fix and would otherwise carry the old text.
     (workdir / "RUNNER.md").write_text(RUNNER_INSTRUCTIONS)
 
-    if config["cli"] == "claude" and not (workdir / ".claude").exists():
+    if child_config["cli"] == "claude" and not (workdir / ".claude").exists():
         claude_dir = workdir / ".claude"
         claude_dir.mkdir()
         (claude_dir / "settings.json").write_text(json.dumps(CLAUDE_SETTINGS, indent=2) + "\n")
 
-    prompt = _kickoff(arguments.real_score_note)
-    command = _command(config, prompt, workdir)
+    if arguments.merge_run_ids:
+        sibling_dir = workdir / "sibling_attempts"
+        sibling_dir.mkdir(exist_ok=True)
+        for merge_run_id in arguments.merge_run_ids:
+            sibling_submission_path = (
+                arguments.workdir_root / arguments.suite_id / merge_run_id / "agent_submission.json"
+            )
+            if not sibling_submission_path.exists():
+                raise SystemExit(f"--merge-run-ids sibling {merge_run_id!r} has no completed agent_submission.json")
+            shutil.copy2(sibling_submission_path, sibling_dir / f"{merge_run_id}_agent_submission.json")
+
+    prompt = _kickoff(arguments.real_score_note, arguments.merge_run_ids)
+    command = _command(child_config, prompt, workdir)
     transcript = workdir / "transcript-gen2-attempt-1.stream.jsonl"
     environment = _environment(arguments.truth_root, arguments.scorer_key_file)
     started = time.time()
@@ -185,6 +251,10 @@ def main() -> None:
         "suite_id": arguments.suite_id,
         "parent_run_id": arguments.parent_run_id,
         "child_run_id": child_run_id,
+        "child_config_id": arguments.child_config_id,
+        "child_cli": child_config["cli"],
+        "child_model": child_config["model"],
+        "merge_run_ids": arguments.merge_run_ids,
         "real_score_note": arguments.real_score_note,
         "returncode": completed.returncode,
         "seconds": round(time.time() - started, 1),
