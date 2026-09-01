@@ -1,0 +1,84 @@
+{
+  "any_persistent_delayed_history_discovery": true,
+  "per_config": {
+    "K8-opus-P1": {
+      "cycle4_baseline": {
+        "cycle4_discovery_events": 16,
+        "cycle4_mean_semantic_family_count": 3.75,
+        "cycle4_replicates": 8,
+        "sources": [
+          "docs/v040_gen1_selection.json:C3",
+          "docs/v040_scaffold_ladder_selection.json:L-opus-P1"
+        ]
+      },
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_clear",
+        "persistent_delayed_history"
+      ],
+      "diversity_metrics": {
+        "mean_eecr": 0.12427409988385597,
+        "mean_effective_family_count": 2.2492938472302053,
+        "mean_semantic_family_count": 2.6666666666666665
+      },
+      "evidence_rejections": 32,
+      "false_promotions": 0,
+      "max_cycles_per_pack": 8,
+      "model": "claude-opus-5",
+      "persistent_delayed_history_discovered": true,
+      "persistent_delayed_history_resolutions": [
+        "v040-cyc8-e01:useful_encoding_unvalidated",
+        "v040-cyc8-e02:inconclusive",
+        "v040-cyc8-e03:falsified",
+        "v040-cyc8-e04:falsified",
+        "v040-cyc8-e05:validated_actionable_transferred",
+        "v040-cyc8-e06:validated_actionable_transferred"
+      ],
+      "prompt_arm": "p1c8",
+      "replicates": 6,
+      "run_slot": "agent-01-s17",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 11
+    },
+    "K8-sol-P1": {
+      "cycle4_baseline": {
+        "cycle4_discovery_events": 7,
+        "cycle4_mean_semantic_family_count": 1.6666666666666667,
+        "cycle4_replicates": 6,
+        "sources": [
+          "docs/v040_sol_ablation_selection.json:S-xhigh"
+        ]
+      },
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b"
+      ],
+      "diversity_metrics": {
+        "mean_eecr": 0.2916666666666667,
+        "mean_effective_family_count": 1.1658166875151557,
+        "mean_semantic_family_count": 1.1666666666666667
+      },
+      "evidence_rejections": 22,
+      "false_promotions": 4,
+      "max_cycles_per_pack": 8,
+      "model": "gpt-5.6-sol",
+      "persistent_delayed_history_discovered": false,
+      "persistent_delayed_history_resolutions": [
+        "v040-cyc8-e01:useful_encoding_unvalidated",
+        "v040-cyc8-e02:useful_encoding_unvalidated",
+        "v040-cyc8-e03:falsified",
+        "v040-cyc8-e04:useful_encoding_unvalidated",
+        "v040-cyc8-e05:useful_encoding_unvalidated",
+        "v040-cyc8-e06:falsified"
+      ],
+      "prompt_arm": "p1c8",
+      "replicates": 6,
+      "run_slot": "agent-02-s17",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 8
+    }
+  },
+  "study": "cycle-budget-ablation",
+  "version": "0.4.0"
+}

@@ -1,0 +1,38 @@
+{
+  "version": "0.4.0",
+  "title": "Track A side-probe — cycle-budget ablation (4 -> 8)",
+  "policy": "c_lite_v040_policy.md",
+  "frozen_before_suite_generation": true,
+  "rationale": "docs/v040_discovery_ledger.md: persistent_delayed_history has a 0/88 discovery base rate across generation 1, the sol-effort ablation, and the scaffold-ladder screen -- the only family never once discovered by any model, scaffold, or reasoning-effort level tried. The sol-effort ablation showed discovery events and diversity metrics rise monotonically with reasoning effort (an evidentiary-capacity lever), and persistent_clear broke for the first time only at high/xhigh effort. Cycle budget is the other evidentiary-capacity lever named in c_lite_v040_policy.md's deferred_to_generation_2 list and not yet tested. This probe raises max_cycles_per_pack from 4 to 8 for the two strongest known baseline configurations (Opus x P1, Sol x P1 x xhigh) to test whether more cycles per pack -- not more reasoning depth per cycle -- unlocks additional discovery, in particular persistent_delayed_history.",
+  "contract_change_disclosed": "Raising max_cycles_per_pack required widening two hardcoded contract ceilings in src/epistemic_loop/controller/v037_agent.py (V037PackSubmission.cycles length, V037CycleRecord.cycle range), both previously fixed at 4 and shared by every version since v0.3.7. Widened to a new MAX_CYCLES_PER_PACK=8 module constant. This is backward compatible by construction: raising a ceiling cannot invalidate any submission that already validated under the old, stricter one, and the full existing test suite (395 tests) was re-run and passes unchanged after the widening. No already-locked or already-unblinded study is affected (none of them produced more than 4 cycles regardless of the ceiling).",
+  "new_prompt": {
+    "file": "prompts/generic_research_agent/v040_p1_c8.md",
+    "diff_from_p1": "exactly the cycle count, 'four' -> 'eight' ('run at most eight adaptive cycles' instead of four), plus the title suffix. No other text changed; no structure-specific vocabulary added.",
+    "sha256_note": "computed at suite-build time and recorded in the suite_set lock, per this project's convention"
+  },
+  "suite_ids": ["v040-cyc8-e01", "v040-cyc8-e02", "v040-cyc8-e03", "v040-cyc8-e04", "v040-cyc8-e05", "v040-cyc8-e06"],
+  "master_seed": 20260929101,
+  "pack_plan": "identical to generation 1, the sol-effort ablation, and the scaffold-ladder screen: 4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs). New master seed; no suite from any prior v0.4.0 study is reused.",
+  "execution_configurations": {
+    "K8-opus-P1": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1c8", "slot": "agent-01-s17"},
+    "K8-sol-P1": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1c8", "reasoning_effort": "xhigh", "slot": "agent-02-s17"}
+  },
+  "held_fixed": "prompt content identical to P1 apart from the cycle-count number; reasoning_effort=xhigh for sol; lineage_policy=posterior_commit -- only max_cycles_per_pack (4 -> 8) varies relative to each configuration's own established baseline",
+  "baseline_for_comparison": {
+    "opus_x_P1_x_cycle4": "8 existing replicates: generation 1's C3 (4 replicates, docs/v040_gen1_selection.json) + Stage 1's L-opus-P1 (4 replicates, docs/v040_scaffold_ladder_selection.json). Not re-run here.",
+    "sol_x_P1_x_xhigh_x_cycle4": "6 existing replicates from the sol-effort ablation's S-xhigh (docs/v040_sol_ablation_selection.json). Not re-run here."
+  },
+  "replicates_per_configuration": 6,
+  "total_runs": 12,
+  "replicate_count_rationale": "6, matching policy Sec 3.2's recommended lower bound and the size of the existing xhigh baseline (6 replicates), so the two arms are comparably powered. Only the cycle=8 arm is executed as new runs; the cycle=4 baseline is read from already-unblinded prior studies rather than re-run, since re-running an already-answered condition would waste budget.",
+  "contract": "identical v0.4.0 contract otherwise (implication provenance, terminal-resolution consistency); the only change is the widened cycle ceiling described above, which is a capability lever, not a discovery-criteria change",
+  "runner_correctness": "codex slot uses -s danger-full-access and explicit -c model_reasoning_effort=xhigh; claude slot uses --dangerously-skip-permissions, as in all prior v0.4.0 studies",
+  "isolation": "workdir-copy + RUNNER.md instructions + transcript audit only for codex (no OS sandbox); claude's deny-rule settings.json as in all prior versions",
+  "evaluation": "locked v0.3.7-lineage evaluator (evaluate_v037_runs/evaluate_v038_runs) with expected_suite_count=6 explicit. Reports discovery-event counts, false-promotion counts, diversity metrics (semantic_family_count, effective_family_count, eecr, deep_lineage_completion_rate), and the named persistent_delayed_history binary endpoint introduced in Stage 2, all compared against the read-only cycle=4 baselines named above.",
+  "predictions": {
+    "primary": "discovery events and/or persistent_delayed_history discovery rate increase at cycle=8 relative to each configuration's own cycle=4 baseline, consistent with the evidentiary-capacity hypothesis (more cycles = more opportunity to accumulate held-out implication support before the pack's cycle budget is exhausted). If neither moves, evidentiary capacity via cycle count specifically is not the persistent-ladder bottleneck (effort and cycle count are not interchangeable), and the remaining candidate explanation reverts to the implication-provenance contract threshold itself.",
+    "secondary": "diversity metrics (semantic_family_count) may or may not move with cycle count independent of the scaffold effect already isolated in the scaffold-ladder studies -- reported without a directional prediction, since cycle budget and scaffold are logically separable levers that have not been tested in combination here."
+  },
+  "stopping_rule": "fixed 12-run probe. Feeds generation 2's design directly alongside the scaffold-ladder Stage 2 results. Does not itself trigger Track B.",
+  "post_registration_deviations": []
+}

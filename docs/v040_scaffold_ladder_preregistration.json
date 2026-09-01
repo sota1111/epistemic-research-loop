@@ -1,0 +1,47 @@
+{
+  "version": "0.4.0",
+  "title": "Track A side-probe — Opus + Sol scaffold-ladder screen (Stage 1)",
+  "policy": "c_lite_v040_policy.md",
+  "frozen_before_suite_generation": true,
+  "rationale": "Cross-architecture diversity (fable, GLM) is quota-constrained; the user set as first priority a structure where Opus and Sol alone can reach solution diversity and unknown-structure discovery, without depending on model count. Generation-1 evidence: fable's P1->P2 swing (2 -> 5 discovery events) was LARGER than Opus's own within-replicate spread across all 4 generation-1 suite instances -- i.e. changing the epistemic scaffold moved behavior more than changing which suite instance the same model+scaffold ran against. This probe tests whether the scaffold ladder (P1 baseline / P2 forced hypothesis enumeration / P3 self-critique-before-promotion, policy Sec 3.2) is a viable substitute lever for cross-architecture diversity, crossed with the two models the user wants centered (Opus, Sol).",
+  "counter_evidence_disclosed": "persistent_clear/persistent_noisy_proxy/persistent_delayed_history are 0/24 across ALL generation-1 configurations -- both prompt arms (P1, P2) and both architectures (claude, codex) already tested. This is a live counter-example: at least one family class was not unlocked by either scaffold or architecture variation so far. Working hypothesis (not yet confirmed): that specific collapse is evidentiary-capacity limited (the implication-provenance 0.95 null-position bar), not hypothesis-generation limited, and may need cycle-budget variation (deferred to Stage 2) rather than scaffold variation. This probe's target is hypothesis-generation diversity (e.g. the grammar-composed family, where generation 1 configurations already varied in which instances they found); it is not expected by itself to move the persistent-ladder collapse.",
+  "two_subproblems": {
+    "hypothesis_generation_diversity": "can the agent conceive of / propose the right structural hypothesis at all -- addressed by scaffold variation (this probe)",
+    "evidentiary_capacity": "can the agent accumulate enough held-out statistical support to cross the terminal-resolution bar -- addressed by cycle-budget and reasoning-effort variation (Stage 2, and the concurrent sol reasoning-effort ablation)"
+  },
+  "suite_ids": ["v040-scaf-c01", "v040-scaf-c02", "v040-scaf-c03", "v040-scaf-c04"],
+  "master_seed": 20260920,
+  "pack_plan": "identical to generation 1: 4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs). New master seed (generation 1's suites are already unblinded and cannot be reused).",
+  "execution_configurations": {
+    "L-opus-P1": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1", "slot": "agent-01-s17"},
+    "L-opus-P2": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p2", "slot": "agent-01-s42"},
+    "L-opus-P3": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p3", "slot": "agent-01-s93"},
+    "L-sol-P1": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "xhigh", "slot": "agent-02-s17"},
+    "L-sol-P2": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p2", "reasoning_effort": "xhigh", "slot": "agent-02-s42"},
+    "L-sol-P3": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p3", "reasoning_effort": "xhigh", "slot": "agent-02-s93"}
+  },
+  "held_fixed": "reasoning_effort=xhigh for sol (matching generation 1's C5; the concurrent effort ablation's own conclusion feeds Stage 2, not this probe), max_cycles_per_pack=4 for both, lineage_policy=posterior_commit -- only prompt_arm (P1/P2/P3) and model (opus/sol) vary",
+  "replicates_per_configuration": 4,
+  "total_runs": 24,
+  "replicate_count_rationale": "4, not generation 2's 6-8, because this is an explicit SCREENING stage aimed at a large, easily-detected effect (the P1->P2 precedent was a 2.5x swing), not precise estimation of a small one. If Stage 1 finds no config separates by more than within-config noise, that itself is informative (scaffold alone may not substitute for architecture diversity) and does not get re-run at higher n; whichever scaffold(s) show a large screening effect get carried into a higher-replicate (6-8) confirmatory follow-up. This is NOT the same unexamined shortcut as the original 4-replicate sol-ablation choice (corrected earlier the same day) -- that 4 was chosen to avoid touching evaluator code, this 4 is chosen for its own stated statistical-role reason (screening vs confirmation).",
+  "new_prompt": {
+    "file": "prompts/generic_research_agent/v040_p3.md",
+    "diff_from_p1": "exactly one inserted paragraph: before promoting any pack, spend one of the pack's existing (not additional) permitted cycles attacking the promotion by constructing and testing the single strongest counter-hypothesis against the recorded evidence; promote only if that attack fails to find comparably strong support, otherwise treat the attack's findings as falsification evidence. No structure-specific vocabulary; mirrors P2's construction (P1 + one inserted paragraph).",
+    "sha256": "4d5c3d91a090f18d6218df76d13e3b3366eaafeb389fe6bd90b45377e951981a"
+  },
+  "prompt_hashes": {
+    "p1": "a7829e6edcd497e2d96b360a1977d0857660f3c5962521e4d1835f0a8b2965a2",
+    "p2": "ecb593b172dbf4cbe1792aa8aa196b2c793c12148bb10ab215e73ba52a62af5f",
+    "p3": "4d5c3d91a090f18d6218df76d13e3b3366eaafeb389fe6bd90b45377e951981a"
+  },
+  "contract": "identical v0.4.0 contract as generation 1 and the sol-effort ablation (implication provenance, terminal-resolution consistency); no contract changes, since this probe targets a scaffold/procedural lever, not the contract",
+  "runner_correctness": "codex slots use -s danger-full-access (not workspace-write) and explicit -c model_reasoning_effort=xhigh, per the generation-1 sandbox correction; claude slots use --dangerously-skip-permissions as in all prior versions",
+  "isolation": "workdir-copy + RUNNER.md instructions + transcript audit only for codex (no OS sandbox, matching the generation-1 fix); claude's deny-rule settings.json as in v0.3.8/9/generation-1",
+  "evaluation": "locked v0.3.7-lineage evaluator (evaluate_v037_runs/evaluate_v038_runs) with expected_suite_count=4 explicit (the evaluator's default; stated explicitly here per the same-day correction to always state this deliberately rather than let it default silently). Reports discovery-event counts and false-promotion counts per configuration (as generation 1's finalize_v040.py), plus the same diversity/exploration-breadth secondary metrics as the sol-effort ablation (semantic_family_count, effective_family_count, eecr, deep_lineage_completion_rate).",
+  "predictions": {
+    "primary": "no assumption that P2/P3 beat P1 uniformly, or that the same scaffold wins for both models. Three outcomes are distinguished: (a) a scaffold effect exists and is consistent across opus/sol (evidence scaffold is a general-purpose diversity lever, transferable across architectures); (b) a scaffold effect exists but differs between opus/sol (evidence scaffold interacts with model, i.e. is not architecture-independent); (c) no scaffold shows a screening-level effect for either model (evidence that, at generation 1's cycle budget, scaffold cannot substitute for architecture diversity, and Stage 2's evidentiary-capacity levers -- cycle budget, effort -- are more likely to matter than further scaffold engineering).",
+    "secondary": "P3 (self-critique) is predicted to reduce false_promotion counts relative to P1/P2 if it works as designed (the attack cycle should catch and downgrade some claims that would otherwise be promoted), possibly at some cost to raw discovery-event count if it also downgrades true positives that fail to survive a skeptical self-attack."
+  },
+  "stopping_rule": "fixed 24-run screening probe, not a generation with its own gate. Feeds Stage 2's design (which scaffold(s), if any, get generation-2-scale replication) and generation 2's own scaffold choice. Does not itself trigger Track B.",
+  "post_registration_deviations": []
+}

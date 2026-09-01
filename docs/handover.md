@@ -1,25 +1,106 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-27
-**現在の基準:** C-lite v0.3.8 完了(FAIL・全指標改善)/ v0.3.9 実行中
+**更新日:** 2026-08-29
+**現在の基準:** v0.4.0 Track A 世代 1 + 3 つの side-probe(sol effort ablation・scaffold-ladder
+Stage1/2・cycle-budget ablation)全て完了。**persistent ラダー全 4 段階が history 上初めて破られた。**
+v0.4.1 仕様策定へ移行
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
 ## 1. 現在地
 
-v0.3.7(PR #17、`879812e`)の Engineering Qualification FAIL を受け、同一の Generator・Gate のまま
-測定・契約の欠陥だけを直す是正回を実施した。
+v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方針転換)** と進行中。
 
-- **v0.3.8 完了(結論 FAIL、ただし全 Gate 指標が改善し 3 Gate 群が新規 Pass)。**
-  介入は 4 点のみ:①24 評価 = 24 個の独立 `claude -p` fresh context(CLI 認証、API key 不使用)、
-  ②Null replicate ごとの provenance artifact 契約必須化、③S1/S2 の Lineage 継続を Controller 強制、
-  ④P1 単独 Prompt 固定 + C1/C2 を Development Suite のみで fit。
-- **v0.3.9 実行中。** 介入は 1 点のみ:終端 resolution の自己整合性契約
-  (falsified ⇔ implication>0.05 / 自己 Null 超え research gain の共存、validated ⇔ implication
-  不足を Lock 前に差し戻す。Truth 不使用)。Suite `v039-qual-e01..e04`、C1 は v0.3.8 Dev fit を再利用。
-- **v0.4 の stash は指示により破棄済み**(`git stash drop` 実行、復元不能)。
-- 完全自動ループは `claude -p`(CLI 認証)で実行する方針が確定しており、実際に 54+ run が
-  人手ゼロで完走している。
+- **v0.3.8 完了(FAIL、全指標改善)。** fresh context / Null provenance / Lineage 強制 / P1 固定。
+- **v0.3.9 完了(FAIL、単一介入は予測どおり奏功)。** 終端 resolution 自己整合性契約により
+  TSRR 0.1875→0.6250(agent-01 は 0.7083 で個体 Gate 通過)、matched_negative 失敗 27→5、
+  FSPR Gate 新規 Pass。開封前の汚染検査で「repair loop による辻褄合わせ」仮説を棄却
+  (13 repair 中 12 が実データ再計算、一発 Pass run の TSRR の方が高い)。
+  詳細: [verification/v039_terminal_consistency_qualification.md](verification/v039_terminal_consistency_qualification.md)
+- **敵対的レビュー(2026-08-28)を実施し、[v0.4.0 方針](c_lite_v040_policy.md) へ転換。**
+  Gate 数値の逐次改善を止め、「発見に至るエージェント構成の発生」(P1)と「IEEE-CIS 橋」(P2)を
+  Primary に再定義。目標モデル=あるべき姿の 8 能力柱(重心は柱 2 構造仮説生成・柱 3 識別実験設計)。
+- **v0.4.0 Track A 世代 1 完了・修正済み。** 6 構成(fable-5×P1 / fable-5×P2 / opus-5×P1 基準線 /
+  sonnet-5×P2 / codex sol×P1 / codex terra×P1)× 4 replicate = 24 run。当初 1 replicate
+  (codex sol、g04)をコンテナの user namespace 遮断による codex sandbox 障害で除外・23 run で
+  一度確定・開封したが、**ユーザー指摘を受けた session ログのフォレンジックで、この障害が
+  除外した 1 run に限らず codex 8 スロット全体に断続的な計算阻害を与えていたと判明**
+  (最終採用 attempt でもコマンド失敗率 38–45%・完走コマンド数わずか 8–17 件の重度汚染が
+  4 スロット)。原因(bwrap 依存の `workspace-write` サンドボックスがこのコンテナで恒久的に
+  機能しない)を `-s danger-full-access` への切替で修正し、reasoning effort の明示固定も併せて
+  行った上で codex 8 スロット全て(除外していた分を含む)を再実行、**24/24 で再確定・再開封**。
+  **codex sol の成績が発見イベント 1→4 件へ改善し世代 2 進出候補に浮上、terra も 0→2 件で
+  閾値を通過**——「codex は終端解決を回避する」という当初の解釈は主として環境障害由来だった。
+  世代 2 進出候補は **opus-5×P1(7)・fable-5×P2(5)・codex sol×P1(4)**。structure-grammar
+  family(machine-composed・未知構造)での発見(7/24・12/24)は claude・codex 双方の上位構成で
+  再現し CLI 非依存と確認。persistent ラダー L1–L3 は 0/24 のまま(v0.3.9: 7・1・5/24)——
+  sandbox 修正後も codex 側で 0 件のため CLI 非依存の現象と判明し、implication provenance 契約が
+  新しい contract-lever ボトルネックになっている疑いが強まった。旧(汚染)データは
+  `.runs/v040/agent_outputs_pre_sandboxfix_backup/`(未 commit)に保全。
+  詳細: [verification/v040_gen1_track_a_qualification.md](verification/v040_gen1_track_a_qualification.md)
+- **codex sol reasoning-effort ablation 完了。** low/medium/high/xhigh × 6 replicate = 24 run
+  (CLI/model/prompt-arm は世代 1 の C5 と同一、effort のみ変える単一介入設計。新 Suite
+  `v040-solE-b01..b06`)。当初 replicate=4 は統計的根拠のない選択だったとユーザー指摘を受け
+  6(policy §3.2 の下限)へ修正し、`evaluate_v037_runs`/`evaluate_v038_runs` に
+  `expected_suite_count` 引数を追加(既存呼び出しは無変更)。**結果は narrowing 仮説を明確に
+  棄却し capacity 仮説を支持:発見イベント low 2→medium 3→high 4→xhigh **7** と単調増加、
+  diversity 指標(semantic_family_count 等)も同方向に単調増加(トレードオフなし)。
+  さらに `persistent_clear` が high・xhigh でのみ計 2 件、history 上初めて真に発見された**
+  (gen1・scaffold-ladder では 0 件のまま)——persistent ラダーの壁が evidentiary capacity
+  (held-out 証拠を 0.95 閾値まで積む能力)の問題であるという仮説を支持する最初の肯定的証拠。
+  世代 2 の codex sol 構成には xhigh を採用する根拠が得られた。
+  詳細: [verification/v040_sol_effort_ablation_qualification.md](verification/v040_sol_effort_ablation_qualification.md)
+- **Opus + Sol scaffold-ladder screen(Stage 1)完了。** 「Opus と Sol だけで解法の多様性・
+  未知構造発見に到達できる構造」を第一優先課題とする方針のもと、P1(baseline)/ P2(仮説列挙強制)/
+  P3(新規:昇格前の自己批判 cycle、既存 cycle 予算内)を opus・sol に交差させた 6 構成 × 4 replicate
+  = 24 run(新 Suite `v040-scaf-c01..c04`)。**P3 が opus の仮説多様性(semantic_family_count)を
+  4 replicate 全てで再現性高く約 3 倍(3.00→8.75)に押し上げ、false promotion は 0 のまま。**
+  **claude 側で初めて persistent 系が真に発見された**(opus×P1:persistent_clear +
+  persistent_compositional 同時発見、opus×P3:persistent_noisy_proxy)。**P2 は opus には
+  効かなかった**(発見イベント P1=P3=9 > P2=7)——scaffold の効果はモデル依存と判明(事前登録した
+  3 通りの予測のうち「モデル依存」が支持された)。sol×P3 の false promotion 7 件は単一 suite に
+  集中する単発の暴走(terra/g03、sol ablation high/b05 と同型)。
+  詳細: [verification/v040_scaffold_ladder_qualification.md](verification/v040_scaffold_ladder_qualification.md)
+  Preregistration: [v040_scaffold_ladder_preregistration.json](v040_scaffold_ladder_preregistration.json)
+  新規プロンプト: [v040_p3.md](../prompts/generic_research_agent/v040_p3.md)
+- **Stage 2(確認世代、opus×P1・opus×P3・sol×P3×xhigh、各 6 replicate = 18 run)完了。**
+  **`persistent_delayed_history`(累積発見台帳で 88 run を通じて 0 件だった唯一の family)が
+  opus×P1・opus×P3 の両方で史上初めて真に発見された。** これで **persistent ラダー全 4 段階が
+  少なくとも一度は破られた。** opus×P3 は同一 6 replicate 内で persistent_clear も発見(1 構成
+  2 family 同時発見は初)。sol×P3 の false promotion は Stage 1 の 7 件→**0/36 に消失**(単発の
+  暴走だったと確認)。一方 **opus×P3 の多様性ブーストは 8.75→4.33 に縮小**——n=4 のスクリーニング
+  推定値は効果量を過大評価していたことが判明(方向は再現、規模は再現せず)。
+  開封時に評価器の潜在バグ(`agent_seed_aggregates` が agent×seed の全直積を仮定しゼロ除算)を
+  発見・修正——既存 3 study(gen1・Stage1・sol ablation)で再実行し bit-for-bit 完全一致を実測
+  確認した上で適用。
+  詳細: [verification/v040_scaffold_ladder_stage2_qualification.md](verification/v040_scaffold_ladder_stage2_qualification.md)
+  累積発見台帳: [v040_discovery_ledger.md](v040_discovery_ledger.md)
+- **cycle-budget ablation(4→8 cycle)完了。** opus×P1×cycle8・sol×P1×xhigh×cycle8、各 6
+  replicate = 12 run(cycle=4 baseline は既存 study 再利用)。**事前登録した capacity 仮説は
+  支持されなかった。** 発見イベント数はほぼ横ばい(opus 2.0→1.83/replicate、sol 1.17→1.33/
+  replicate)。**多様性指標は両モデルとも明確に低下**(opus 3.75→2.67、sol 1.67→1.17)——
+  reasoning effort とは逆方向の効果。**cycle を増やすと「広く探索」ではなく「同じ仮説を
+  深く詰める」方向に働く**——evidentiary capacity を単一概念で扱うのは不正確だったと判明。
+  sol の false promotion 1→4(単一 suite 集中、単発の暴走型)。`persistent_delayed_history`
+  は opus×P1×cycle8 でも 1/6 発見(cycle=4 の Stage2 と同水準、底上げなし)。
+  運用面:suite build 実行忘れ・`_CONFIG_REGISTRY` 登録漏れ(Stage2 に続き 2 度目、回帰テスト
+  追加済み)、バッチ親プロセスが原因不明で異常終了(子プロセスは孤立生存で完走、実害なし)。
+  詳細: [verification/v040_cycle_budget_ablation_qualification.md](verification/v040_cycle_budget_ablation_qualification.md)
+- **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
+  (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
+  **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで
+  ディレクトリ外読み書きを防がない)ため、隔離は claude/codex 同様 workdir コピー + prompt 指示 +
+  transcript 監査のみに依存する設計とした。`-p` headless モードは全 tool 操作を自動承認済み
+  (`confirmationService.setSessionFlag("allOperations", true)`)。restricted env
+  (`_environment()`と同一)下での smoke test で認証・ファイル書き込み・bash 実行・JSONL
+  transcript 出力を確認済み。`scripts/run_v040_agent.py` の `_command()` に `cli: "glm"` 分岐を
+  追加済み。**ただし実際の Suite・replicate 数を伴う正式な study はまだ preregister していない**
+  ——導入は完了したが、どの世代・どの config 数で投入するかは次の preregistration 時点で決める。
+- **v0.4 の旧 stash は指示により破棄済み**(復元不能)。
+- 完全自動ループは `claude -p` / `codex exec` / `glm -p`(いずれも CLI/wrapper 認証、provider
+  API key を agent プロセス環境には渡さない)で実行。累計 104+ run
+  (v0.3.8 24 + v0.3.9 24 + v0.4.0 世代 1 実行 24 + codex 8 スロット再実行 + sol ablation 16)が
+  人手ゼロで完走(ablation は実行中)。
 
 ## 2. 最重要結果(v0.3.8)
 
@@ -110,6 +191,12 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 3. **`claude -p` は `--dangerously-skip-permissions` + settings deny rule で運用。** deny は
    bypass でも強制される。ネットワークは WebFetch/WebSearch/curl/wget/git を deny。
 4. 契約 repair feedback には Truth 情報を含めないこと(validation error 文字列のみ)。
+5. **この devcontainer の作業ディレクトリは複数セッション/タスクで共有されている。**
+   2026-08-28、無関係な別セッションが同じ working directory で `git checkout`/commit/PR
+   マージ/`git pull` を実行し、このセッションの HEAD を無警告で `main`(v0.4.0 作業を一切
+   含まない)へ移動させた。バックグラウンドバッチが新しい subprocess を起動する直前に発覚・
+   復旧(`git checkout system/c-lite-v0.3.8`)。commit 自体は失われない(branch ref は残る)が、
+   **長時間バックグラウンド実行中は定期的に `git branch --show-current` を確認すること。**
 
 ## 5. 既知の制約
 
@@ -125,32 +212,49 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **v0.3.9 の完走・Lock・開封**(実行中)。予測:TSRR 大幅上昇、persistent 系の matched-negative
-   失敗解消。リスク:falsified が inconclusive へ逃げて resolution rate 低下。
-2. 残る本質課題は **persistent 系 family の evidence 段階**(46/116)。介入は Prompt へ構造語彙を
-   足さずに設計すること(例:cycle 予算・Null 設計の一般的強化)。
-3. `useful_encoding_without_structure` への false promotion(8 件)対策は v0.3.9 の
-   validated ⇔ implication 契約で部分的に当たる。効果を開封後に確認。
-4. Worst FSPR 0.2083 は Gate 0.20 と僅差。agent-02 の false promotion 集中を確認する。
-5. 個体 Gate へ十分近づいた段階で **IEEE-CIS 実データの Blind Suite**(`.data/ieee-cis` にデータあり)
-   へ移行。解法・構造を Agent へ教えない原則は不変。
-6. Container 隔離、Null の独立再実行検証、新 Generator family は Confirmatory 前の必須項目。
+1. **Stage 2(scaffold-ladder 確認世代)を起動する。** Stage 1 の結論(opus×P3 が多様性で圧倒、
+   opus×P1 と同点最高発見、sol は xhigh 固定が最良)を policy §3.2 の推奨 replicate(6)で
+   新 Suite に対して再現確認する。特に (a) opus×P3 の semantic_family_count 3 倍化が再現するか、
+   (b) sol×P3 の false promotion 7 件(単一 suite 集中)が繰り返すか、(c) persistent 系発見
+   (opus×P1/P3 で計 3 件、sol ablation の high/xhigh で計 2 件)が偶然か構造的傾向かを見る。
+2. **v0.4.0 Track A 世代 2 の設計。** Stage 2 の結果を踏まえて確定する。現時点の暫定候補:
+   opus×P1・opus×P3・sol×xhigh(P1 か P3、Stage 2 の結果次第)。fable・GLM は使用量制約のため
+   1 構成ずつに留める。
+3. **persistent L1–L4 の壁は「evidentiary capacity」仮説がさらに補強された。** sol ablation
+   (high/xhigh)に加え、scaffold-ladder でも opus×P1(persistent_clear + compositional 同時)・
+   opus×P3(persistent_noisy_proxy)で claude 側初の真の発見が生じた。低 effort・P2 以外の
+   条件で確率的に発見され始めている。**次の一手は cycle 予算 4→8 の ablation**
+  (deferred_to_generation_2 に記載済み、まだ未実施)——Stage 2 と並行して着手を検討。
+4. **GLM(zai)の正式な study 設計。** runner 統合・smoke test は完了しているが、
+   世代・config 数・replicate 数を伴う preregistration はまだない。次の preregistration
+   (世代 2、または独立 GLM probe)で候補プールに加える判断ポイント。GLM-5.3 のみが確認済みで、
+   Kimi K3 等の別系統は別途 CLI 導入・smoke test が必要。なお `Dockerfile`/`scripts/glm-cli`
+   として GLM/codex/claude CLI を dev container イメージへ正式に組み込む作業が別セッションで
+   進行し、`main` へ PR #18 としてマージ済み(このブランチとは独立)。
+5. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
+   へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
+6. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
 
 ## 7. 再現・確認コマンド
 
 ```bash
-make ci          # 388 tests / coverage 85.28% / ruff / mypy / schema / secret / audit 全 Pass
+make ci          # ruff / mypy / schema / secret / audit 全 Pass(tests は都度件数変動)
 
-# v0.3.9 パイプライン(Suite は生成・Lock 済み)
-uv run python scripts/run_v039_batch.py --parallel 4      # 再開可能
-uv run python scripts/audit_v039_blindness.py
-uv run python scripts/lock_v039_agent_runs.py
-uv run python scripts/finalize_v039.py                    # 全 24 Lock 後のみ
+# v0.4.0 Track A 世代 2(新 Suite ID を preregister してから)
+uv run python scripts/build_v040_suites.py --suite-ids <gen2 suite ids>
+uv run python scripts/run_v040_batch.py --parallel 3       # 再開可能。V040_GEN1_EXCLUDED_RUNS は
+                                                             # スロット単位の preregistered 除外
+uv run python scripts/audit_v040_blindness.py
+uv run python scripts/lock_v040_agent_runs.py
+uv run python scripts/finalize_v040.py                     # 実行対象全 run が Lock 済みの場合のみ
 ```
 
 `.runs/` `.state/` `.controller_truth/` は Git ignore 対象。開封済み Suite ID
-(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`)は再利用禁止。v0.3.9 Suite は Agent 実行中のため
-Truth 開封は 24 run Lock 後のみ。
+(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`, `v039-qual-*`, `v040-genA-*`)は再利用禁止。
+世代 2 は新規 suite id・新規 master seed で preregister すること(方針§3.2:世代間でのメタ過適合
+防止)。`evaluate_v037_runs`/`evaluate_v038_runs` は preregistered 除外を扱うための
+`excluded_pairs` 引数(デフォルト空集合)を持つ——インフラ障害等で run が実行不能になった場合は
+開封前にこの引数へ追加し、preregistration に deviation エントリを残すこと。
 
 ## 8. 正本文書
 
@@ -162,7 +266,11 @@ Truth 開封は 24 run Lock 後のみ。
   [Blind Spots](v038_population_blind_spot_report.json) /
   [Failure Traces](v038_structure_failure_traces.json) /
   [Null Audit](v038_full_refit_null_audit.json)
-- [v0.3.9 Preregistration](v039_preregistration.json)
+- [v0.3.9 Preregistration](v039_preregistration.json) /
+  [v0.3.9 検証](verification/v039_terminal_consistency_qualification.md)
+- [v0.4.0 方針](c_lite_v040_policy.md) / [v0.4.0 世代 1 Preregistration](v040_gen1_preregistration.json)
+- [v0.4.0 世代 1 検証](verification/v040_gen1_track_a_qualification.md) /
+  [Selection Table](v040_gen1_selection.json) / [Diagnostics](v040_gen1_diagnostics.json)
 - [進捗ログ](progress.md)
 
 ## 9. Git 状態

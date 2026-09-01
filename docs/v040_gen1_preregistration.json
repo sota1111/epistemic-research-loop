@@ -1,0 +1,87 @@
+{
+  "version": "0.4.0",
+  "title": "Track A Generation 1 — Emergence of Discovering Configurations",
+  "policy": "c_lite_v040_policy.md",
+  "frozen_before_suite_generation": true,
+  "primary_criteria": {
+    "P1": "some configuration achieves behavioral discovery of persistent/grammar structures with matched-negative rejection in at least two independent runs",
+    "selection_metric": "verified discovery events on persistent_/grammar_composed families per configuration, tie-broken by fewer false promotions"
+  },
+  "suite_ids": ["v040-genA-g01", "v040-genA-g02", "v040-genA-g03", "v040-genA-g04"],
+  "master_seed": 20260910,
+  "pack_plan": "4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs)",
+  "structure_grammar": {
+    "motifs": ["entity_effect", "delayed_history", "regime_flip", "cross_key_link", "path_decay", "routed_signal"],
+    "composition": "2-3 motifs sampled per matched pair from the suite master seed",
+    "acceptance": "deterministic resampling until the identifiability preflight passes; the designer does not hand-pick instances",
+    "note": "grammar instances are machine-composed; the suite designer knows the grammar, not the sampled structure"
+  },
+  "execution_configurations": {
+    "C1": {"cli": "claude", "model": "claude-fable-5", "prompt_arm": "p1", "slot": "agent-01-s17"},
+    "C2": {"cli": "claude", "model": "claude-fable-5", "prompt_arm": "p2", "slot": "agent-01-s42"},
+    "C3": {"cli": "claude", "model": "claude-opus-5", "prompt_arm": "p1", "slot": "agent-02-s17"},
+    "C4": {"cli": "claude", "model": "claude-sonnet-5", "prompt_arm": "p2", "slot": "agent-02-s42"},
+    "C5": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "slot": "agent-03-s17"},
+    "C6": {"cli": "codex", "model": "gpt-5.6-terra", "prompt_arm": "p1", "slot": "agent-03-s42"}
+  },
+  "replicates_per_configuration": 4,
+  "total_runs": 24,
+  "deferred_to_generation_2": [
+    "claude-haiku-4-5",
+    "gpt-5.6-luna",
+    "P3 self-critique scaffold",
+    "codex reasoning-effort ablation (default xhigh in generation 1)",
+    "8-cycle exploration budget"
+  ],
+  "lineage_policy": "posterior_commit for every slot",
+  "contract_additions_over_v039": {
+    "implication_provenance": "per-context {statistic, held_out=true, null_reference_position, computation_hash} required for terminal resolutions",
+    "consistency": "falsified: at most one context with position >= 0.95; validated: at least two"
+  },
+  "prompt_hashes": {
+    "p1": "a7829e6edcd497e2d96b360a1977d0857660f3c5962521e4d1835f0a8b2965a2",
+    "p2": "ecb593b172dbf4cbe1792aa8aa196b2c793c12148bb10ab215e73ba52a62af5f"
+  },
+  "prompt_policy": "P1 adds only the null-referenced implication requirement; P2 additionally mandates enumeration of competing task formulations on the four generic assumption axes. No structure-specific vocabulary.",
+  "evaluation": "locked v0.3.7-lineage evaluator reused verbatim; per-configuration aggregates are the agent-by-seed aggregates; selection table computed from evaluated packs",
+  "old_gates_status": "diagnostic only per the v0.4.0 policy; FSPR <= 0.20 and evidence-based conditions remain internal requirements of discovery events",
+  "isolation": {
+    "claude": "workdir isolation + deny rules + transcript audit (as v0.3.8/9)",
+    "codex": "originally workspace-write sandbox; corrected to danger-full-access on 2026-08-28 (see post_registration_deviations) because the container's bwrap dependency is non-functional. Isolation is workdir-copy + RUNNER.md instructions + transcript audit only, with no OS-level enforcement; recorded as a parity limitation relative to claude's deny rules, same posture as glm/zai (which has no OS sandbox at all)",
+    "container_isolation": false
+  },
+  "predictions": {
+    "primary": "at least one configuration separates from the baseline (C3) on persistent/grammar discovery events; if none does, the bottleneck is not addressable by model/scaffold variation at this budget and stopping rule 1 fires",
+    "secondary": "cross-model populations show lower shared-blind-spot overlap than same-model populations (diagnostic)"
+  },
+  "stopping_rules": [
+    "generation 2 proceeds only with configurations showing >= 2 verified discovery events",
+    "if no configuration reaches 2 events, synthetic search stops and the best configuration proceeds to the IEEE-CIS bridge (policy stopping rule 1)"
+  ],
+  "post_registration_deviations": [
+    {
+      "recorded": "2026-08-28",
+      "recorded_before_unblinding": true,
+      "status": "SUPERSEDED by the entry below (root cause fixed, run reinstated)",
+      "kind": "excluded run (infrastructure failure, not agent behavior)",
+      "run": "v040-genA-g04/agent-03-s17",
+      "configuration": "C5 (codex gpt-5.6-sol, prompt p1)",
+      "cause": "codex workspace-write sandbox deterministically non-functional in the container: bwrap cannot create a user namespace (unshare returns EPERM even for root; container seccomp). Both shell commands and the file-edit tool fail to write, verified by isolated smoke tests on 2026-08-28. Earlier codex runs (2026-08-26) executed 381/388 commands successfully, so this is an environment regression, not a contract or agent failure.",
+      "decision": "generation 1 completes with 23 of 24 runs; C5 is evaluated on 3 replicates, which still satisfies the P1 criterion (reproduction in >= 2 independent runs per configuration)",
+      "rejected_alternatives": "running the slot with sandbox bypass (weakens read isolation and mixes sandbox regimes within one configuration); blocking the pipeline on a host-level container change",
+      "effective_run_count": 23
+    },
+    {
+      "recorded": "2026-08-28",
+      "recorded_before_unblinding": false,
+      "recorded_after_unblinding_note": "This correction was made AFTER generation 1 was unblinded and its first report published (docs/verification/v040_gen1_track_a_qualification.md, committed). It is disclosed in full rather than silently revised. The finalize evaluator code and acceptance criteria were not changed; only the contaminated codex inputs were replaced with cleanly re-executed ones under an unchanged preregistered design (same suites, same configs, same replicate count).",
+      "kind": "systematic re-execution of all 8 codex slots (infrastructure defect discovered to be pervasive, not isolated to the excluded run)",
+      "trigger": "Forensic review of codex session rollout logs (~/.codex/sessions/) requested by the user to check whether codex/glm were being fairly evaluated. Found that the bwrap userns failure that caused the g04/agent-03-s17 exclusion had been intermittently corrupting EVERY codex slot's execution throughout generation 1 (2026-08-26 through 2026-08-28), not just the one excluded run. Command-level forensics on the accepted (locked) attempt for each of the other 7 codex slots: 2 slots had light contamination (2-5% of commands bwrap-failed, hundreds of commands still completed), but 4 slots were severely degraded (38-45% command failure, only 8-17 total commands in the accepted attempt, well short of a full 14-pack protocol) with transcript evidence of the agent editing completion/honesty flags directly rather than completing blocked computation. This confounds the 'codex avoids terminal resolution' interpretation already published: the effect may be substantially an infrastructure artifact rather than a model behavior.",
+      "fix": "scripts/run_v040_agent.py codex invocation changed from `-s workspace-write` (bwrap-dependent) to `-s danger-full-access` (no OS sandbox; matches claude and glm/zai, which also rely only on workdir-copy + prompt instructions + transcript audit in this container). Also pinned `-c model_reasoning_effort` explicitly per slot instead of relying on the shared, mutable ~/.codex/config.toml default (a related but separate defect: one accepted run had silently executed at effort=low instead of the preregistered xhigh, traced via the same session-log forensics).",
+      "verification_before_rerun": "smoke test in an isolated scratch directory confirmed danger-full-access executes shell and python3 without any bwrap error",
+      "action": "backed up the 8 original (contaminated) submissions, run_meta, and transcripts to .runs/v040/agent_outputs_pre_sandboxfix_backup/ (not committed; local only). Cleared the 8 slots' outputs and workdirs, including the previously-excluded g04/agent-03-s17. Re-ran all 8 through scripts/run_v040_batch.py under the fixed runner. All 8, including the previously-excluded slot, completed with 0 bwrap failures in their final attempt and full 14-pack/42-context/5+-replicate submissions.",
+      "outcome": "generation 1 now completes at 24 of 24 preregistered runs (the g04/agent-03-s17 exclusion above is lifted; V040_GEN1_EXCLUDED_RUNS is now empty). Selection results changed materially for the codex configurations: C5 (sol) verified discovery events 1 -> 4 (now clears the >=2 generation-2 threshold, with 2 new false promotions on a matched-negative grammar pair); C6 (terra) verified discovery events 0 -> 2 (now clears the threshold, with 5 false promotions concentrated entirely on one suite instance, v040-genA-g03, where it validated 11 of 14 packs -- a single over-promotion run rather than a consistent pattern across its other 3 replicates). Claude configurations (C1-C4) were untouched and unchanged. Full corrected results superseded docs/v040_gen1_selection.json, docs/v040_gen1_diagnostics.json, and docs/verification/v040_gen1_track_a_qualification.md.",
+      "effective_run_count": 24
+    }
+  ]
+}

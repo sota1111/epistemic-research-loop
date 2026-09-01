@@ -1,0 +1,45 @@
+{
+  "version": "0.4.0",
+  "title": "Track A side-probe — codex sol reasoning-effort ablation",
+  "policy": "c_lite_v040_policy.md",
+  "parent_study": "v040_gen1_preregistration.json (deferred_to_generation_2 item: codex reasoning-effort ablation)",
+  "frozen_before_suite_generation": true,
+  "rationale": "Generation 1 fixed codex reasoning_effort at xhigh for every codex slot. This is a single-intervention side-probe (not folded into generation 2's claude-reproduction confirmatory track) that varies only reasoning_effort for gpt-5.6-sol, holding CLI/model/prompt-arm fixed at generation 1's C5 configuration. Run independently and first, per the user's explicit choice, so its result can inform (not gate) generation 2's design rather than expand generation 2's own budget and confound two different questions in one preregistration.",
+  "suite_ids": ["v040-solE-b01", "v040-solE-b02", "v040-solE-b03", "v040-solE-b04", "v040-solE-b05", "v040-solE-b06"],
+  "master_seed": 20260915,
+  "pack_plan": "identical to generation 1: 4 persistent ladder positives + 4 matched negatives + observation-routing sanity positive + random-routing sanity negative + 2 grammar-composed positives + 2 grammar matched negatives (14 packs). Reuses the same structure-grammar generator; new master seed means new grammar instances (generation 1's suites are already unblinded and cannot be reused).",
+  "execution_configurations": {
+    "S-low": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "low", "slot": "agent-01-s17"},
+    "S-medium": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "medium", "slot": "agent-01-s42"},
+    "S-high": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "high", "slot": "agent-02-s17"},
+    "S-xhigh": {"cli": "codex", "model": "gpt-5.6-sol", "prompt_arm": "p1", "reasoning_effort": "xhigh", "slot": "agent-02-s42"}
+  },
+  "held_fixed": "cli=codex, model=gpt-5.6-sol, prompt_arm=p1, lineage_policy=posterior_commit -- only reasoning_effort varies across the four configurations",
+  "replicates_per_configuration": 6,
+  "total_runs": 24,
+  "replicate_count_note": "originally set to 4 to avoid modifying evaluate_v037_runs's hardcoded suite-count check -- an engineering-convenience choice, not a statistical one, and one that silently overrode this study's own parent policy (c_lite_v040_policy.md Sec 3.2), which recommends 6-8 replicates for exactly this kind of confirmatory/exploratory run. Corrected (see post_registration_deviations) to 6 replicates, policy's lower bound, after evaluate_v037_runs/evaluate_v038_runs gained an explicit expected_suite_count parameter (default 4, so v0.3.7/8/9 and generation 1 are unaffected). Verified nothing else in the evaluator (population blocks, cluster bootstrap, Wilson intervals) depends on the suite count being exactly 4 -- all are computed generically over whatever suites are present.",
+  "lineage_policy": "posterior_commit for every slot",
+  "contract": "identical v0.4.0 contract as generation 1 (implication provenance, terminal-resolution consistency); no contract changes, since this probe targets a capability/scaffold lever (reasoning effort), not the contract",
+  "runner_correctness": "-s danger-full-access (not workspace-write, which depends on a bwrap mechanism this container blocks unconditionally) and -c model_reasoning_effort pinned explicitly per slot -- both fixed in scripts/run_v040_agent.py before generation 1 was corrected; this probe inherits the fix from the start",
+  "prompt_hashes": {
+    "p1": "a7829e6edcd497e2d96b360a1977d0857660f3c5962521e4d1835f0a8b2965a2"
+  },
+  "isolation": "workdir-copy + RUNNER.md instructions + transcript audit only, no OS sandbox (danger-full-access); same posture as generation 1's corrected codex configuration and as glm/zai",
+  "evaluation": "locked v0.3.7-lineage evaluator reused verbatim for discovery-event counting and false-promotion counting, identical to generation 1's finalize_v040.py logic. Additionally reports per-configuration diversity/exploration-breadth secondary metrics already computed by the evaluator but not previously highlighted: semantic_family_count, effective_family_count, eecr (early-exploit-conversion-rate), deep_lineage_completion_rate.",
+  "predictions": {
+    "primary": "no monotonic assumption: discovery-event count as a function of reasoning_effort is NOT assumed to be increasing. Two plausible directions are both live: (a) capacity hypothesis -- higher effort improves discovery because it enables deeper multi-context implication computation and null-refit rigor; (b) narrowing hypothesis -- higher effort induces earlier convergence on a single hypothesis path and stricter self-consistency pressure toward `inconclusive`, reducing both raw discovery and exploration breadth. This probe is designed to distinguish these, not to confirm (a).",
+    "secondary": "if the narrowing hypothesis holds, semantic_family_count / effective_family_count should be higher (more distinct hypothesis families attempted) at LOWER effort levels even if discovery events are comparable or lower, and the inconclusive/useful_encoding_unvalidated share of non-terminal resolutions should rise with effort."
+  },
+  "stopping_rule": "this is a fixed-size probe, not a generation with its own gate. Its result is read into generation 2's design (e.g. which effort level(s), if any, generation 2's codex sol slots should use) but does not itself trigger Track B or further generations.",
+  "post_registration_deviations": [
+    {
+      "recorded": "2026-08-28",
+      "recorded_before_unblinding": true,
+      "kind": "replicate-count correction (design error, not infrastructure failure)",
+      "trigger": "User question: \"4 replicate の意味はありましたか\" (did the 4-replicate choice have meaning?). It did not -- the 4 was chosen to avoid touching evaluate_v037_runs's hardcoded 4-suite check, not for any statistical reason, and it silently overrode this study's own parent policy's 6-8 replicate recommendation (c_lite_v040_policy.md Sec 3.2). With only 4 replicates, a single anomalous run carries 25% of the weight for a configuration's result -- already observed to matter in generation 1, where one outlier suite instance produced all 5 of C6/terra's false promotions.",
+      "action": "generalized evaluate_v037_runs/evaluate_v038_runs with an explicit expected_suite_count parameter (default 4, so v0.3.7/8/9 and the already-unblinded generation 1 are unaffected) and grew V040_SOL_ABLATION_SUITE_IDS from 4 to 6 suites (b05, b06 added). Verified before growing it that nothing else in the evaluator depends on the suite count being exactly 4. scripts/build_v040_sol_ablation_suites.py made resumable: it now skips suite ids whose output already exists and merges their prior build result into the regenerated lock, so the first 4 (already-built, immutable, already had 2 of 16 runs executed against them) are untouched and only b05/b06 are newly built.",
+      "effective_run_count": 24,
+      "note": "made while some agent runs against the original 4 suites were already in flight, but before any truth was opened for any suite (encrypted, never decrypted at this point) -- a legitimate pre-unblinding design correction, not a post-hoc reinterpretation of results."
+    }
+  ]
+}

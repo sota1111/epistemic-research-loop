@@ -1,0 +1,9 @@
+{
+  "executed_null_packs": 288,
+  "interpretation": "Every executed null carries per-replicate permutation, feature, fold, model, and OOF artifacts that were structurally audited and hash-locked before unblinding. The artifacts are agent-computed; independent re-execution remains future work.",
+  "maximum_replicates": 30,
+  "minimum_replicates": 5,
+  "pack_count": 288,
+  "packs_with_complete_provenance": 288,
+  "provenance_status": "MACHINE_AUDITED_DECLARED"
+}

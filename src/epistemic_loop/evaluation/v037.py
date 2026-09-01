@@ -196,18 +196,38 @@ class V037Acceptance:
 def evaluate_v037_runs(
     submissions: Sequence[V037AgentSubmission],
     truths: Sequence[V037SuiteTruth],
+    *,
+    excluded_pairs: frozenset[tuple[str, str]] = frozenset(),
+    expected_suite_count: int = 4,
 ) -> V037AggregateReport:
-    """Evaluate locked outputs across four suites without using transfer labels for discovery."""
+    """Evaluate locked outputs across a fixed number of suites without using transfer labels
+    for discovery.
+
+    ``excluded_pairs`` names (suite_id, run_id) slots that a preregistered, pre-unblinding
+    deviation dropped from the batch (e.g. an infrastructure failure recorded before truth
+    was opened). It defaults to empty, so the v0.3.7/8/9 callers that never pass it keep the
+    exact 24-run gate unchanged.
+
+    ``expected_suite_count`` names how many distinct suite instances (replicates) the study
+    preregistered. It defaults to 4 (the v0.3.7 baseline every subsequent version reused), so
+    v0.3.7/8/9 and any caller that doesn't pass it are unaffected. Nothing else in this module
+    depends on the suite count being exactly 4 -- population blocks, cluster bootstrap blocks,
+    and Wilson intervals are all computed generically over whatever suites are present -- so a
+    study preregistering a different replicate count (chosen for its own statistical-power
+    reasons, not to route around this default) should pass its own count explicitly here.
+    """
 
     truth_by_suite = {item.suite_id: item for item in truths}
-    if len(truth_by_suite) != 4:
-        raise ValueError("v0.3.7 requires four distinct locked qualification suites")
-    expected_pairs = {
-        (suite_id, run_id) for suite_id in truth_by_suite for run_id in _run_ids(truth_by_suite[suite_id])
-    }
+    if len(truth_by_suite) != expected_suite_count:
+        raise ValueError(f"this study requires exactly {expected_suite_count} distinct locked qualification suites")
+    full_grid = {(suite_id, run_id) for suite_id in truth_by_suite for run_id in _run_ids(truth_by_suite[suite_id])}
+    if not excluded_pairs <= full_grid:
+        raise ValueError("excluded_pairs must be a subset of the preregistered 24-run grid")
+    expected_pairs = full_grid - excluded_pairs
+    expected_total = len(expected_pairs)
     actual_pairs = {(item.suite_id, item.run_id) for item in submissions}
-    if actual_pairs != expected_pairs or len(submissions) != 24:
-        raise ValueError("v0.3.7 primary evaluation requires exactly 24 unique agent runs")
+    if actual_pairs != expected_pairs or len(submissions) != expected_total:
+        raise ValueError(f"v0.3.7 primary evaluation requires exactly {expected_total} unique agent runs")
     preliminary = tuple(
         _evaluate_submission_pack(submission, pack, truth_by_suite[submission.suite_id])
         for submission in submissions
@@ -219,10 +239,15 @@ def evaluate_v037_runs(
         _agent_aggregate(agent_id, submissions, evaluated)
         for agent_id in sorted({submission.agent_id for submission in submissions})
     )
+    # Computed over (agent_id, sampling_seed) pairs that actually occur in submissions, not the
+    # full cross product of observed agent ids x observed seeds: a study whose run-id slots are
+    # not a full factorial grid (e.g. an asymmetric configuration screen where not every
+    # "agent" label is paired with every "seed" label) would otherwise divide by zero over an
+    # empty positives/negatives set for a combination nothing submitted. For every study to date
+    # where the slot design IS a full grid, this is identical to the old cross product.
     agent_seed_aggregates = tuple(
         _agent_aggregate(agent_id, submissions, evaluated, sampling_seed)
-        for agent_id in sorted({submission.agent_id for submission in submissions})
-        for sampling_seed in sorted({submission.sampling_seed for submission in submissions})
+        for agent_id, sampling_seed in sorted({(item.agent_id, item.sampling_seed) for item in submissions})
     )
     blocks = tuple(
         _population_block(suite_id, sampling_seed, evaluated, truth)

@@ -1,0 +1,107 @@
+{
+  "any_persistent_delayed_history_discovery": true,
+  "per_config": {
+    "T2-opus-P1": {
+      "all_positive_tsdr": 0.4523809523809524,
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_delayed_history"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.8624999999999999,
+        "mean_eecr": 0.3544871794871795,
+        "mean_effective_family_count": 3.240770390820193,
+        "mean_semantic_family_count": 3.6666666666666665
+      },
+      "evidence_rejections": 18,
+      "false_promotions": 0,
+      "model": "claude-opus-5",
+      "persistent_delayed_history_discovered": true,
+      "persistent_delayed_history_resolutions": [
+        "v040-scaf2-d01:useful_encoding_unvalidated",
+        "v040-scaf2-d02:validated_actionable_transferred",
+        "v040-scaf2-d03:falsified",
+        "v040-scaf2-d04:useful_encoding_unvalidated",
+        "v040-scaf2-d05:useful_encoding_unvalidated",
+        "v040-scaf2-d06:useful_encoding_unvalidated"
+      ],
+      "prompt_arm": "p1",
+      "replicates": 6,
+      "run_slot": "agent-01-s17",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 13
+    },
+    "T2-opus-P3": {
+      "all_positive_tsdr": 0.47619047619047616,
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_clear",
+        "persistent_delayed_history"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.7441520467836257,
+        "mean_eecr": 0.4619883040935672,
+        "mean_effective_family_count": 3.733084889107115,
+        "mean_semantic_family_count": 4.333333333333333
+      },
+      "evidence_rejections": 29,
+      "false_promotions": 0,
+      "model": "claude-opus-5",
+      "persistent_delayed_history_discovered": true,
+      "persistent_delayed_history_resolutions": [
+        "v040-scaf2-d01:inconclusive",
+        "v040-scaf2-d02:falsified",
+        "v040-scaf2-d03:useful_encoding_unvalidated",
+        "v040-scaf2-d04:useful_encoding_unvalidated",
+        "v040-scaf2-d05:useful_encoding_unvalidated",
+        "v040-scaf2-d06:validated_actionable_not_transferred"
+      ],
+      "prompt_arm": "p3",
+      "replicates": 6,
+      "run_slot": "agent-01-s93",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 14
+    },
+    "T2-sol-P3": {
+      "all_positive_tsdr": 0.30952380952380953,
+      "discovered_families": [
+        "grammar_composed_a",
+        "grammar_composed_b",
+        "persistent_compositional",
+        "persistent_noisy_proxy"
+      ],
+      "diversity_metrics": {
+        "mean_deep_lineage_completion_rate": 0.7091503267973857,
+        "mean_eecr": 0.45751633986928103,
+        "mean_effective_family_count": 1.4477421624018962,
+        "mean_semantic_family_count": 1.5
+      },
+      "evidence_rejections": 26,
+      "false_promotions": 0,
+      "model": "gpt-5.6-sol",
+      "persistent_delayed_history_discovered": false,
+      "persistent_delayed_history_resolutions": [
+        "v040-scaf2-d01:useful_encoding_unvalidated",
+        "v040-scaf2-d02:falsified",
+        "v040-scaf2-d03:falsified",
+        "v040-scaf2-d04:falsified",
+        "v040-scaf2-d05:falsified",
+        "v040-scaf2-d06:useful_encoding_unvalidated"
+      ],
+      "prompt_arm": "p3",
+      "replicates": 6,
+      "run_slot": "agent-02-s93",
+      "target_positive_packs": 36,
+      "verified_discovery_events": 10
+    }
+  },
+  "ranking": [
+    "T2-opus-P3",
+    "T2-opus-P1",
+    "T2-sol-P3"
+  ],
+  "study": "scaffold-ladder-stage2",
+  "version": "0.4.0"
+}
