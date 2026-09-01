@@ -1,6 +1,93 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-31
+**更新日:** 2026-09-01
+
+**進行中(最優先で読むこと):** v0.4.8後半——「進化+探索→実提出→実スコアで親選定→次ラウンド」
+という**繰り返しサイクル**の定常運用が確立。**ラウンド2のエージェント計35体は全て完了・
+盲検監査済み・局所AUC採点済み**(2026-09-01)。**Santanderラウンド2は3件を実提出、
+実スコア確認済み(下記)。IEEE-CISラウンド2は未提出——5枠選定でユーザー確認待ち。**
+サイクルの正式なルール群は**[c_lite_v048_policy.md](c_lite_v048_policy.md) §5〜§8 が正本**:
+
+- **§5.1 サイクル構造:** [親選定(実publicスコア)] → [進化+探索、両競技対称] →
+  [提出5枠] → 繰り返し(4サイクル以上想定)。1回目のみ親なし(探索のみ)。
+- **§5.2 提出枠ルール(2回目以降):** 進化上位2+探索上位2+全有効候補ブレンド1=5枠
+  (カテゴリ内の局所AUC順位のみで機械的に決定。探索の締め出し防止のためのカテゴリ固定枠)。
+- **§5.3+§6.2 親選定ルール(N=3、累積プール):** 親1=実提出済み全個体(ブレンド除く)の
+  実スコア最良、親2=親1と異なるプロンプトアーム(P1↔P3)の中で最良、親3=親1と異なる
+  モデル(opus↔sol)の中で最良。予測相関ベースの多様性指標は検証の結果不採用
+  (構造発見者ペアが最も相関が高かった——§5.3の検討過程参照)。
+- **§7 進化設計:** 各親から子A(同モデル・異アーム)+子B(異モデル・同アーム)——
+  モデル軸とアーム軸の単独効果を分離する。
+- **§6.4+§8.3 探索統合:** 未提出候補はそのまま持ち越さず、approach_summaryの内容
+  ベースで手法クラスタに分類し、クラスタごとにマージ進化エージェント
+  (`--merge-run-ids`、兄弟のapproach_summaryを渡して統合改良させる)1体に集約。
+- **§6.5+§8.5 完全新規探索:** 毎ラウンド新しい列salt(新suite)で6config
+  (sol low/xhigh×P1/P3+opus P1/P3)を1体ずつ。
+
+**実提出結果 ラウンド1(2026-09-01、計7件):**
+1. **IEEE-CIS Track A(修正版時系列分割、上位4+ブレンド5件):局所-実相関の回復仮説は
+   反証された(ρ=-0.4、依然逆相関傾向)。** 局所AUC最下位のagent-05-r1(opus P1)が
+   実スコア最良0.8699、局所1位のagent-03-r1は実2位0.8563。時系列分割修正だけでは
+   IEEE-CISのシフトは説明できない。IEEE-CIS親3体=agent-05-r1・agent-04-r2・agent-03-r1。
+2. **Santanderラウンド1(2件、3枠温存):agent-05-r1-evo2がpublic 0.9006——当時の
+   本プロジェクト過去最高**(親0.8890から+0.0116)。multiplicityチャネル(値の出現回数が
+   信号強度を減衰させる構造)の実効性が実リーダーボードで確認された。
+
+**実提出結果 ラウンド2 Santander(2026-09-01、3件):**
+ユーザー指示「local#1とevo2-armP3/06-r1-armP1は同手法か?同手法なら、local#1・
+解法の異なる最上位・(未知構造探索手法×local#1のマージ)を提出」に対応。
+top2進化体は両方とも multiplicity系統(Gaussian-EM naive Bayes)で**同手法と判定**した上で:
+
+| 提出物 | 手法 | local AUC | **public** |
+| --- | --- | ---: | ---: |
+| local#1 `agent-05-r1-evo2-armP3` | multiplicity系統+低ランク縮小(rank-2で200曲線を表現) | 0.8979 | **0.90179**(自己ベスト更新) |
+| 異手法最上位 `v048-suite-b02/agent-05-r1` | rank-2共有形状(分散/extremeness構造、multiplicity不使用) | 0.8908 | 0.89157 |
+| マージ(上記2つのrank-blend) | — | — | 0.90069 |
+
+**この3件が示した2つの重要な知見:** (a) **Santanderには複数の独立した exploitable な構造が
+存在する**——multiplicityを一切使わない別の未知構造(分散/extremeness)だけで実public 0.89台
+到達、multiplicityは唯一の勝ち筋ではないと実スコアで裏付け。(b) **マージ(0.90069)は
+local#1単体(0.90179)にわずかに劣った**——異手法は単体では強いが相補的でなく、ラウンド1の
+「Santander(シフトなし)ではブレンドが単体最良に劣る」知見と整合。
+**Santander本日UTC枠: 3消費・残り2枠。**
+
+**ラウンド2の全候補ランキング(35体完了・採点済み、`docs/v047_v048_suite_*_diagnostics.json`
+とgen2子の直接採点):**
+- **IEEE-CIS:** 進化top(予測変更ありのみ有効)=`agent-05-r1-evo3`(0.9095、opus P1→P3)・
+  `agent-03-r1-evo1`(0.9018)。`changed=False`の進化体(evo2系・agent-04-r2-evo2/evo3等)は
+  親と同一予測=改善なしで提出候補から除外。探索top=`agent-03-r2-evo1`(0.9007)・
+  `v048-suite-a02/agent-04-r1`(0.8962)。**注意:a01(進化・マージ)とa02(新規探索)は
+  時系列窓が異なり(baseline 0.8856 vs 0.8997)生AUCの直接比較にバイアスあり**——
+  5枠選定④の扱い(生AUC字義通り vs baseline差分補正)がユーザー確認待ちの論点。
+- **Santander:** 進化=上記3件で消化。残り2枠の使い道は未定(top探索は
+  `v048-suite-b02/agent-06-r1` 0.8803 等)。
+
+**次にやること:** **IEEE-CISラウンド2の5枠選定案の確定と実提出許可**(2:2:1ルール、
+窓バイアスの扱いを含む)。Santanderは次サイクルの親選定(§5.3累積プールに
+`agent-05-r1-evo2-armP3` public 0.90179 と `v048-suite-b02/agent-05-r1` public 0.89157 を追加)へ。
+
+**監査結果(2026-09-01、全suiteクリーン扱い):** `v048-suite-a01/a02`・`v047-suite-b01`・
+`v048-suite-b02`の盲検監査で検出された指摘は全て既知の良性パターン——(a)エージェントが
+自分のscore_confirmation.pyをcatした際のscorerソース文言、(b)venvパス
+(`/workspaces/.../.venv/...`のnumpy/sklearn警告)、(c)既記録済みのagent-06-r2
+env-varインシデント(該当run除外済み)。tool_use_idトレースで全件確認、新規リークなし。
+
+**インフラ変更(2026-09-01):** `run_v047_gen2_refinement.py`に
+(a)`--child-config-id`(子を親と異なるcli/model/effortで実行)、
+(b)`--merge-run-ids`(兄弟のagent_submission.jsonを`sibling_attempts/`に配置し
+統合改良を指示)、(c)gen-2子を親として再利用可能に(preregistered configに無い
+親run_idでも`--child-config-id`指定があれば許可)を追加。
+
+**ユーザーの標準指示(必ず遵守):** (1) **private scoreは比較対象にしない**
+(ローカルvs publicのみ。参加者が見えない情報のため)。(2) **claude/codexは定額
+(`claude -p`等)で呼ぶ——エージェント実行のコストを理由に躊躇しない**(有限なのは
+Kaggleの提出枠のみ)。(3) **実Kaggle提出(`scripts/submit_kaggle.py`)は都度、明示
+承認を得る**。(4) 選定基準は機械的・事前登録されたルールのみ(Controller主観の排除)。
+(5) 提出履歴の確認は`kaggle competitions submissions -c <ref> -v`
+(ref: `ieee-fraud-detection` / `santander-customer-transaction-prediction`)。
+
+---
+
 **直近の完了:** v0.4.7(実Kaggle late submission検証環境)——世代1(1競技あたりsol
 8体+opus 4体、探索population、23/24完了)→選定基準を巡るユーザーとの複数往復の
 議論(taxonomy一致・エージェント一致・Controller独自検証など5つの候補案を全て
@@ -21,15 +108,14 @@
 [世代1結果](verification/v047_generation1_results.md) /
 [c_lite_v047_policy.md](c_lite_v047_policy.md)。
 
-**進行中:** v0.4.8(次のエージェント計画、方針草案)。実スコアの相関逆転を追う
-過程で**`_sample_split`の時系列分割バグを発見・修正**(IEEE-CISの`time_column`
-指定が`sort_values`後の`.sample()`呼び出しで無効化されており、v0.4.4以降
-research/confirmation/transferが時系列分離されずランダム分割のままだった、
-[発見記録](verification/v047_temporal_split_bug.md)、実データで修正確認済み・
-回帰テスト追加済み)。次の計画は2トラック:Track A(IEEE-CIS、修正版で
-ローカル-実相関が回復するか検証)・Track B(Santander、実スコアで裏付け済みの
-2系統を実スコア情報込みで深掘り)。**エージェント実行はまだ行っていない**——
-ユーザーの確認待ち。詳細:[c_lite_v048_policy.md](c_lite_v048_policy.md)。
+**v0.4.8前半(完了):** 実スコアの相関逆転を追う過程で**`_sample_split`の時系列分割
+バグを発見・修正**(IEEE-CISの`time_column`指定が`sort_values`後の`.sample()`呼び出しで
+無効化されており、v0.4.4以降research/confirmation/transferが時系列分離されずランダム
+分割のままだった、[発見記録](verification/v047_temporal_split_bug.md)、実データで修正
+確認済み・回帰テスト追加済み)。Track A(IEEE-CIS、修正版12体)実行→実提出→
+**仮説反証(冒頭参照)**。Track B(Santander、opus 4体=親2×2 replicateに実スコアを
+注入した進化)実行→**4/4で局所AUC改善**、うちagent-05-r1-evo2は実提出でpublic 0.9006を
+達成(冒頭参照)。詳細:[c_lite_v048_policy.md](c_lite_v048_policy.md)。
 
 **直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
 指定の制約(effort=low固定・フィードバック両方維持・全列のみ・少数opus)で新規36 run
@@ -598,7 +684,10 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
 ## 9. Git 状態
 
 ```text
-ブランチ  system/c-lite-v0.3.8(main 未マージ、PR 未作成)
-main      879812e(= PR #17、v0.3.7)
-v0.4      stash はユーザー指示で破棄済み(2026-08-27)
+ブランチ  system/c-lite-v0.4.8(v0.4.0〜v0.4.7 は PR #19〜#28 で main へマージ済み)
+main      16b1417(= PR #28、CI 修正まで含む最新)
+v0.4      旧 stash はユーザー指示で破棄済み(2026-08-27)
 ```
+各 v0.4.x は個別ブランチ(`system/c-lite-v0.4.x`)→ PR → main マージの運用。
+消費済み suite ID prefix(再利用禁止)に v0.4.8 分を追加:`v048-suite-a01`・
+`v048-suite-a02`・`v048-suite-b02`(および v0.4.7 の `v047-suite-a01`・`v047-suite-b01`)。
