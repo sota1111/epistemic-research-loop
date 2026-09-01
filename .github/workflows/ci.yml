@@ -19,6 +19,6 @@ jobs:
           version: "0.11.32"
           enable-cache: true
       - name: Install locked dependencies
-        run: uv sync --extra dev --frozen
+        run: uv sync --extra dev --extra solver --frozen
       - name: Run quality, replay, holdout, schema, secret, and dependency gates
         run: make ci
