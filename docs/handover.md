@@ -91,6 +91,57 @@ IEEE-CIS では実際に新しい未分類パターンが2件出現し(うち1�
 [Santander側](verification/v043_sol_effort_diversity_santander.md) /
 [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)。
 
+**v0.4.4 全特徴量 + 疑似採点ループ pilot 完了(2026-08-30)。** ユーザーからの指摘
+(「10列だけでは上位解法に繋がる発見は無理では」)を受け、既存 v0.4.0〜v0.4.3 の
+全 Suite が合成 Track A 由来の固定10列制約を real データにも無検討で継承していた
+ことを認め、その制約を撤廃する別トラックを新設した。IEEE-CIS で1エージェント・
+1回のみの feasibility pilot(`v044-pilot-a01`)を実施:全106列(既存の10倍以上)を
+渡し、confirmation 領域への予測をローカル疑似採点ツールで繰り返し提出→採点できる
+ようにした(実 Kaggle 提出はしない、との指示に基づく代替設計)。**結果:機構は
+完全に機能した**——疑似採点を20回(上限まで)使い切り、内部CVとforward validation
+の矛盾を疑似採点で解消するという実際の意思決定に使われ、封印済み transfer 領域の
+最終 AUC は 0.8315(reference baseline 0.7739 を +0.0576 上回る)。盲検監査もクリーン
+(監査スクリプト自体の初期の偽陽性1件を修正済み)。詳細:
+[preregistration](verification/v044_full_feature_pilot_preregistration.md) /
+[結果](verification/v044_full_feature_pilot_results.md)。
+
+**⚠️ 訂正・v0.4.3-f のやり直しが必要(2026-08-30)。** この10列制約が
+**ユーザーの承認を得ずに継承されていた**ことが判明した——[preregistration
+JSON](../v041_track_b_preregistration.json)には設計として記載されていたが、
+「開示するリスク」節には含まれておらず、「実コンペのエージェントに見せる列数を
+10列に制限する、それでよいか」という形で判断を仰いだことは一度もなかった。
+詳細な経緯・影響範囲の切り分けは
+[10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)、
+やり直しの計画は **[c_lite_v044_policy.md](c_lite_v044_policy.md)** を参照——
+**v0.4.3-f(sol reasoning-effort 多様性ラウンド全体)は10列制約下の結果に過ぎず、
+全特徴量設計でやり直す**。v0.4.3-a/b/d は列数に依存しない検証のため対象外。
+
+**v0.4.4-b(全特徴量やり直し、screening+確認ラウンド)完了(2026-08-30)。**
+ユーザーが「両コンペを列数限定なしで、解法多様性・上位解法相当の存在・未知構造
+発見を目指す環境を構築し、sol reasoning-effort で7時間承認不要で実行してよい」と
+承認。IEEE-CIS(106列)・Santander(200列)双方で、v0.4.3-fと同じ8構成(sol・
+reasoning_effort×prompt_arm)のscreening→確認→population拡大の3ラウンド
+(計36 run×2コンペではなく、両コンペ合計36 run:screening16+確認12+population
+拡大8)を実施。**結果は10列制約下と劇的に異なった:**
+1. **性能面:** 36 run**全て**が reference baseline を上回った——10列制約下の
+   不安定な成否パターンから一変。
+2. **layer1到達:** IEEE-CISで技術クラス#5(adversarial validation)への到達が
+   初めて確認された(10列制約下は全ラウンド0%)。ただしSantanderでは200列・
+   population拡大(計22 run)を経ても実際の公開技術(頻度エンコーディング・
+   real/synthetic行判定)には未到達——「列数・populationを増やせば解決」という
+   単純な仮説はコンペ依存で部分的にしか成立しないことが確定した。
+3. **最も頑健な発見:** adversarial validation は reasoning effort ではなく
+   **prompt_arm(P3の自己批判指示)に完全に決定される**——両コンペ・全ラウンド
+   通算で **22/22 P3-arm run が示し、P1-arm run(14件)は1件も示さなかった**。
+   v0.4.3-fの「単一seedのnoveltyは信頼できない」という教訓を踏まえた3段階確認
+   (screening→確認→population拡大)を経て正式に確定した、本セッション最強の知見。
+4. **population拡大の限界:** 収束済みセル(IEEE-CIS)をさらに拡大しても新規性は
+   生まれず、既存toolkitの精緻化に留まった——「populationを増やせば多様性が
+   増える」は普遍的ではなく、「まだ収束していないセルでのみ有効」と判明。
+詳細:[クロスコンペ統合分析](verification/v044_cross_competition_synthesis.md) /
+[IEEE-CIS側](verification/v044_full_feature_diversity_ieee_cis.md) /
+[Santander側](verification/v044_full_feature_diversity_santander.md)。
+
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -450,8 +501,21 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   回帰対応)は metric/oracle/permutation/agent 契約の実装・テストまで完了、実データ
   実行は共有基盤ブロッカーで次ラウンド持ち越し(§9 参照)
 - [sol reasoning-effort 多様性ラウンド:IEEE-CIS](verification/v043_sol_effort_diversity_ieee_cis.md) /
-  [Santander](verification/v043_sol_effort_diversity_santander.md) /
-  [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
+  [Santander](verification/v043_sol_effort_diversity_santander.md)(⚠️10列制約下の結果、
+  v0.4.4-bで置き換え) / [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
+- **[10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)** —
+  無承認継承の経緯・影響範囲の記録
+- **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — 現行の正本。v0.4.3-f を全特徴量
+  設計でやり直し完了(v0.4.4-b)
+- **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
+  — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
+  [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が
+  baseline超え、adversarial validation が prompt_arm(P3)に完全決定される形で
+  22/22 P3・0/14 P1と確定。Santanderの実際の公開技術は列数・population両方を
+  増やしても未到達と確定
+- [v0.4.4 全特徴量 + 疑似採点ループ pilot](verification/v044_full_feature_pilot_preregistration.md)
+  — [結果](verification/v044_full_feature_pilot_results.md):機構完全動作(v0.4.4-bの
+  基盤となった単発feasibility確認)
 - **[クロスコンペ統合分析(IEEE-CIS×Santander)](verification/v042_cross_competition_synthesis.md)**
   — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
   および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)

@@ -1,5 +1,13 @@
 # v0.4.3-f sol reasoning-effort 多様性ラウンド — Santander(`v042-mc-c02`)
 
+**⚠️ 10列制約下の結果である旨、明記(2026-08-30追記):** 本ドキュメントの全ての run は、
+ユーザーの承認を得ずに継承されていた固定10列制約の下で実施された
+([インシデント記録](v044_ten_column_constraint_incident.md))。ここに記録された
+diversity 指数・layer1/layer2 一致率・「beyond additive」候補の観測などは、**全て
+「10列という上限の中での結果」**として読むこと——全特徴量下でどうなるかは
+[c_lite_v044_policy.md](../c_lite_v044_policy.md) の計画に基づき別途再検証する。
+本ドキュメント自体は削除せず、10列制約下での方法論的教訓の記録として保持する。
+
 **目的:** [IEEE-CIS 側](v043_sol_effort_diversity_ieee_cis.md)と対になる、同一設計
 (`V043_SOL_EFFORT_CONFIGS`、sol のみ・reasoning_effort × prompt_arm の 8 run)の
 Santander 版。全 run 完了、盲検監査クリーン(2026-08-30)。
