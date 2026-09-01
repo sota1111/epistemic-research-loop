@@ -1,7 +1,21 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-30
-**直近の完了:** v0.4.5 要因計画(DOE)完了。v0.4.4-b(10列制約撤廃+疑似採点フィードバック、
+**更新日:** 2026-08-31
+**直近の完了:** v0.4.6(reasoning effort=low断面 + 少数opus screening)完了。ユーザー
+指定の制約(effort=low固定・フィードバック両方維持・全列のみ・少数opus)で新規36 run
+(sol 28 + opus 8)を両コンペで実行、全run成功。post-hoc盲検監査でopus 3runに誤検出
+(採点ツール自身のソースを`cat`したことによるfalse positive、コミット`2964a00`で修正)
+を発見・解決し、最終的に全4 suiteクリーン。**最重要結果:(1) IEEE-CIS opusの4 run
+全てが独立に実データの意味論的構造(count/amountペア)を再構築し、うち1 runは
+技術クラス#1(UID/エンティティ復元)に本プロジェクトで初めて到達。(2) 150 run超で
+崩れなかった「P3がadversarial validationの絶対的必要条件」という知見が、P1アーム
+2件の初出現で初めて破れた(ただしP3出現率は依然P1の3倍)。(3) 低effort+feedbackの
+性能はIEEE-CISではxhigh水準に匹敵/超過したがSantanderでは届かず——effort軸でも
+コンペ依存の非対称性を確認。** late submission上位到達可能性の考察(実提出はせず)
+含め詳細:[v0.4.6結果](verification/v046_low_effort_opus_results.md) /
+[v0.4.6方針](c_lite_v046_policy.md)。
+
+**直前の完了:** v0.4.5 要因計画(DOE)完了。v0.4.4-b(10列制約撤廃+疑似採点フィードバック、
 両方同時に変更)が導いた結論(36/36 baseline超え・adversarial validationがP3に
 22/22決定される)について、ユーザーから「列数が効いたのかフィードバックが効いたのか
 分からない」との指摘を受け、2×2×2要因計画(列数{10,Full}×フィードバック{None,
@@ -520,8 +534,10 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   無承認継承の経緯・影響範囲の記録
 - **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — v0.4.3-f を全特徴量
   設計でやり直し完了(v0.4.4-b)
-- **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 現行の正本。列数×フィードバックの
+- **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 列数×フィードバックの
   交絡を分離する2×2×2要因計画、完了。[結果](verification/v045_factorial_design_results.md)
+- **[c_lite_v046_policy.md](c_lite_v046_policy.md)** — 現行の正本。reasoning effort=low
+  断面 + 少数opus screening、完了。[結果](verification/v046_low_effort_opus_results.md)
 - **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
   — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
   [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が

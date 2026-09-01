@@ -190,6 +190,107 @@ V044_R5_CONFIGS: Mapping[str, Mapping[str, str]] = {
 }
 V044_R5_RUN_IDS = tuple(V044_R5_CONFIGS)
 
+#: v0.4.6 cells I/J (docs/c_lite_v046_policy.md SS3): full columns, NO confirmation-
+#: scoring loop, at LOW effort (the opposite end of v0.4.5's xhigh-fixed design), both
+#: prompt arms. Sol is the primary arm (n=4/comp, toward this project's standard
+#: reproducibility bar); a small opus/claude screening arm (n=1/comp, agent-03/agent-04
+#: run_ids) is layered in per the user's explicit request to include a few opus runs even
+#: though this harness has no reasoning-effort dial for claude. New seeds, no overlap with
+#: any prior round.
+V046_LOW_NOFB_SOL_SEEDS = (2001, 2114, 2237, 2358)
+V046_LOW_NOFB_OPUS_SEEDS = (3001,)
+V046_LOW_NOFB_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "F6-low-nofb-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "low",
+        }
+        for seed in V046_LOW_NOFB_SOL_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "F6-low-nofb-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "low",
+        }
+        for seed in V046_LOW_NOFB_SOL_SEEDS
+    },
+    **{
+        f"agent-03-s{seed}": {
+            "config_id": "F6-opus-nofb-P1",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p1",
+        }
+        for seed in V046_LOW_NOFB_OPUS_SEEDS
+    },
+    **{
+        f"agent-04-s{seed}": {
+            "config_id": "F6-opus-nofb-P3",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p3",
+        }
+        for seed in V046_LOW_NOFB_OPUS_SEEDS
+    },
+}
+V046_LOW_NOFB_RUN_IDS = tuple(V046_LOW_NOFB_CONFIGS)
+
+#: v0.4.6 cells K/L (docs/c_lite_v046_policy.md SS3): full columns, WITH the confirmation-
+#: scoring loop, at LOW effort. Sol seeds here are new (do not overlap the existing
+#: F4-low-P1/F4-low-P3 screening seed 17 from v044-suite-a01/b01, which this suite's own
+#: build does NOT include -- that single existing seed per competition is pooled in at
+#: analysis time by reading its diagnostics JSON directly, per c_lite_v046_policy.md SS6,
+#: not re-run here). Same small opus screening arm as I/J above.
+V046_LOW_FB_SOL_SEEDS = (2481, 2592, 2703)
+V046_LOW_FB_OPUS_SEEDS = (3002,)
+V046_LOW_FB_CONFIGS: Mapping[str, Mapping[str, str]] = {
+    **{
+        f"agent-01-s{seed}": {
+            "config_id": "F6-low-fb-P1",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p1",
+            "reasoning_effort": "low",
+        }
+        for seed in V046_LOW_FB_SOL_SEEDS
+    },
+    **{
+        f"agent-02-s{seed}": {
+            "config_id": "F6-low-fb-P3",
+            "cli": "codex",
+            "model": "gpt-5.6-sol",
+            "prompt_arm": "p3",
+            "reasoning_effort": "low",
+        }
+        for seed in V046_LOW_FB_SOL_SEEDS
+    },
+    **{
+        f"agent-03-s{seed}": {
+            "config_id": "F6-opus-fb-P1",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p1",
+        }
+        for seed in V046_LOW_FB_OPUS_SEEDS
+    },
+    **{
+        f"agent-04-s{seed}": {
+            "config_id": "F6-opus-fb-P3",
+            "cli": "claude",
+            "model": "claude-opus-5",
+            "prompt_arm": "p3",
+        }
+        for seed in V046_LOW_FB_OPUS_SEEDS
+    },
+}
+V046_LOW_FB_RUN_IDS = tuple(V046_LOW_FB_CONFIGS)
+
 
 @dataclass(frozen=True)
 class V044RunBuildResult:

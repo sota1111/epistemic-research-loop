@@ -29,6 +29,10 @@ from epistemic_loop.benchmark.v044_full_feature_pilot import (
     V044_R5_RUN_IDS,
     V044_SOL_EFFORT_CONFIGS,
     V044_SOL_EFFORT_RUN_IDS,
+    V046_LOW_FB_CONFIGS,
+    V046_LOW_FB_RUN_IDS,
+    V046_LOW_NOFB_CONFIGS,
+    V046_LOW_NOFB_RUN_IDS,
 )
 
 _CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
@@ -37,6 +41,8 @@ _CONFIG_SETS: dict[str, tuple[object, tuple[str, ...]]] = {
     "scale": (V044_R3_CONFIGS, V044_R3_RUN_IDS),
     "10col-fb": (V044_R4_CONFIGS, V044_R4_RUN_IDS),
     "full-nofb": (V044_R5_CONFIGS, V044_R5_RUN_IDS),
+    "low-nofb": (V046_LOW_NOFB_CONFIGS, V046_LOW_NOFB_RUN_IDS),
+    "low-fb": (V046_LOW_FB_CONFIGS, V046_LOW_FB_RUN_IDS),
 }
 
 
@@ -91,7 +97,9 @@ def main() -> None:
             {
                 "run_id": run_id,
                 "config_id": configs[run_id]["config_id"],
-                "reasoning_effort": configs[run_id]["reasoning_effort"],
+                "cli": configs[run_id]["cli"],
+                "model": configs[run_id]["model"],
+                "reasoning_effort": configs[run_id].get("reasoning_effort"),
                 "prompt_arm": configs[run_id]["prompt_arm"],
                 "transfer_auc": transfer_auc,
                 "beats_reference_baseline": (
