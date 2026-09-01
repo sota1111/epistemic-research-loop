@@ -1,0 +1,1322 @@
+{
+  "any_configuration_reproducibility_met": false,
+  "per_config": {
+    "TB-opus-P1": {
+      "p2_satisfied_runs": 0,
+      "reproducibility_met": false,
+      "runs": 4
+    },
+    "TB-opus-P3": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 4
+    },
+    "TB-sol-P3": {
+      "p2_satisfied_runs": 1,
+      "reproducibility_met": false,
+      "runs": 4
+    }
+  },
+  "per_run": [
+    {
+      "config_id": "TB-opus-P1",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n01"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a0e5584a4105859fecda",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7405411877394636,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-97cc9ac4f2cbb4b3f9cf",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.688792270531401,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-01bb42f49d1b44ccc087",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-10be02a440eae3f88921",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-97afb6c1edd4f669ed39",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-2ef5f214d30ecc196052",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5287142857142857,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-21f16238381afc85d9a5",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7736191860465116,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a26830ad2dbf6d2c1fdd",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s17"
+    },
+    {
+      "config_id": "TB-opus-P1",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n01",
+        "pack-n02"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-daac624dee704af5caca",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-fc3997cac516f44661c5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-e05b4ede9a49a86f9b42",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-c1a0a943ec549a24ed36",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7772529069767442,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-d61de08090f899a749ad",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5245450191570882,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-a85240a5d717740b5204",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6884084302325582,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-5381d9c7161dfdcf2619",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6758397409955483,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-5d0c68882efc02dac463",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s42"
+    },
+    {
+      "config_id": "TB-opus-P1",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-9528875702e5cc433354",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.677487922705314,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-fc7806e851b2e3310f49",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-faeb50da0bb3e87234e0",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-b5f83e06534b978cfcaf",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6827107279693486,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-91bce6e9c4b19619c0ed",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-bb15610edc4b1b5f4024",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7605377906976745,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-fc0b562789462bf86158",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6003352490421456,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-9ca643291c6b9bd3ab0e",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s93"
+    },
+    {
+      "config_id": "TB-opus-P1",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n04"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-a57b3073ba6887a4c6d4",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7691787439613527,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-b895402c39c2d19b78df",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7522710755813954,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-8a3bd4e5e2713cfcfaaf",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-695a622b5e663f8f8683",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-3b4248acd2932ba64f6b",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-562a61431b339f463258",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7781613372093024,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-743156e66c772e86fbeb",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5542857142857143,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-f2f59ca0fe7990ab05bc",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-01-s124"
+    },
+    {
+      "config_id": "TB-opus-P3",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n01",
+        "pack-n04",
+        "pack-n03"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-e1fa7f9a2eeca94ba867",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5734285714285714,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-ed1bc800b8c3b1a35e89",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-81a880cc0cc624f21344",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7728502415458938,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-cd2e4c47961d4fece64f",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7539970930232558,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-1d91177ec0cc0d2d123c",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7511809593023255,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-463060bace02aa8ff2fd",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-9c1ec00313898a676e5e",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-4e0583c6a228105048c4",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s17"
+    },
+    {
+      "config_id": "TB-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c04",
+        "pack-c03"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.6631884057971015,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-92151cb9853423460a05",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-6154ca6ac3bb664f04f2",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-8efd3f6b3598fff1f26c",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.768531976744186,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-8438009124880d06fd8a",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7112068965517241,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d3e3aeb1202f293eee71",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5404693486590039,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-a963748a64decc9a7956",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-20dd3c26881af683c5e3",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-498d49e0283c8634982f",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s42"
+    },
+    {
+      "config_id": "TB-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.6620289855072464,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-764700c396117e022413",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.8126816860465116,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-74f1bfe6770cd9fe04e5",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-d253fb3eaaa52001b0d5",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-de8e65cef13d4e51fd9e",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5284961685823755,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-c19c697536c13de678e0",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e2784eec6c87afd62780",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7502394636015326,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-126f026c19b5ddb939e7",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-1fa46857a06b81af887c",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-02-s93"
+    },
+    {
+      "config_id": "TB-opus-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-136ad4ae563d2ad2ead2",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6499392958316471,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-77799bb1cc3f89f8617d",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-13893697277f76cd82e3",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-383d1e2aa63fea93ce7f",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.48443486590038315,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-71b4c9ba9646cd30b7a3",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7140804597701149,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-c94e7d7227b338bb57f4",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-74f05a8d36571f830dbc",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7772529069767442,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-916148b55b8ffd278e32",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-02-s124"
+    },
+    {
+      "config_id": "TB-sol-P3",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n04",
+        "pack-n02"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.7408248546511628,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-3d653f3e8fc16aa2d2ce",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.4605714285714286,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-a4868284e77194bad677",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-f2b5295a70cba355dda5",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-0f0c2bbe294d0e28a5dd",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-6698d2b8a2c4c9367047",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-06d78a772c3ddb3d77cd",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.6146859903381643,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-aa58e40932f104bbc9ab",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.6622535211267606,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-6625c3643d429ec77c16",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-03-s17"
+    },
+    {
+      "config_id": "TB-sol-P3",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n03"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.6962768110076892,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-c2448590a0f16c0f5bd5",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-f3ab808d028ff6589198",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-9445026a2a942ba18460",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5594202898550724,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-f8ad4bf9baf762588f48",
+          "promoted": false,
+          "resolution": "inconclusive",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.8687318313953488,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-e3a94e4e21acf8d1a4c6",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e3cd31b6b84581ad6974",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-8030ab5a16e210b1ee6d",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.7211446360153256,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-f9423d82f92c38322509",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        }
+      ],
+      "run_id": "agent-03-s42"
+    },
+    {
+      "config_id": "TB-sol-P3",
+      "fspr_clean": true,
+      "matched_negatives_promoted": [],
+      "p2_qualifying_packs": [
+        "pack-c04",
+        "pack-c03",
+        "pack-c02"
+      ],
+      "p2_satisfied": true,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.8094113372093024,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-08c3149038f11fae5983",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7360101744186046,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d4f90cd478aa948eb923",
+          "promoted": true,
+          "resolution": "validated_actionable_transferred",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.5211925287356322,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-48acb4d9d274ce15c018",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7409955483609875,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-bf8ad956c5b08300702a",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-5be39a3c66fd93089f6b",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-83cbce38cb3728cb3cc1",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-f2ca5b4da9f37d8ceed8",
+          "promoted": false,
+          "resolution": "falsified",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-a13e1046b5d65b093658",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-03-s93"
+    },
+    {
+      "config_id": "TB-sol-P3",
+      "fspr_clean": false,
+      "matched_negatives_promoted": [
+        "pack-n02"
+      ],
+      "p2_qualifying_packs": [],
+      "p2_satisfied": false,
+      "packs": [
+        {
+          "agent_transfer_auc_median": 0.7113266283524904,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c03",
+          "controller_baseline_transfer_auc_median": 0.6264788732394366,
+          "family": "real_candidate_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-e255a214bf82345958d8",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n02",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-856e212ebc7b11493a95",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.8134084302325582,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c04",
+          "controller_baseline_transfer_auc_median": 0.6635842667361292,
+          "family": "real_candidate_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-5a46e53cac85b6022e54",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": 0.7209631728045326,
+          "beats_capacity_matched_baseline": true,
+          "canonical_pack_id": "pack-c02",
+          "controller_baseline_transfer_auc_median": 0.5311111111111111,
+          "family": "real_candidate_02",
+          "matched_pair": "real-pair-02",
+          "opaque_pack_id": "opaque-bd780972f4fccf199d7c",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n04",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_04",
+          "matched_pair": "real-pair-04",
+          "opaque_pack_id": "opaque-93ce949044c82de3550c",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": 0.5118571428571429,
+          "beats_capacity_matched_baseline": false,
+          "canonical_pack_id": "pack-c01",
+          "controller_baseline_transfer_auc_median": 0.5846503831417624,
+          "family": "real_candidate_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-3c2a1be31677cd4542a2",
+          "promoted": true,
+          "resolution": "validated_non_actionable",
+          "structure_present_candidate": true
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n01",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_01",
+          "matched_pair": "real-pair-01",
+          "opaque_pack_id": "opaque-94bb605dea9c4eda65ee",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        },
+        {
+          "agent_transfer_auc_median": null,
+          "beats_capacity_matched_baseline": null,
+          "canonical_pack_id": "pack-n03",
+          "controller_baseline_transfer_auc_median": null,
+          "family": "real_matched_negative_03",
+          "matched_pair": "real-pair-03",
+          "opaque_pack_id": "opaque-d3a8656f3f2106541a84",
+          "promoted": false,
+          "resolution": "useful_encoding_unvalidated",
+          "structure_present_candidate": false
+        }
+      ],
+      "run_id": "agent-03-s124"
+    }
+  ],
+  "study": "track-b-ieee-cis-blind-bridge",
+  "suite_id": "v041-trackb-01",
+  "version": "0.4.1"
+}

@@ -1,9 +1,12 @@
 # Epistemic Research Loop 引き継ぎ書
 
 **更新日:** 2026-08-29
-**現在の基準:** v0.4.0 Track A 世代 1 + 3 つの side-probe(sol effort ablation・scaffold-ladder
-Stage1/2・cycle-budget ablation)全て完了。**persistent ラダー全 4 段階が history 上初めて破られた。**
-v0.4.1 仕様策定へ移行
+**現在の基準:** v0.4.0 Track A 世代 1 + 4 つの side-probe 全て完了(78 run)。**opus×P1(cycle=4)が
+3 study・14 replicate を通じて false promotion ゼロのまま P1 達成基準を満たしたと判定。**
+[v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動・実行(12 run)。**P2 再現要件は
+3 構成とも不成立——ただし主因は Track B 自身の Matched Negative 構築方法の統計的な甘さの疑いが強く、
+「合成が実データへ転移しなかった」と結論するのは時期尚早。** 詳細:
+[Track B qualification](verification/v041_track_b_qualification.md)。次の Suite 再構築はユーザー確認待ち。
 **対象リポジトリ:** `epistemic-research-loop`
 **作業ブランチ:** `system/c-lite-v0.3.8`(main 未マージ)
 
@@ -86,6 +89,16 @@ v0.3.7 FAIL → v0.3.8(測定是正)→ v0.3.9(契約整合性)→ **v0.4.0(方�
   運用面:suite build 実行忘れ・`_CONFIG_REGISTRY` 登録漏れ(Stage2 に続き 2 度目、回帰テスト
   追加済み)、バッチ親プロセスが原因不明で異常終了(子プロセスは孤立生存で完走、実害なし)。
   詳細: [verification/v040_cycle_budget_ablation_qualification.md](verification/v040_cycle_budget_ablation_qualification.md)
+- **[v0.4.1 方針](c_lite_v041_policy.md)を策定。** 累積発見台帳を精査した結果、**opus×P1
+  (claude-opus-5・P1・cycle=4)が gen1・Stage1・Stage2 の 3 study・14 replicate を通じて
+  false promotion ゼロのまま 3 つの異なる persistent family(compositional・clear・
+  delayed_history)を発見しており、v0.4.0 方針の P1 達成基準(同一構成の独立 2 run 以上での
+  persistent 系発見+汚染なき Matched Negative 棄却)を満たしていると判定した。** v0.4.0 の
+  停止規則 2(「P1 達成構成が出た時点で Track B へ即時移行」)に従い、v0.4.1 は Track A の
+  さらなる世代を追わず **Track B(IEEE-CIS blind bridge)の起動を主目的**とする。投入構成は
+  opus×P1(実績)・opus×P3(Stage2 で同点最高)・sol×P3×xhigh(codex 系で唯一複数 persistent
+  family 発見)の 3 構成。**Track B の Suite build は実データを扱うためユーザー確認を取ってから
+  実行する**(本方針書に明記済み)。
 - **GLM(zai CLI)を runner に統合・smoke test 済み。** `/home/vscode/.local/bin/glm`
   (`ZAI_MODEL=glm-5.3` 既定、`.env` の `GLM_API_KEY` を自前で source)。ソース確認の結果、
   **OS レベルのサンドボックスが一切ない**(`text-editor.js` は `path.resolve()` のみで
@@ -212,49 +225,67 @@ v0.3.7 の評価 7 項目(旧引き継ぎ書 §5)に加えて:
 
 ## 6. 次の推奨作業
 
-1. **Stage 2(scaffold-ladder 確認世代)を起動する。** Stage 1 の結論(opus×P3 が多様性で圧倒、
-   opus×P1 と同点最高発見、sol は xhigh 固定が最良)を policy §3.2 の推奨 replicate(6)で
-   新 Suite に対して再現確認する。特に (a) opus×P3 の semantic_family_count 3 倍化が再現するか、
-   (b) sol×P3 の false promotion 7 件(単一 suite 集中)が繰り返すか、(c) persistent 系発見
-   (opus×P1/P3 で計 3 件、sol ablation の high/xhigh で計 2 件)が偶然か構造的傾向かを見る。
-2. **v0.4.0 Track A 世代 2 の設計。** Stage 2 の結果を踏まえて確定する。現時点の暫定候補:
-   opus×P1・opus×P3・sol×xhigh(P1 か P3、Stage 2 の結果次第)。fable・GLM は使用量制約のため
-   1 構成ずつに留める。
-3. **persistent L1–L4 の壁は「evidentiary capacity」仮説がさらに補強された。** sol ablation
-   (high/xhigh)に加え、scaffold-ladder でも opus×P1(persistent_clear + compositional 同時)・
-   opus×P3(persistent_noisy_proxy)で claude 側初の真の発見が生じた。低 effort・P2 以外の
-   条件で確率的に発見され始めている。**次の一手は cycle 予算 4→8 の ablation**
-  (deferred_to_generation_2 に記載済み、まだ未実施)——Stage 2 と並行して着手を検討。
-4. **GLM(zai)の正式な study 設計。** runner 統合・smoke test は完了しているが、
-   世代・config 数・replicate 数を伴う preregistration はまだない。次の preregistration
-   (世代 2、または独立 GLM probe)で候補プールに加える判断ポイント。GLM-5.3 のみが確認済みで、
-   Kimi K3 等の別系統は別途 CLI 導入・smoke test が必要。なお `Dockerfile`/`scripts/glm-cli`
-   として GLM/codex/claude CLI を dev container イメージへ正式に組み込む作業が別セッションで
-   進行し、`main` へ PR #18 としてマージ済み(このブランチとは独立)。
-5. 世代 2 で >= 2 verified discovery event を再現する構成が出れば Track B(IEEE-CIS 橋、policy §4)
-   へ。皆無なら停止規則 1 が発動し、最良構成のまま Track B へ進む(合成完璧主義を避ける)。
-6. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
+1. **Track B(IEEE-CIS blind bridge)——起動・実行済み、Matched Negative 設計の修正が必要
+   (2026-08-29)。** 1 Suite(`v041-trackb-01`)・12 run(opus×P1/P3・sol×P3×xhigh 各 4 replicate)
+   を実行、契約エラー 0・盲検監査クリーンだったが、**P2 再現要件は 3 構成とも不成立**——
+   主因は候補構造の未発見ではなく、**Matched Negative パックが 12 run 中 9 run で最低 1 件
+   昇格した**こと。提出済み transfer AUC を精査すると、一部(`pack-n01`)は chance 付近
+   (~0.5)なのに昇格されておりエージェント側の閾値判定の甘さ、残り(`pack-n02/03/04`)は
+   複数 run・複数モデルで再現する 0.55〜0.71 の AUC が見られ、**Controller 側の Matched
+   Negative 構築法(decile-stratified permutation、baseline が線形ロジスティック回帰)が
+   非線形残差構造を破壊しきれていない疑いが強い**——suite 設計側の技術的負債。
+   詳細:[Track B qualification](verification/v041_track_b_qualification.md)。
+   **次のステップ:** baseline モデルをより表現力の高いものに変える等で Matched Negative
+   構築を強化し、新 Suite で再試行する。実データを再び扱う判断のため、**実行前にユーザー
+   確認を取ること**。
+2. **codex 系(sol/terra)限定の false promotion 現象——機序を部分的に特定済み(2026-08-29、
+   read-only 調査完了)。** 4 件の暴走 replicate(gen1 terra/g03・sol ablation high/b05・
+   Stage1 sol×P3/c04・cycle8 sol/e05)が実際に書いた `run_protocol.py` を直接読んだ結果、
+   **4 件全てが null 分布を `N_NULL=5` replicate で推定していた**(promotion 判定
+   `position>=0.95` が理論上 ~16.7% の確率でノイズでも棄却域に入る粗い検定になる)。
+   対照 opus は一貫して 200〜500 replicate。ただし N_NULL=5 は codex の固定習慣ではなく
+   run ごとにばらつき、false promotion 0 件の N_NULL=5 run も多数あるため、**必要条件に
+   近いが十分条件ではない**——「codex 系は自己記述する統計プロトコルの厳密さが run 間で
+   ばらつく」という限定的な主張までが現時点の到達点(詳細:
+   [累積発見台帳§7](v040_discovery_ledger.md)、[v0.4.1 方針§4.1](c_lite_v041_policy.md))。
+   これ以上の深掘り(null replicate 数の下限をプロンプトで指定する介入の是非など)は
+   Track B より優先度低。
+3. **GLM(zai)の正式な study はまだ実施していない。** runner 統合・smoke test 済み。
+   Track B 完了後、または並行する余力があれば独立 side-probe として投入する
+   (v0.4.1 方針§4.2)。なお `Dockerfile`/`scripts/glm-cli` として GLM/codex/claude CLI を
+   dev container イメージへ正式に組み込む作業が別セッションで進行し、`main` へ PR #18 として
+   マージ済み(このブランチとは独立)。
+4. Container 隔離、Null の独立再実行検証は Confirmatory 前の必須項目のまま。
 
 ## 7. 再現・確認コマンド
 
 ```bash
 make ci          # ruff / mypy / schema / secret / audit 全 Pass(tests は都度件数変動)
 
-# v0.4.0 Track A 世代 2(新 Suite ID を preregister してから)
-uv run python scripts/build_v040_suites.py --suite-ids <gen2 suite ids>
-uv run python scripts/run_v040_batch.py --parallel 3       # 再開可能。V040_GEN1_EXCLUDED_RUNS は
-                                                             # スロット単位の preregistered 除外
-uv run python scripts/audit_v040_blindness.py
-uv run python scripts/lock_v040_agent_runs.py
-uv run python scripts/finalize_v040.py                     # 実行対象全 run が Lock 済みの場合のみ
+# 各 side-probe は build → batch → audit → lock → finalize の共通パターン
+# (例:cycle-budget ablation。他の study も scripts/*_v040_*.py の対応スクリプトで同型)
+uv run python scripts/build_v040_cycle8_suites.py    # 一度だけ、以後は resumable(新 suite id 追加時のみ再実行)
+uv run python scripts/run_v040_cycle8_batch.py --parallel 4   # 再開可能
+uv run python scripts/audit_v040_cycle8_blindness.py
+uv run python scripts/lock_v040_cycle8_runs.py
+uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済みの場合のみ
+
+# 新しい study を追加する際の必須チェックリスト(このセッションで 2 回登録漏れを起こした):
+# 1. v040_grammar_suite.py に SUITE_IDS/MASTER_SEED/CONFIGS/RUN_IDS を追加
+# 2. scripts/run_v040_agent.py の _CONFIG_REGISTRY に追加 ← 忘れやすい
+# 3. build/batch/audit/lock/finalize の 5 スクリプトを既存 study からコピーして書き換え
+# 4. uv run pytest tests/unit/test_v040_grammar_and_contract.py -k registers_every_study
+#    (registry 完全性の回帰テスト、新 study を検知して自動でチェックする)
 ```
 
-`.runs/` `.state/` `.controller_truth/` は Git ignore 対象。開封済み Suite ID
-(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`, `v039-qual-*`, `v040-genA-*`)は再利用禁止。
-世代 2 は新規 suite id・新規 master seed で preregister すること(方針§3.2:世代間でのメタ過適合
-防止)。`evaluate_v037_runs`/`evaluate_v038_runs` は preregistered 除外を扱うための
-`excluded_pairs` 引数(デフォルト空集合)を持つ——インフラ障害等で run が実行不能になった場合は
-開封前にこの引数へ追加し、preregistration に deviation エントリを残すこと。
+`.runs/` `.state/` `.controller_truth/` は Git ignore 対象。開封済み Suite ID の prefix
+(`v037-repro-*`, `v038-qual-*`, `v038-dev-*`, `v039-qual-*`, `v040-genA-*`, `v040-solE-*`,
+`v040-scaf-*`, `v040-scaf2-*`, `v040-cyc8-*`)は再利用禁止。新しい study は新規 suite id・
+新規 master seed で preregister すること。`evaluate_v037_runs`/`evaluate_v038_runs` は
+`excluded_pairs`(インフラ障害等の preregistered 除外)と `expected_suite_count`
+(既定 4、非対称スロット構成では明示指定)の 2 引数を持つ(いずれもデフォルトで v0.3.7/8/9・
+世代 1 は無変更)。`agent_seed_aggregates` は実際に提出された `(agent_id, sampling_seed)`
+組のみを走査する(全直積ではない、非対称構成でのゼロ除算を 2026-08-29 に修正)。
 
 ## 8. 正本文書
 
@@ -271,6 +302,20 @@ uv run python scripts/finalize_v040.py                     # 実行対象全 run
 - [v0.4.0 方針](c_lite_v040_policy.md) / [v0.4.0 世代 1 Preregistration](v040_gen1_preregistration.json)
 - [v0.4.0 世代 1 検証](verification/v040_gen1_track_a_qualification.md) /
   [Selection Table](v040_gen1_selection.json) / [Diagnostics](v040_gen1_diagnostics.json)
+- [sol reasoning-effort ablation Preregistration](v040_sol_effort_ablation_preregistration.json) /
+  [検証](verification/v040_sol_effort_ablation_qualification.md) /
+  [Selection Table](v040_sol_ablation_selection.json) / [Diagnostics](v040_sol_ablation_diagnostics.json)
+- [scaffold-ladder Stage1 Preregistration](v040_scaffold_ladder_preregistration.json) /
+  [検証](verification/v040_scaffold_ladder_qualification.md) /
+  [Selection Table](v040_scaffold_ladder_selection.json) / [Diagnostics](v040_scaffold_ladder_diagnostics.json)
+- [scaffold-ladder Stage2 Preregistration](v040_scaffold_ladder_stage2_preregistration.json) /
+  [検証](verification/v040_scaffold_ladder_stage2_qualification.md) /
+  [Selection Table](v040_scaffold_stage2_selection.json) / [Diagnostics](v040_scaffold_stage2_diagnostics.json)
+- [cycle-budget ablation Preregistration](v040_cycle_budget_ablation_preregistration.json) /
+  [検証](verification/v040_cycle_budget_ablation_qualification.md) /
+  [Selection Table](v040_cycle8_selection.json) / [Diagnostics](v040_cycle8_diagnostics.json)
+- [累積発見台帳](v040_discovery_ledger.md)(102 run、study 完了ごとに更新)
+- **[v0.4.1 方針](c_lite_v041_policy.md)** — 現行の正本。P1 達成の宣言、Track B 起動計画
 - [進捗ログ](progress.md)
 
 ## 9. Git 状態
