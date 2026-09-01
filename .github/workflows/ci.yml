@@ -18,6 +18,9 @@ jobs:
         with:
           version: "0.11.32"
           enable-cache: true
+          # mypy targets python_version = "3.11" (pyproject.toml); on 3.12 the
+          # runner resolves numpy stubs that use 3.12-only `type` statements.
+          python-version: "3.11"
       - name: Install locked dependencies
         run: uv sync --extra dev --extra solver --frozen
       - name: Run quality, replay, holdout, schema, secret, and dependency gates
