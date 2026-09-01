@@ -314,7 +314,10 @@ class V037SubmissionValidation:
 
 
 def load_v037_submission(path: Path) -> V037AgentSubmission:
-    payload = json.loads(path.read_text())
+    return parse_v037_submission(json.loads(path.read_text()))
+
+
+def parse_v037_submission(payload: dict[str, Any]) -> V037AgentSubmission:
     packs: list[V037PackSubmission] = []
     for pack in payload["packs"]:
         cycles: list[V037CycleRecord] = []

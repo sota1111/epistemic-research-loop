@@ -229,3 +229,36 @@ did transfer in 6/8 cases (pooled USTR 0.75, median gain +0.09431), locating the
 discovery/falsification rather than translation. P1's generic assumption challenge improved mean
 TSDR and reduced mean FSPR relative to P0, but yielded only one persistent discovery; S1/S2 did not
 show a consistent discovery advantage. Communication ablation remains intentionally deferred.
+
+## 2026-08-27 — v0.3.8 fresh-context qualification with machine-audited provenance
+
+The v0.3.7 design was re-run with new suite identities and four interventions only: one fresh
+`claude -p` context per (suite, run) — 24 independent processes, CLI-authenticated with no provider
+API key; a mandatory per-replicate null provenance artifact (permutation / feature / fold / model /
+OOF hashes plus preserved statistics) validated before lock; controller-enforced lineage continuity
+for posterior-commit and two-hit policies; and P1 as the single frozen prompt. Two development
+suites (six fresh runs) were executed, locked, and opened first to fit the C1 isotonic map; the
+qualification truth was never used for fitting. All 30 runs completed autonomously; three needed
+one contract-repair retry (validation feedback only). Transcript audits found no forbidden-path
+access; two hits were numpy warnings naming the interpreter's site-packages path and were reviewed
+and allow-listed.
+
+The engineering qualification still failed, but every gate metric improved: median agent TSDR
+0.0833→0.1875, TSRR 0.0208→0.1875, worst FSPR 0.3333→0.2083, shared blind-spot 0.7917→0.7083,
+median Brier 0.2614→0.1813 (now passing), persistent ladder 1/4→4/4 levels by 2/3 agents (now
+passing), pooled USTR 0.75→1.00 with median sealed gain +0.2209. Observation-routing structure is
+now found almost universally (23/24); the persistent-unit families remain near-blind at the
+individual level (1–2/24 each). The dominant rejection blocker was located precisely: of 95
+falsified declarations that failed evidence-based rejection, 73 co-reported an independent
+implication strength above 0.05 in the same bundle — an internal contradiction, not missing
+evidence. Twelve persistent-clear discoveries died at the matched-negative gate through this path.
+
+## 2026-08-27 — v0.3.9 launched: terminal-resolution consistency
+
+v0.3.9 adds exactly one intervention over v0.3.8: a pre-lock contract that a terminal resolution
+must be internally consistent with the agent's own artifacts (falsified packs may not co-report
+implication strengths above 0.05 or research gains above their own full-refit null in two or more
+contexts; validated packs must report at least two implication supports). Repair feedback
+references only the agent's own numbers, so nothing about structures leaks. New suites
+v039-qual-e01..e04 were preregistered and locked with the same P1 prompt hash; C1 is reused from
+the locked v0.3.8 development fit. The 24 fresh-context qualification runs are in flight.
