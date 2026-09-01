@@ -1,6 +1,19 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-08-29
+**更新日:** 2026-08-30
+**直近の完了:** v0.4.5 要因計画(DOE)完了。v0.4.4-b(10列制約撤廃+疑似採点フィードバック、
+両方同時に変更)が導いた結論(36/36 baseline超え・adversarial validationがP3に
+22/22決定される)について、ユーザーから「列数が効いたのかフィードバックが効いたのか
+分からない」との指摘を受け、2×2×2要因計画(列数{10,Full}×フィードバック{None,
+Iterative}×アーム{P1,P3}、xhigh固定)を事前登録・実施(新規4セル・計32run、両コンペ、
+全run成功・盲検監査クリーン)。**最重要結果:P3は必要条件(ゲート)——列数・フィードバックの
+組み合わせを問わずP1アームでadversarial validationが出現したことは一度もない。**
+P3アーム限定では列数・フィードバック両方に正の主効果(列数の方がやや強い、弱い正の
+交互作用)。連続値応答(baseline上乗せ幅)では列数とフィードバックのどちらが効くかは
+コンペ依存(IEEE-CISはフィードバック優位、Santanderは列数優位)。詳細:
+[v0.4.5要因計画結果](verification/v045_factorial_design_results.md) /
+[v0.4.5方針](c_lite_v045_policy.md)。
+
 **現在の基準:** v0.4.0 Track A 世代 1 + 4 つの side-probe 全て完了(78 run)。**opus×P1(cycle=4)が
 3 study・14 replicate を通じて false promotion ゼロのまま P1 達成基準を満たしたと判定。**
 [v0.4.1 方針](c_lite_v041_policy.md)を策定し、Track B(IEEE-CIS)を起動。**Matched Negative
@@ -505,8 +518,10 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   v0.4.4-bで置き換え) / [ps -ef 盲検リーク事例](verification/v043_blindness_incident_ps_ef_leak.md)
 - **[10列制約インシデント記録](verification/v044_ten_column_constraint_incident.md)** —
   無承認継承の経緯・影響範囲の記録
-- **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — 現行の正本。v0.4.3-f を全特徴量
+- **[c_lite_v044_policy.md](c_lite_v044_policy.md)** — v0.4.3-f を全特徴量
   設計でやり直し完了(v0.4.4-b)
+- **[c_lite_v045_policy.md](c_lite_v045_policy.md)** — 現行の正本。列数×フィードバックの
+  交絡を分離する2×2×2要因計画、完了。[結果](verification/v045_factorial_design_results.md)
 - **[v0.4.4-b クロスコンペ統合分析(全特徴量、screening→確認→population拡大)](verification/v044_cross_competition_synthesis.md)**
   — 現行の正本。[IEEE-CIS](verification/v044_full_feature_diversity_ieee_cis.md) /
   [Santander](verification/v044_full_feature_diversity_santander.md)。36/36 run が
