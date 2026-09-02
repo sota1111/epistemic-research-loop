@@ -3,7 +3,16 @@ set -euo pipefail
 
 # Prefer an already injected secret. For local development only, fall back to
 # the ignored workspace .env file without exporting its unrelated variables.
-glm_env_file="${GLM_ENV_FILE:-/workspace/.env}"
+# 既定は ERL 独自イメージの WORKDIR(/workspace)だが、devcontainer 上では
+# リポジトリが別パスに置かれる。GLM_ENV_FILE > リポジトリ直下 > /workspace の順に探す。
+repo_env_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
+glm_env_file="${GLM_ENV_FILE:-}"
+if [[ -z "$glm_env_file" ]]; then
+  for candidate in "$repo_env_file" /workspace/.env; do
+    [[ -f "$candidate" ]] && { glm_env_file="$candidate"; break; }
+  done
+fi
+glm_env_file="${glm_env_file:-/workspace/.env}"
 if [[ -z "${GLM_API_KEY:-}" && -f "$glm_env_file" ]]; then
   # shellcheck disable=SC1090
   source "$glm_env_file"

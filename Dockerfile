@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-ARG PYTHON_VERSION=3.12
+# mypy targets python_version = "3.11" (pyproject.toml) and CI pins the same; on 3.12 the
+# resolved numpy stubs use 3.12-only `type` statements and typechecking fails before it starts.
+ARG PYTHON_VERSION=3.11
 ARG NODE_VERSION=20.20.2
 
 # Keep the Node toolchain separate so the small runtime image does not inherit it.
@@ -12,6 +14,8 @@ ARG UV_VERSION=0.11.32
 ARG CLAUDE_CODE_VERSION=2.1.241
 ARG CODEX_VERSION=0.149.1
 ARG ZAI_CLI_VERSION=0.3.5
+ARG KAGGLE_CLI_VERSION=2.2.4
+ARG SIGNATE_CLI_VERSION=0.12.0
 
 COPY --from=node-toolchain /usr/local/ /usr/local/
 
@@ -28,6 +32,8 @@ RUN apt-get update \
         ripgrep \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir "uv==${UV_VERSION}" \
+    && pip install --no-cache-dir "kaggle==${KAGGLE_CLI_VERSION}" \
+    && pip install --no-cache-dir "signate==${SIGNATE_CLI_VERSION}" \
     && npm install --global \
         "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
         "@openai/codex@${CODEX_VERSION}" \
