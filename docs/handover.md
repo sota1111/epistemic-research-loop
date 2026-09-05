@@ -7,10 +7,10 @@
 **2026-09-03、並走枠として Kaggle `kaggriculture` への参戦を決定した(§5)。**
 **作業は3つのコンペ別リポジトリに分割した**(下記)。ERL 本体はエンジンとして残る。
 
-> **2026-09-06、方針を転換した。**NEDO で回していたのは C-lite ではなく population を
-> 持った System A だった。ラウンド5 を停止し、順序を「強い B → 世界モデル → C と B の比較」
-> へ戻す。何を間違えていたかと、ここからの方針は
-> **[v0.5.0 方針転換 引き継ぎ書](v050_course_correction.md)**。
+> **2026-09-06、ERL 本体の完成へ軸を戻した。**唯一の実運用(NEDO)は
+> **エンジンを一度も使っておらず**(`epistemic_loop` の参照 0 件)、回していたのも
+> C-lite ではなく population を持った System A だった。残作業 12 件と順序、
+> 完成の判定条件は **[ERL を完成させるための引き継ぎ書](v050_course_correction.md)**。
 >
 > **世界モデルは作られていない。**`research_models.md` の 38 コンペ corpus が素材として
 > 最初からあるのに、Preferred State は手書き定数のままである。着手手順と、なぜ作らなかったかは
@@ -823,9 +823,14 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
   [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
   [Santander](controller_reference/santander_technique_taxonomy.md)
-- **[v0.5.0 方針転換 引き継ぎ書](v050_course_correction.md)** — 現行の正本。
-  回していた系の取り違え、蓄積を使わなかったこと、広い事前分布を狭い主張で上書きした件、
-  記録の訂正 4 件、競技と研究の分離、判定条件
+- **[ERL を完成させるための引き継ぎ書](v050_course_correction.md)** — 現行の正本。
+  エンジンが実運用で一度も使われていない件、世界モデル一次版の結果と 3 つの穴、
+  **winner corpus が C-lite の当の部分に事前分布を供給できないこと**、
+  プログラム水準の誤り 7 件、残作業 12 件と順序、成果物ベースの完成条件
+- **[世界モデル 結果](world_model/results.md)** — 38 コンペ corpus の一次版。
+  leave-one-domain-out で context 条件付けがチェックリストに優る(+0.0283、
+  95% 区間 [+0.0121, +0.0466])一方、反例を再現できず、Hypothesis Calibration と
+  Falsification Coverage は 38 コンペ中 0 件
 - **[世界モデル構築 引き継ぎ書](world_model_handover.md)** — 未着手。`research_models.md`
   §44 の 38 コンペ corpus から Preferred State 分布を作る手順、`DEFAULT_PREFERRED_TARGETS`
   が手書き定数である件、作らなかった理由 6 件、NEDO が示した転移の証拠
