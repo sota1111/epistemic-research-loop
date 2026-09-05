@@ -1,11 +1,16 @@
 # Epistemic Research Loop 引き継ぎ書
 
-**更新日:** 2026-09-03
+**更新日:** 2026-09-06
 
 **進行中(最優先で読むこと):** **v0.5.0 — SIGNATE NEDO Challenge コンテスト2「積付アルゴリズム」**へ
 主軸を移した。IEEE-CIS / Santander は継続だがラウンド1未実行。
 **2026-09-03、並走枠として Kaggle `kaggriculture` への参戦を決定した(§5)。**
 **作業は3つのコンペ別リポジトリに分割した**(下記)。ERL 本体はエンジンとして残る。
+
+> **エンジンに持ち帰る教訓は [v0.5.0 の教訓](v050_lessons.md) にまとめた。**
+> ラウンド 1〜5(約 70 個体・実提出 13 件)で確定したこと、間違えたこと、
+> ERL 本体へ入れるべき 10 機構。**本文の §1〜§4 はラウンド1 時点の記録**であり、
+> 以後の結果は教訓文書とコンペ側リポジトリが正本。
 
 ## 0. リポジトリ構成の変更(2026-09-02)
 
@@ -89,7 +94,7 @@ CANONICAL_FEATURES、Matched Negative、盲検監査)は一切使わない。継
 3. **ハーネスが追跡中のバックグラウンドタスクに `SIGSTOP` を送るとプロセス群ごと落ちる。**
    上限撤廃のつもりで送り、2時間45分の実行を破壊した。以後 `setsid` で独立セッション化。
 
-## 4. 現在地と次の一手
+## 4. 現在地と次の一手(2026-09-03 時点、以後は [v0.5.0 の教訓](v050_lessons.md) が正本)
 
 **プロービング中。** ローカル composite と実スコアの当てはめ(n=6):
 
@@ -809,6 +814,11 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
   [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
   [Santander](controller_reference/santander_technique_taxonomy.md)
+- **[v0.5.0 の教訓](v050_lessons.md)** — 現行の正本(NEDO 系)。分解能の法則
+  `32/√問数`、目的関数の同定不能性、族の到達上限による停止規則、監督プロセスの
+  失敗 6 件、ERL 本体へ入れるべき 10 機構。個々の経過は
+  [erl-nedo-baggage-loading](https://github.com/sota1111/erl-nedo-baggage-loading)
+  の `docs/programme.md` / `docs/round4_5.md`
 - [進捗ログ](progress.md)
 
 ## 9. Git 状態
