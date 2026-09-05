@@ -7,6 +7,11 @@
 **2026-09-03、並走枠として Kaggle `kaggriculture` への参戦を決定した(§5)。**
 **作業は3つのコンペ別リポジトリに分割した**(下記)。ERL 本体はエンジンとして残る。
 
+> **2026-09-06、方針を転換した。**NEDO で回していたのは C-lite ではなく population を
+> 持った System A だった。ラウンド5 を停止し、順序を「強い B → 世界モデル → C と B の比較」
+> へ戻す。何を間違えていたかと、ここからの方針は
+> **[v0.5.0 方針転換 引き継ぎ書](v050_course_correction.md)**。
+>
 > **世界モデルは作られていない。**`research_models.md` の 38 コンペ corpus が素材として
 > 最初からあるのに、Preferred State は手書き定数のままである。着手手順と、なぜ作らなかったかは
 > **[世界モデル構築 引き継ぎ書](world_model_handover.md)**。
@@ -818,6 +823,9 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
   [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
   [Santander](controller_reference/santander_technique_taxonomy.md)
+- **[v0.5.0 方針転換 引き継ぎ書](v050_course_correction.md)** — 現行の正本。
+  回していた系の取り違え、蓄積を使わなかったこと、広い事前分布を狭い主張で上書きした件、
+  記録の訂正 4 件、競技と研究の分離、判定条件
 - **[世界モデル構築 引き継ぎ書](world_model_handover.md)** — 未着手。`research_models.md`
   §44 の 38 コンペ corpus から Preferred State 分布を作る手順、`DEFAULT_PREFERRED_TARGETS`
   が手書き定数である件、作らなかった理由 6 件、NEDO が示した転移の証拠
