@@ -1,0 +1,160 @@
+{
+  "_source": "docs/research_models.md 44-116 (38-competition table and the four recurring-state paragraphs)",
+  "_rules": "docs/world_model/coding_rules.md (pre-registered 2026-09-06)",
+  "_coder": "claude-opus-5, single coder, inter-coder agreement UNMEASURED",
+  "_states": ["VF","DGP","DSU","ETI","DLQ","EU","HC","HCAL","FC","RMC","SED","ROB","PB"],
+  "_values": {"1": "decisive", "0": "not recorded", "-1": "counterexample"},
+  "competitions": [
+    {"name":"IEEE-CIS Fraud Detection","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"DGP":1,"DSU":1,"ETI":1},
+     "evidence":"time-aware validation (train 4 months, gap, predict later month); UID/client/card identity reconstruction; adversarial and time validation considered"},
+
+    {"name":"Santander Customer Transaction Prediction","domain":"tabular","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"DGP":1,"DLQ":1},
+     "evidence":"identifying synthetic/fake test rows; understanding of test generation changed the win condition"},
+
+    {"name":"Home Credit Default Risk","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"RMC":1},
+     "evidence":"multiple relational tables, time ordering, sequence representation"},
+
+    {"name":"Elo Merchant Category Recommendation","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"ETI":1,"SED":1},
+     "evidence":"CV design central; explicit shared judgement to trust CV over public LB; time information; ensemble"},
+
+    {"name":"TalkingData AdTracking Fraud Detection","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"ETI":1},
+     "evidence":"day-level holdout; time-aware target/count encoding"},
+
+    {"name":"Avito Demand Prediction","domain":"other","ctx":{"temporal":1,"entity":0,"decomposable":0},
+     "labels":{"VF":1,"RMC":1,"SED":1},
+     "evidence":"heterogeneous text/image/tabular representations; 3rd combined a 5-fold ensemble with a time-series-validation ensemble"},
+
+    {"name":"Mercari Price Suggestion","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"RMC":-1,"SED":-1},
+     "evidence":"1st concentrated on a single sparse-input MLP; named in the source as the counterexample to 'many families and complex ensembles are required'"},
+
+    {"name":"American Express Default Prediction","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"RMC":1,"SED":1},
+     "evidence":"customer time-series aggregation, autoregressive representation, OOF/time features; 16th made feature diversity/ensemble its explicit theme"},
+
+    {"name":"Jane Street Market Prediction","domain":"tabular","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"DGP":1,"ETI":1,"DLQ":1},
+     "evidence":"time embedding, stock/entity structure, target denoising, online inference design"},
+
+    {"name":"Rossmann Store Sales","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"ETI":1},
+     "evidence":"winner states reliable holdout design was the single most important insight; temporal holdout extrapolating to the private period"},
+
+    {"name":"Corporacion Favorita Grocery Sales","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"RMC":1},
+     "evidence":"LightGBM, CNN/DNN, seq2seq — markedly different families; time-series representation itself the main search object"},
+
+    {"name":"M5 Forecasting Accuracy","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":1},
+     "labels":{"VF":1,"RMC":1,"ROB":1},
+     "evidence":"mixed families at the top; hierarchical aggregation/scaling of the M5 metric affects evaluation stability — understanding the validation metric itself was the problem"},
+
+    {"name":"Web Traffic Time Series","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"RMC":1,"ROB":1},
+     "evidence":"seasonality, robust statistics, time-series-specific representation/ensemble"},
+
+    {"name":"Recruit Restaurant Visitor Forecasting","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1},
+     "evidence":"calendar/holiday handling, temporal imputation, mapping holidays onto same weekday"},
+
+    {"name":"ASHRAE Great Energy Predictor III","domain":"forecasting","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"DLQ":1},
+     "evidence":"building/meter/weather/time structure; handling of leak and external information was a major research theme"},
+
+    {"name":"TGS Salt Identification","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"RMC":1},
+     "evidence":"beyond architecture: augmentation, resolution, mask/post-processing, loss combinations explored"},
+
+    {"name":"Airbus Ship Detection","domain":"cv","ctx":{"temporal":0,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"ETI":1,"HC":1,"RMC":1},
+     "evidence":"explicit 'trust CV over LB' lesson; search for overlap between train images; classification/detection/segmentation as different problem decompositions"},
+
+    {"name":"Severstal Steel Defect Detection","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":1},
+     "labels":{"HC":1,"RMC":1,"ROB":1},
+     "evidence":"classification+segmentation and class-wise decomposition; decomposing into independent subtasks for stability"},
+
+    {"name":"RSNA Pneumonia Detection","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"HC":1,"RMC":1},
+     "evidence":"problem representation itself differed among top solutions (RetinaNet, single-stage detector, U-Net segmentation)"},
+
+    {"name":"SIIM-ACR Pneumothorax","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"HC":1,"RMC":1},
+     "evidence":"multiple problem decompositions present at the top: classification+segmentation, semi-supervision, mask filtering/scoring"},
+
+    {"name":"Humpback Whale Identification","domain":"cv","ctx":{"temporal":0,"entity":1,"decomposable":0},
+     "labels":{"HC":1,"RMC":1},
+     "evidence":"solution families differ greatly (classification, ArcFace, SIFT+Siamese); representation/hypothesis diversity mattered before model diversity"},
+
+    {"name":"Bengali.AI Handwritten Grapheme","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":1},
+     "labels":{"RMC":-1},
+     "evidence":"5th was seed diversity within one SEResNeXt family; named in the source as a counterexample to 'different model families are always required'"},
+
+    {"name":"Planet Amazon","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":1},
+     "labels":{"VF":1,"ROB":1,"PB":-1},
+     "evidence":"public/private shake-up observed; a case showing the risk of adapting to the LB alone"},
+
+    {"name":"Carvana Image Masking","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"HC":1,"RMC":1},
+     "evidence":"high-resolution segmentation, coarse-to-fine/refinement — problem decomposition mattered"},
+
+    {"name":"DSTL Satellite Imagery","domain":"cv","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"RMC":1,"SED":-1},
+     "evidence":"domain representation (multispectral bands, spectral indices, boundary treatment); 3rd competitive without a complex ensemble — counterexample to ensemble-diversity universalism"},
+
+    {"name":"Quora Insincere Questions","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"VF":1,"ROB":1,"PB":-1},
+     "evidence":"matching local CV to LB under a short runtime was central; large public-to-private shake-up recorded"},
+
+    {"name":"Jigsaw Toxic Comment Classification","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"DSU":1},
+     "evidence":"1st gained training signal from unlabeled test via pseudo-labeling"},
+
+    {"name":"Jigsaw Unintended Bias","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":1},
+     "labels":{"EU":1},
+     "evidence":"subgroup/BPSN/BNSP metric structure targeted directly; named as the clear case of metric decomposition and subgroup error understanding"},
+
+    {"name":"Quora Question Pairs","domain":"nlp","ctx":{"temporal":0,"entity":1,"decomposable":0},
+     "labels":{"ETI":1,"RMC":1},
+     "evidence":"duplicate/question relationship exploited; many features and multi-level models rather than a single text classifier"},
+
+    {"name":"Tweet Sentiment Extraction","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"DGP":1,"DLQ":1},
+     "evidence":"reverse-engineering the label generation rule; reranking and post-processing were the top differentiators"},
+
+    {"name":"Google QUEST Q&A Labeling","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"RMC":1},
+     "evidence":"multi-model beyond the BERT family; target/post-processing research; independent discovery of post-processing magic"},
+
+    {"name":"CommonLit Readability Prize","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"DSU":1,"RMC":1},
+     "evidence":"external data, teacher/student, sentence representation — representation learning beyond the training distribution"},
+
+    {"name":"Feedback Prize ELL","domain":"nlp","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"VF":1,"RMC":1},
+     "evidence":"back-translation, rank loss, pseudo-labeling, pooling explored; 2nd recorded the CV/PB contribution of rank loss and back-translation"},
+
+    {"name":"H&M Personalized Fashion Recommendations","domain":"recsys","ctx":{"temporal":0,"entity":1,"decomposable":0},
+     "labels":{"DGP":1,"RMC":1},
+     "evidence":"the research structure was candidate generation to feature engineering to ranking to ensembling; candidate recall defined the solution space"},
+
+    {"name":"Santander Product Recommendation","domain":"recsys","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"ETI":1},
+     "evidence":"customer history and temporal product transitions structured beyond raw multiclass prediction"},
+
+    {"name":"Riiid Answer Correctness Prediction","domain":"recsys","ctx":{"temporal":1,"entity":1,"decomposable":0},
+     "labels":{"VF":1,"ETI":1,"RMC":1,"SED":1},
+     "evidence":"lag/time features and online-inference consistency; diverse families; 28th's Transformer contributed to the ensemble despite a low standalone CV"},
+
+    {"name":"Google Landmark Retrieval","domain":"other","ctx":{"temporal":0,"entity":1,"decomposable":0},
+     "labels":{"DLQ":1,"RMC":1},
+     "evidence":"metric learning, clean-sample weighting, different training datasets, high-resolution fine-tuning, ensemble"},
+
+    {"name":"NOMAD Materials","domain":"other","ctx":{"temporal":0,"entity":0,"decomposable":0},
+     "labels":{"RMC":1,"SED":1},
+     "evidence":"representations differ fundamentally (crystal graph, handcrafted descriptors+GBDT, SOAP+NN); comparing representation/model error correlation was the scientific search"}
+  ]
+}
