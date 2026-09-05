@@ -7,6 +7,10 @@
 **2026-09-03、並走枠として Kaggle `kaggriculture` への参戦を決定した(§5)。**
 **作業は3つのコンペ別リポジトリに分割した**(下記)。ERL 本体はエンジンとして残る。
 
+> **世界モデルは作られていない。**`research_models.md` の 38 コンペ corpus が素材として
+> 最初からあるのに、Preferred State は手書き定数のままである。着手手順と、なぜ作らなかったかは
+> **[世界モデル構築 引き継ぎ書](world_model_handover.md)**。
+>
 > **エンジンに持ち帰る教訓は [v0.5.0 の教訓](v050_lessons.md) にまとめた。**
 > ラウンド 1〜5(約 70 個体・実提出 13 件)で確定したこと、間違えたこと、
 > ERL 本体へ入れるべき 10 機構。**本文の §1〜§4 はラウンド1 時点の記録**であり、
@@ -814,6 +818,9 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   [IEEE-CIS](controller_reference/ieee_cis_technique_taxonomy.md) /
   [Rossmann](controller_reference/rossmann_technique_taxonomy.md) /
   [Santander](controller_reference/santander_technique_taxonomy.md)
+- **[世界モデル構築 引き継ぎ書](world_model_handover.md)** — 未着手。`research_models.md`
+  §44 の 38 コンペ corpus から Preferred State 分布を作る手順、`DEFAULT_PREFERRED_TARGETS`
+  が手書き定数である件、作らなかった理由 6 件、NEDO が示した転移の証拠
 - **[v0.5.0 の教訓](v050_lessons.md)** — 現行の正本(NEDO 系)。分解能の法則
   `32/√問数`、目的関数の同定不能性、族の到達上限による停止規則、監督プロセスの
   失敗 6 件、ERL 本体へ入れるべき 10 機構。個々の経過は
