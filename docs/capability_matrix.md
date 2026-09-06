@@ -168,6 +168,7 @@ Written after a campaign in which four conclusions were drawn inside the noise a
 | 78 | 層2 の昇格条件は**問題クラス 2 つ**(コンペ 2 つではない)。規則はコードが当てる | enforced | `taxonomy/layer2.py` `PromotionRule`; `docs/controller_reference/layer2_registry.json`; `erlctl taxonomy status` | `tests/unit/test_taxonomy_layer2.py`, `tests/integration/test_cli_measure.py` |
 | 79 | 単一モデルでしか観測されていないクラスは昇格しない | enforced | `PromotionRule.minimum_agent_models`, applied only when every direct observation names a model | `tests/unit/test_taxonomy_layer2.py` |
 | 80 | 登録簿の観測はすべて実在する出典を指す | enforced | test resolves every `source` path in the registry | `tests/unit/test_taxonomy_layer2.py` |
+| 83 | 腕の体数を先に決める — 検出力と自由度から必要体数を計算する | enforced | `measurement/power.py`; `erlctl measure arms`; Student-t quantiles verified against published tables | `tests/unit/test_measurement_power.py` |
 | 82 | README の `erlctl` 手順が並べたとおり動く — 14 手を別プロセスで通し、replay が一致する | enforced | `scripts/engine_walkthrough.py`; prompt root resolves to the repository, not the run home | `tests/e2e/test_engine_walkthrough.py`, [記録](verification/engine_walkthrough.md) |
 | 81 | novelty は自己申告ではなく archive に対して**測る** — System B の効用に QDContribution が入る | enforced | `scoring/qd_contribution.py`; `research_graph.select_experiments` passes the cell census; `UtilityBreakdown.diversity_method` records which was used | `tests/unit/test_qd_contribution.py` |
 

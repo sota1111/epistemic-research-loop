@@ -78,7 +78,7 @@ def scale_constant_from_spread(per_task_spread: float, *, confidence: float = DE
     """
     if per_task_spread < 0:
         raise ValueError("per_task_spread must be non-negative")
-    return _z_for(confidence) * per_task_spread
+    return z_for_confidence(confidence) * per_task_spread
 
 
 def paired_differences(
@@ -134,7 +134,7 @@ def paired_bootstrap_interval(
     high = _percentile(means, 1 - tail)
     if minimum_spread is not None:
         centre = sum(differences) / count
-        floor = _z_for(confidence) * minimum_spread / math.sqrt(count)
+        floor = z_for_confidence(confidence) * minimum_spread / math.sqrt(count)
         low = min(low, centre - floor)
         high = max(high, centre + floor)
     return low, high
@@ -340,7 +340,8 @@ def _percentile(sorted_values: Sequence[float], fraction: float) -> float:
     return sorted_values[lower] * (1 - weight) + sorted_values[upper] * weight
 
 
-def _z_for(confidence: float) -> float:
+def z_for_confidence(confidence: float) -> float:
+    """Two-sided normal quantile for a confidence level."""
     if not 0 < confidence < 1:
         raise ValueError("confidence must be in (0, 1)")
     if abs(confidence - DEFAULT_CONFIDENCE) < 1e-9:

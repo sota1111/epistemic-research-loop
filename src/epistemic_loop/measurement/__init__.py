@@ -7,10 +7,21 @@ Three rules, in the order `docs/v050_course_correction.md` §4 puts them:
 2. :mod:`epistemic_loop.measurement.task_budget` -- iterate on one task set, rank on another.
 3. :mod:`epistemic_loop.measurement.task_scores` -- persist the raw per-task vector; the composite
    is derived.
+
+And, for §4's "decide the number of individuals first",
+:mod:`epistemic_loop.measurement.power` -- what an arm of a given size can actually see.
 """
 
 from __future__ import annotations
 
+from epistemic_loop.measurement.power import (
+    ArmPlan,
+    arm_size_for,
+    measurement_spread,
+    plan_arm,
+    student_t_quantile,
+    total_spread,
+)
 from epistemic_loop.measurement.resolution import (
     ComparisonVerdict,
     GatedRanking,
@@ -34,6 +45,7 @@ from epistemic_loop.measurement.task_scores import (
 )
 
 __all__ = [
+    "ArmPlan",
     "ComparisonVerdict",
     "DerivedMetricError",
     "GatedRanking",
@@ -42,14 +54,19 @@ __all__ = [
     "TaskBudgetPolicy",
     "TaskScore",
     "TaskScoreStore",
+    "arm_size_for",
     "compare_pair",
     "composite_scores",
     "gated_ranking",
     "paired_bootstrap_interval",
+    "measurement_spread",
     "paired_differences",
     "per_task_composite",
+    "plan_arm",
     "recompute",
     "required_task_count",
     "resolution_half_width",
     "scale_constant_from_spread",
+    "student_t_quantile",
+    "total_spread",
 ]

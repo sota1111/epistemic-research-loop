@@ -78,6 +78,7 @@ from epistemic_loop.holdout.leaderboard import LeaderboardGate
 from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
 from epistemic_loop.holdout.violations import HoldoutViolationError
+from epistemic_loop.measurement.power import arm_size_for, plan_arm
 from epistemic_loop.measurement.resolution import (
     NEDO_SCALE_CONSTANT,
     ResolutionGateError,
@@ -1783,6 +1784,70 @@ def measure_plan(
         else:
             payload["affordable"][purpose] = {"ok": True}
     _echo(payload)
+
+
+@measure_app.command("arms")
+def measure_arms(  # noqa: PLR0913
+    difference: float | None = typer.Option(None, "--difference", help="difference between arm means to detect"),
+    arm_size: int | None = typer.Option(None, "--arm-size", help="individuals per arm, to ask what it can see"),
+    individual_spread: float = typer.Option(4.5, "--individual-spread", help="spread between individuals"),
+    half_width: float = typer.Option(2.8, "--half-width", help="resolution of one individual's score"),
+    power: float = typer.Option(0.8, "--power"),
+    alpha: float = typer.Option(0.05, "--alpha"),
+) -> None:
+    """How many individuals an arm needs, or what the arm you have can see.
+
+    Run this before the arms are built. Both sources of spread are counted -- the individuals differ
+    from each other, and each individual's own score is an estimate -- and the quantiles are
+    Student's t, because an arm of five has eight degrees of freedom.
+    """
+    if (difference is None) == (arm_size is None):
+        raise typer.BadParameter("provide exactly one of --difference or --arm-size")
+    if arm_size is None:
+        assert difference is not None
+        needed = arm_size_for(
+            difference,
+            individual_spread=individual_spread,
+            measurement_half_width=half_width,
+            power=power,
+            alpha=alpha,
+        )
+        plan = plan_arm(
+            needed,
+            individual_spread=individual_spread,
+            measurement_half_width=half_width,
+            power=power,
+            alpha=alpha,
+        )
+        _echo(
+            {
+                "target_difference": difference,
+                "individuals_per_arm": needed,
+                "detectable_difference": round(plan.detectable_difference, 3),
+                "standard_error": round(plan.standard_error, 3),
+                "power": power,
+                "alpha": alpha,
+                "summary": plan.summary(),
+            }
+        )
+        return
+    plan = plan_arm(
+        arm_size,
+        individual_spread=individual_spread,
+        measurement_half_width=half_width,
+        power=power,
+        alpha=alpha,
+    )
+    _echo(
+        {
+            "individuals_per_arm": plan.arm_size,
+            "detectable_difference": round(plan.detectable_difference, 3),
+            "standard_error": round(plan.standard_error, 3),
+            "power": power,
+            "alpha": alpha,
+            "summary": plan.summary(),
+        }
+    )
 
 
 def _scored_vectors(scores: Path, metric: str, weights: str | None) -> dict[str, dict[str, float]]:
