@@ -4,6 +4,7 @@
 **規則:** [coding_rules.md](coding_rules.md)(符号化前に確定・commit 済み)
 **符号化:** [corpus_coding.json](corpus_coding.json) — 38 コンペ × 13 状態
 **当てはめ:** `scripts/fit_world_model.py` → [world_model.json](world_model.json)
+**入口:** [世界モデルとは何か](README.md)
 
 ---
 

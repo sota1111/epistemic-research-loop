@@ -4,6 +4,7 @@
 **予測本体:** [prediction_nedo.json](prediction_nedo.json)(`scripts/predict_world_model.py` が
 committed の [world_model.json](world_model.json) / [world_model_counterexample.json](world_model_counterexample.json)
 から機械的に生成。**手で書いた数字は 1 つも無い**)
+**入口:** [世界モデルとは何か](README.md)
 **位置づけ:** [結果](results.md) §4 の 4、[引き継ぎ書](../v050_course_correction.md) §7 の 1 ——
 **世界モデルの最初の問題クラス外テストケース**
 

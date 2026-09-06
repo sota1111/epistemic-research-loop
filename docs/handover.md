@@ -42,7 +42,8 @@ ERL は「KPI を改善する AI」ではなく「**未知の勝ち筋を発見�
 | # | 文書 | 何が書いてあるか |
 | ---: | --- | --- |
 | 1 | **[ERL を完成させるための引き継ぎ書](v050_course_correction.md)** | **現行の正本。**残作業 12 件、順序、成果物ベースの完成条件、プログラム水準の誤り 7 件 |
-| 2 | [世界モデル 結果](world_model/results.md) | 38 コンペ corpus の一次版。leave-one-domain-out の結果と 3 つの穴 |
+| 2 | **[世界モデルとは何か](world_model/README.md)** | **世界モデルの入口。**何を符号化し、何で条件付け、何が言えて何が言えないか。NEDO 適用まで |
+| 2b | [世界モデル 結果](world_model/results.md) | 38 コンペ corpus の一次版。leave-one-domain-out の結果と 3 つの穴 |
 | 3 | [世界モデル構築 引き継ぎ書](world_model_handover.md) | 何を作るのか、なぜ作られてこなかったのか |
 | 4 | [v0.5.0 の教訓](v050_lessons.md) | 分解能の法則 `32/√問数`、目的関数の同定不能性、監督プロセスの失敗 6 件 |
 | 5 | [研究設計](research_basis_and_design_rationale.md) / [調査結果](research_models.md) | 仕様の正本。System A/B/B+/C の定義、13 状態、38 コンペ corpus |

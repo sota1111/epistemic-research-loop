@@ -4,6 +4,7 @@
 **規則:** [coding_rules_v2_counterexample.md](coding_rules_v2_counterexample.md)(**当てはめ前に確定・commit 済み**)
 **当てはめ:** `scripts/fit_world_model_counterexample.py` → [world_model_counterexample.json](world_model_counterexample.json)
 **一次版:** [results.md](results.md) は変更していない。corpus のラベルも 1 件も触っていない
+**入口:** [世界モデルとは何か](README.md)
 
 ---
 

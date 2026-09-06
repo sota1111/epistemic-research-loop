@@ -16,7 +16,7 @@
 | NEDO 用の run 設定(競技リポジトリを開発させる executor、提出を機械には絶対にさせない予算) | `configs/competitions/nedo_baggage_loading.yaml`(読み込みテストあり) |
 | campaign の採点結果をエンジンの課題ごとスコア置き場へ入れる変換 | `scripts/import_nedo_results.py`(**campaign の composite を誤差 0.00000 で再現**) |
 | 分解能ゲートを実データへ当てた結果 | [記録](verification/nedo_resolution_gate.md) |
-| 世界モデルの NEDO 予測(**符号化前に事前登録**) | [prediction_nedo.md](world_model/prediction_nedo.md) |
+| 世界モデルの NEDO 予測(**符号化前に事前登録**) | [prediction_nedo.md](world_model/prediction_nedo.md)。世界モデル自体の説明は [入口](world_model/README.md) |
 
 ## 1. 済んでいること
 
