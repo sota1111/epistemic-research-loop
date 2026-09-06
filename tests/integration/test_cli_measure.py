@@ -175,3 +175,47 @@ def test_taxonomy_status_filters_by_layer() -> None:
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.output)["classes"] == []  # no solution class clears the raised bar
+
+
+def test_rank_accepts_a_specification_file_with_a_gate(tmp_path: Path) -> None:
+    """The real campaign's scoring is not a weighted sum: below a placed-item fraction every
+    component except fill stops counting. `--spec` is how that reaches the comparator."""
+    scores = tmp_path / "scores.jsonl"
+    TaskScoreStore(scores).append(
+        [TaskScore("a", f"t{index:02d}", {"fill": 40.0 + index, "cog": 90.0, "placed": 0.40}) for index in range(16)]
+        + [TaskScore("b", f"t{index:02d}", {"fill": 41.0 + index, "cog": 10.0, "placed": 0.60}) for index in range(16)]
+    )
+    spec = tmp_path / "spec.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "weights": {"fill": 0.6, "cog": 0.4},
+                "gate": {"metric": "placed", "minimum": 0.48, "kept_metrics": ["fill"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    gated = CliRunner().invoke(app, ["measure", "rank", "--scores", str(scores), "--spec", str(spec), "--strict"])
+    ungated = CliRunner().invoke(
+        app,
+        ["measure", "rank", "--scores", str(scores), "--weights", json.dumps({"fill": 0.6, "cog": 0.4}), "--strict"],
+    )
+
+    assert gated.exit_code == 0, gated.output
+    assert json.loads(gated.output)["total_order"] == ["b", "a"]  # a is gated down to fill alone
+    assert json.loads(ungated.output)["total_order"] == ["a", "b"]  # its cog score would win
+
+
+def test_weights_and_spec_are_mutually_exclusive(tmp_path: Path) -> None:
+    scores = tmp_path / "scores.jsonl"
+    TaskScoreStore(scores).append([TaskScore("a", "t01", {"fill": 40.0})])
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({"weights": {"fill": 1.0}}), encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        ["measure", "rank", "--scores", str(scores), "--spec", str(spec), "--weights", json.dumps({"fill": 1.0})],
+    )
+
+    assert result.exit_code != 0

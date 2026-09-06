@@ -18,6 +18,7 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 #: Names that mean "already combined". Storing one of these defeats the point of the store: the
 #: recomputation would silently read a composite built under the previous weights.
@@ -130,32 +131,103 @@ class TaskScoreStore:
         return vectors
 
 
+@dataclass(frozen=True)
+class TaskGate:
+    """A per-task threshold below which most of the score stops counting.
+
+    Real scoring systems are rarely a plain weighted sum. The loading competition zeroes every
+    component except fill once a task falls below a placed-item fraction, and a recomputation that
+    ignores that reproduces neither the ranking nor the campaign's own numbers. Expressing it here
+    keeps the gate in the derivation, where a change of threshold is a recomputation, rather than
+    baked into whatever wrote the scores.
+    """
+
+    metric: str
+    minimum: float
+    kept_metrics: tuple[str, ...] = ()
+
+    def passes(self, metrics: Mapping[str, float]) -> bool:
+        if self.metric not in metrics:
+            raise KeyError(f"gate metric '{self.metric}' is not in the stored vector")
+        return metrics[self.metric] >= self.minimum
+
+
+@dataclass(frozen=True)
+class CompositeSpec:
+    """How raw per-task metrics combine into the number a decision is made on."""
+
+    weights: Mapping[str, float]
+    gate: TaskGate | None = None
+
+    def __post_init__(self) -> None:
+        if not self.weights:
+            raise ValueError("weights must not be empty")
+
+    def required_metrics(self) -> tuple[str, ...]:
+        names = set(self.weights)
+        if self.gate is not None:
+            names.add(self.gate.metric)
+        return tuple(sorted(names))
+
+    def score(self, metrics: Mapping[str, float]) -> float:
+        counted = self.weights
+        if self.gate is not None and not self.gate.passes(metrics):
+            counted = {name: self.weights[name] for name in self.gate.kept_metrics if name in self.weights}
+        return sum(weight * metrics[name] for name, weight in counted.items())
+
+    @classmethod
+    def from_mapping(cls, payload: Mapping[str, Any]) -> CompositeSpec:
+        """Accept either a bare weight mapping or ``{"weights": ..., "gate": ...}``."""
+        if "weights" not in payload:
+            return cls(weights={name: float(value) for name, value in payload.items()})
+        gate_payload = payload.get("gate")
+        gate = (
+            TaskGate(
+                metric=str(gate_payload["metric"]),
+                minimum=float(gate_payload["minimum"]),
+                kept_metrics=tuple(str(name) for name in gate_payload.get("kept_metrics", ())),
+            )
+            if isinstance(gate_payload, Mapping)
+            else None
+        )
+        weights: Mapping[str, Any] = payload["weights"]
+        return cls(weights={name: float(value) for name, value in weights.items()}, gate=gate)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {"weights": dict(self.weights)}
+        if self.gate is not None:
+            payload["gate"] = {
+                "metric": self.gate.metric,
+                "minimum": self.gate.minimum,
+                "kept_metrics": list(self.gate.kept_metrics),
+            }
+        return payload
+
+
 def per_task_composite(
     scores: Sequence[TaskScore],
-    weights: Mapping[str, float],
+    weights: Mapping[str, float] | CompositeSpec,
 ) -> dict[str, dict[str, float]]:
-    """Derive ``{candidate: {task: composite}}`` under one set of weights.
+    """Derive ``{candidate: {task: composite}}`` under one scoring specification.
 
     Missing metrics are an error rather than a zero: a candidate scored before a metric existed is
     not a candidate that scored zero on it, and silently treating it as one is how a recomputation
     quietly changes a ranking.
     """
-    if not weights:
-        raise ValueError("weights must not be empty")
+    spec = weights if isinstance(weights, CompositeSpec) else CompositeSpec.from_mapping(weights)
+    required = spec.required_metrics()
     derived: dict[str, dict[str, float]] = {}
     for row in scores:
-        missing = [name for name in weights if name not in row.metrics]
+        missing = [name for name in required if name not in row.metrics]
         if missing:
             raise KeyError(f"{row.candidate_id}/{row.task_id} is missing metric(s): {', '.join(sorted(missing))}")
-        derived.setdefault(row.candidate_id, {})[row.task_id] = sum(
-            weight * row.metrics[name] for name, weight in weights.items()
-        )
+        derived.setdefault(row.candidate_id, {})[row.task_id] = spec.score(row.metrics)
     return derived
 
 
 def composite_scores(
     scores: Sequence[TaskScore],
-    weights: Mapping[str, float],
+    weights: Mapping[str, float] | CompositeSpec,
     *,
     tasks: Sequence[str] | None = None,
 ) -> dict[str, float]:
@@ -175,7 +247,10 @@ def composite_scores(
 
 
 def recompute(
-    store: TaskScoreStore, weights: Mapping[str, float], *, tasks: Sequence[str] | None = None
+    store: TaskScoreStore,
+    weights: Mapping[str, float] | CompositeSpec,
+    *,
+    tasks: Sequence[str] | None = None,
 ) -> dict[str, float]:
     """Re-derive every candidate's composite under new weights, without re-scoring anything."""
     return composite_scores(tuple(store.latest().values()), weights, tasks=tasks)

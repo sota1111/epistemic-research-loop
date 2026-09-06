@@ -87,7 +87,12 @@ from epistemic_loop.measurement.resolution import (
     required_task_count,
 )
 from epistemic_loop.measurement.task_budget import TaskBudgetError, TaskBudgetPolicy
-from epistemic_loop.measurement.task_scores import TaskScoreStore, composite_scores
+from epistemic_loop.measurement.task_scores import (
+    CompositeSpec,
+    TaskScoreStore,
+    composite_scores,
+    per_task_composite,
+)
 from epistemic_loop.oof.diversity import analyze as analyze_oof
 from epistemic_loop.oof.ensemble import build_cross_fitted_ensemble
 from epistemic_loop.oof.store import OOFStore
@@ -1850,27 +1855,31 @@ def measure_arms(  # noqa: PLR0913
     )
 
 
-def _scored_vectors(scores: Path, metric: str, weights: str | None) -> dict[str, dict[str, float]]:
+def _composite_spec(weights: str | None, spec: Path | None) -> CompositeSpec | None:
+    """Weights inline, or a specification file that can also carry a per-task gate."""
+    if weights is not None and spec is not None:
+        raise typer.BadParameter("provide at most one of --weights and --spec")
+    if spec is not None:
+        return CompositeSpec.from_mapping(json.loads(spec.read_text(encoding="utf-8")))
+    if weights is not None:
+        return CompositeSpec.from_mapping(json.loads(weights))
+    return None
+
+
+def _scored_vectors(scores: Path, metric: str, composite: CompositeSpec | None) -> dict[str, dict[str, float]]:
     """Per-task vectors for one raw metric, or for a composite derived from the raw ones."""
     store = TaskScoreStore(scores)
     if not store.load():
         raise typer.BadParameter(f"{scores} holds no task scores")
-    if weights is None:
+    if composite is None:
         vectors = store.metric_vectors(metric)
         if not vectors:
             raise typer.BadParameter(f"no rows carry metric '{metric}'")
         return vectors
-    parsed = {name: float(value) for name, value in json.loads(weights).items()}
-    rows = tuple(store.latest().values())
-    per_task: dict[str, dict[str, float]] = {}
-    for row in rows:
-        missing = [name for name in parsed if name not in row.metrics]
-        if missing:
-            raise typer.BadParameter(f"{row.candidate_id}/{row.task_id} is missing {', '.join(sorted(missing))}")
-        per_task.setdefault(row.candidate_id, {})[row.task_id] = sum(
-            weight * row.metrics[name] for name, weight in parsed.items()
-        )
-    return per_task
+    try:
+        return per_task_composite(tuple(store.latest().values()), composite)
+    except KeyError as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @measure_app.command("compare")
@@ -1880,13 +1889,14 @@ def measure_compare(  # noqa: PLR0913
     right: str = typer.Option(..., "--right"),
     metric: str = typer.Option("score", "--metric", help="raw metric name; ignored when --weights is given"),
     weights: str | None = typer.Option(None, "--weights", help="JSON weights; derives the composite"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
     direction: str = typer.Option("maximize", "--direction"),
     scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
     minimum_spread: float | None = typer.Option(None, "--minimum-spread", help="floor on the per-task spread"),
     seed: int = typer.Option(0, "--seed"),
 ) -> None:
     """Paired-bootstrap one comparison. Reports no winner when the interval spans zero."""
-    vectors = _scored_vectors(scores, metric, weights)
+    vectors = _scored_vectors(scores, metric, _composite_spec(weights, spec))
     for name in (left, right):
         if name not in vectors:
             raise typer.BadParameter(f"unknown candidate: {name}")
@@ -1921,6 +1931,7 @@ def measure_rank(  # noqa: PLR0913
     scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
     metric: str = typer.Option("score", "--metric"),
     weights: str | None = typer.Option(None, "--weights"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
     direction: str = typer.Option("maximize", "--direction"),
     scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
     minimum_spread: float | None = typer.Option(None, "--minimum-spread"),
@@ -1932,7 +1943,7 @@ def measure_rank(  # noqa: PLR0913
     This is the command that belongs in front of a selection step. A tier with more than one name
     means selection has to either buy more tasks or pick on something other than score.
     """
-    vectors = _scored_vectors(scores, metric, weights)
+    vectors = _scored_vectors(scores, metric, _composite_spec(weights, spec))
     ranking = gated_ranking(
         vectors,
         metric_direction=direction,
@@ -1963,7 +1974,8 @@ def measure_rank(  # noqa: PLR0913
 @measure_app.command("recompute")
 def measure_recompute(
     scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
-    weights: str = typer.Option(..., "--weights", help="JSON object of raw metric weights"),
+    weights: str | None = typer.Option(None, "--weights", help="JSON object of raw metric weights"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
     tasks: Path | None = typer.Option(None, "--tasks", exists=True, dir_okay=False, help="newline-separated task ids"),
 ) -> None:
     """Re-derive composites under new weights from the stored raw vectors, without re-scoring.
@@ -1976,14 +1988,16 @@ def measure_recompute(
     if not rows:
         raise typer.BadParameter(f"{scores} holds no task scores")
     selected = tasks.read_text(encoding="utf-8").split() if tasks is not None else None
-    parsed = {name: float(value) for name, value in json.loads(weights).items()}
+    composite = _composite_spec(weights, spec)
+    if composite is None:
+        raise typer.BadParameter("provide --weights or --spec")
     try:
-        derived = composite_scores(rows, parsed, tasks=selected)
+        derived = composite_scores(rows, composite, tasks=selected)
     except KeyError as error:
         raise typer.BadParameter(str(error)) from error
     _echo(
         {
-            "weights": parsed,
+            "spec": composite.to_dict(),
             "tasks": len(selected) if selected is not None else len(store.tasks()),
             "composites": {name: round(value, 4) for name, value in sorted(derived.items())},
         }

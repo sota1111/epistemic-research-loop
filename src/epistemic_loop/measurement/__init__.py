@@ -36,7 +36,9 @@ from epistemic_loop.measurement.resolution import (
 )
 from epistemic_loop.measurement.task_budget import TaskBudgetError, TaskBudgetPolicy
 from epistemic_loop.measurement.task_scores import (
+    CompositeSpec,
     DerivedMetricError,
+    TaskGate,
     TaskScore,
     TaskScoreStore,
     composite_scores,
@@ -47,11 +49,13 @@ from epistemic_loop.measurement.task_scores import (
 __all__ = [
     "ArmPlan",
     "ComparisonVerdict",
+    "CompositeSpec",
     "DerivedMetricError",
     "GatedRanking",
     "ResolutionGateError",
     "TaskBudgetError",
     "TaskBudgetPolicy",
+    "TaskGate",
     "TaskScore",
     "TaskScoreStore",
     "arm_size_for",

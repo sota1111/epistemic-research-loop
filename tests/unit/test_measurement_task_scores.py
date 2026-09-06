@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
 from epistemic_loop.measurement.task_scores import (
+    CompositeSpec,
     DerivedMetricError,
+    TaskGate,
     TaskScore,
     TaskScoreStore,
     composite_scores,
@@ -113,3 +116,59 @@ def test_round_trips_through_disk(tmp_path: Path) -> None:
     reread = TaskScoreStore(tmp_path / "scores.jsonl").load()
 
     assert reread == tuple(_rows())
+
+
+def test_a_task_gate_drops_the_components_it_gates_and_keeps_the_rest() -> None:
+    """The loading competition zeroes every component except fill below a placed-item fraction.
+    A plain weighted sum reproduces neither its ranking nor its own published composite."""
+    spec = CompositeSpec(
+        weights={"fill_score": 0.6, "cog_score": 0.2, "stability_score": 0.2},
+        gate=TaskGate(metric="placed_fraction", minimum=0.48, kept_metrics=("fill_score",)),
+    )
+    passed = {"fill_score": 50.0, "cog_score": 60.0, "stability_score": 80.0, "placed_fraction": 0.80}
+    failed = {**passed, "placed_fraction": 0.30}
+
+    assert spec.score(passed) == pytest.approx(0.6 * 50 + 0.2 * 60 + 0.2 * 80)
+    assert spec.score(failed) == pytest.approx(0.6 * 50)
+
+
+def test_the_gate_metric_is_required_even_though_it_carries_no_weight() -> None:
+    spec = CompositeSpec(
+        weights={"fill_score": 1.0},
+        gate=TaskGate(metric="placed_fraction", minimum=0.48, kept_metrics=("fill_score",)),
+    )
+    rows = [TaskScore("cand-a", "t01", {"fill_score": 50.0})]
+
+    assert spec.required_metrics() == ("fill_score", "placed_fraction")
+    with pytest.raises(KeyError, match="placed_fraction"):
+        per_task_composite(rows, spec)
+
+
+def test_a_specification_round_trips_through_json() -> None:
+    spec = CompositeSpec(
+        weights={"fill_score": 0.55, "cog_score": 0.15},
+        gate=TaskGate(metric="placed_fraction", minimum=0.48, kept_metrics=("fill_score",)),
+    )
+
+    restored = CompositeSpec.from_mapping(json.loads(json.dumps(spec.to_dict())))
+
+    assert restored == spec
+    # A bare weight mapping is still accepted, so the simple case needs no wrapper.
+    assert CompositeSpec.from_mapping({"fill_score": 1.0}).gate is None
+
+
+def test_lowering_the_gate_threshold_is_a_recomputation_not_a_rescore(tmp_path: Path) -> None:
+    store = TaskScoreStore(tmp_path / "scores.jsonl")
+    store.append(
+        [
+            TaskScore("cand-a", "t01", {"fill_score": 40.0, "cog_score": 90.0, "placed_fraction": 0.40}),
+            TaskScore("cand-b", "t01", {"fill_score": 45.0, "cog_score": 10.0, "placed_fraction": 0.60}),
+        ]
+    )
+    weights = {"fill_score": 0.6, "cog_score": 0.4}
+
+    strict = recompute(store, CompositeSpec(weights, TaskGate("placed_fraction", 0.48, ("fill_score",))))
+    relaxed = recompute(store, CompositeSpec(weights, TaskGate("placed_fraction", 0.30, ("fill_score",))))
+
+    assert strict["cand-b"] > strict["cand-a"]  # cand-a is gated down to fill alone
+    assert relaxed["cand-a"] > relaxed["cand-b"]  # with the gate lowered its cog score counts

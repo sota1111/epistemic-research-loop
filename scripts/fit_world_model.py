@@ -123,7 +123,9 @@ def main() -> None:
         json.dumps(
             {
                 "_rules": "docs/world_model/coding_rules.md",
-                "_coder_note": "single coder; inter-coder agreement UNMEASURED. Do not wire into Preferred State defaults.",
+                "_coder_note": (
+                    "single coder; inter-coder agreement UNMEASURED. Do not wire into Preferred State defaults."
+                ),
                 "_context_keys": list(CTX_KEYS),
                 "_shrinkage_k0": K0,
                 "validation": {
