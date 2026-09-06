@@ -38,7 +38,7 @@ Track B は列名を意図的に匿名化・汎用ラベル化しているため
 ## 層2(データ形式非依存メタ技術)との照合
 
 v041-trackb-03(修正済み Suite)の discovery ログは、上記層1の6クラスとは0/6一致だったが、
-[層2 taxonomy](meta_technique_taxonomy_layer2.md) の2クラス双方と一致した——promoted 27件中
+[層2 taxonomy](tabular_technique_taxonomy_layer2.md) の2クラス双方と一致した——promoted 27件中
 17件(63%)が層2クラス#1(context プーリング)、複数 run が独立に層2クラス#2
 (occurrence/sparsity 集約)に到達している。詳細は
 [クロスコンペ統合分析](../verification/v042_cross_competition_synthesis.md)を参照。

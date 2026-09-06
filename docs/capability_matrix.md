@@ -165,6 +165,9 @@ Written after a campaign in which four conclusions were drawn inside the noise a
 | 75 | Preferred-state に既定の目標ベクトルが無い — 供給されない状態は gap 0 ではなく欠測 | enforced | `controller/research_state.py` (no default vector; `preferred_state_missing`), `config.PreferredStateConfig.targets` empty by default | `tests/unit/test_preferred_state_targets.py` |
 | 76 | 仕様 13 状態のうち測れない 7 状態が名前で報告される | derived | `domain/preferred_state.py`; `ResearchStateSnapshot.unmeasured_states` | `tests/unit/test_preferred_state_targets.py` |
 | 77 | 目標値を置くには出所(`source`)が要る | enforced | `config.PreferredStateConfig`; unknown dimension names are refused | `tests/unit/test_preferred_state_targets.py` |
+| 78 | 層2 の昇格条件は**問題クラス 2 つ**(コンペ 2 つではない)。規則はコードが当てる | enforced | `taxonomy/layer2.py` `PromotionRule`; `docs/controller_reference/layer2_registry.json`; `erlctl taxonomy status` | `tests/unit/test_taxonomy_layer2.py`, `tests/integration/test_cli_measure.py` |
+| 79 | 単一モデルでしか観測されていないクラスは昇格しない | enforced | `PromotionRule.minimum_agent_models`, applied only when every direct observation names a model | `tests/unit/test_taxonomy_layer2.py` |
+| 80 | 登録簿の観測はすべて実在する出典を指す | enforced | test resolves every `source` path in the registry | `tests/unit/test_taxonomy_layer2.py` |
 
 **Not claimed here:** the `32/√問数` constant is fitted on one competition's 0--100 scale.
 `resolution.scale_constant_from_spread` re-fits it; carrying the number itself to another scoring

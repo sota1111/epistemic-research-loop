@@ -157,3 +157,21 @@ def test_unknown_candidates_and_metrics_are_rejected(tmp_path: Path) -> None:
 
     assert unknown_metric.exit_code != 0
     assert unknown_candidate.exit_code != 0
+
+
+def test_taxonomy_status_reports_the_demotions_the_raised_bar_causes() -> None:
+    """`erlctl taxonomy status` is where the promotion bar is actually applied (§3 items 9-10)."""
+    result = CliRunner().invoke(app, ["taxonomy", "status"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0, result.output
+    assert payload["rule"]["minimum_problem_classes"] == 2
+    assert payload["demoted_by_this_rule"] == ["context_pooling", "occurrence_sparsity_profile"]
+    assert payload["promoted"] == ["local_differences_are_exaggerated", "local_metric_measures_something_else"]
+
+
+def test_taxonomy_status_filters_by_layer() -> None:
+    result = CliRunner().invoke(app, ["taxonomy", "status", "--layer", "solution", "--promoted-only"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["classes"] == []  # no solution class clears the raised bar

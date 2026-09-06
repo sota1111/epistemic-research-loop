@@ -352,7 +352,7 @@ promoted パックの claim が構成・seedを問わず「context 間で共有�
 → `promotion_passed` の2段階ゲートに守られた本物の発見と判定(IEEE-CIS の負例パックでの
 プーリング主張は 100%、Santander は 98% が正しく falsify されており、IEEE-CIS の promoted
 27件中 37% は非プーリングで昇格——プーリングが唯一の抜け道ではないことが最も強い反証)。
-**v0.4.3-b(taxonomy 2層化):** [層2 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+**v0.4.3-b(taxonomy 2層化):** [層2 taxonomy](controller_reference/tabular_technique_taxonomy_layer2.md)
 を新設し3コンペの taxonomy に相互参照を追加。**v0.4.3-d:** 実行構成の既定を P3 系に
 (policy 上で明文化、コードは既に3構成保持のため変更不要)。**v0.4.3-c(Rossmann 回帰対応)
 は部分完了。** `_spearman`(regression 版 metric)・`HistGradientBoostingRegressor` oracle・
@@ -824,7 +824,7 @@ uv run python scripts/finalize_v040_cycle8.py        # 全 run が Lock 済み�
   — 現行の正本。両 claim の 2 コンペ独立確認、context プーリング等のメタ技術パターン新発見、
   および pooling が artifact でなく本物の構造であることの追加検証(v0.4.3-a)
 - [Rossmann 回帰対応 preregistration(実装完了・実行は次ラウンド持ち越し)](verification/v043_rossmann_regression_preregistration.md)
-- [層2(データ形式非依存)メタ技術 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+- [層2(データ形式非依存)メタ技術 taxonomy](controller_reference/tabular_technique_taxonomy_layer2.md)
 - [best-of-population 遡及分析(IEEE-CIS、v041-trackb-01 の限定データ、superseded)](verification/v042_best_of_population_ieee_cis_retrospective.md)
 - [Santander qualification(P2 3/3 構成達成)](verification/v042_santander_qualification.md) /
   [参考記録(v042-mc-b01)](verification/v042_santander_v1_informal_note.md)

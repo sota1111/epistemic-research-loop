@@ -97,6 +97,7 @@ from epistemic_loop.reporting.benchmark_report import write_benchmark_report
 from epistemic_loop.reporting.run_report import write_run_report
 from epistemic_loop.scoring.selector import score_experiment
 from epistemic_loop.storage.repositories import ResearchRepository
+from epistemic_loop.taxonomy.layer2 import load_registry, summarize
 from epistemic_loop.validation.worlds import posterior_entropy
 
 app = typer.Typer(help="Epistemic Research Loop control CLI", no_args_is_help=True)
@@ -115,6 +116,7 @@ oof_app = typer.Typer(help="Store and analyze row-level OOF predictions", no_arg
 falsifier_app = typer.Typer(help="Generate independent counter-experiments", no_args_is_help=True)
 contamination_app = typer.Typer(help="Build contamination-resistant data variants", no_args_is_help=True)
 measure_app = typer.Typer(help="Resolution-gated comparison of scored candidates", no_args_is_help=True)
+taxonomy_app = typer.Typer(help="Controller-owned layer-2 taxonomy (never shown to agents)", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -130,6 +132,7 @@ app.add_typer(oof_app, name="oof")
 app.add_typer(falsifier_app, name="falsifier")
 app.add_typer(contamination_app, name="contamination")
 app.add_typer(measure_app, name="measure")
+app.add_typer(taxonomy_app, name="taxonomy")
 
 
 def _home() -> Path:
@@ -1895,6 +1898,39 @@ def measure_recompute(
             "weights": parsed,
             "tasks": len(selected) if selected is not None else len(store.tasks()),
             "composites": {name: round(value, 4) for name, value in sorted(derived.items())},
+        }
+    )
+
+
+DEFAULT_REGISTRY = Path("docs/controller_reference/layer2_registry.json")
+
+
+@taxonomy_app.command("status")
+def taxonomy_status(
+    registry_path: Path = typer.Option(DEFAULT_REGISTRY, "--registry", exists=True, dir_okay=False),
+    layer: str | None = typer.Option(None, "--layer", help="solution | apparatus"),
+    promoted_only: bool = typer.Option(False, "--promoted-only"),
+) -> None:
+    """Assess every layer-2 class against the promotion bar and say which ones a raise demoted.
+
+    Controller-owned output. It must not be pasted into a prompt, a contract, or anything an agent
+    can read: a taxonomy handed to the agents being measured stops measuring them.
+    """
+    registry = load_registry(registry_path)
+    rows = summarize(registry)
+    if layer is not None:
+        if layer not in ("solution", "apparatus"):
+            raise typer.BadParameter("layer must be 'solution' or 'apparatus'")
+        rows = [row for row in rows if row["layer"] == layer]
+    if promoted_only:
+        rows = [row for row in rows if row["status"] == "promoted"]
+    _echo(
+        {
+            "registry": str(registry_path),
+            "rule": registry.rule.__dict__,
+            "promoted": sorted(str(row["id"]) for row in rows if row["status"] == "promoted"),
+            "demoted_by_this_rule": sorted(str(row["id"]) for row in rows if row["demoted"]),
+            "classes": rows,
         }
     )
 
