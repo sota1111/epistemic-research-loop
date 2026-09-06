@@ -67,6 +67,11 @@ write-up から「勝者の validation_fidelity は 0.82 だった」は**復元
 `submission_type`(予測値 / **アルゴリズム**)は 38 件すべて「予測値」なので
 **学習には使わない。**NEDO を問題クラス外テストへ掛けるときに使う。
 
+> **追記(2026-09-06、規則の変更ではなく被覆の記録):** 3 特徴 = 8 セルのうち、
+> 38 コンペが観測したのは **6 セル**である。`(0,1,1)` と `(1,0,1)` は空。
+> NEDO は `(0,1,1)` に落ちるため、**条件付けが働かない**
+> ([prediction_nedo.md](prediction_nedo.md) §2)。
+
 ## 4. domain の割り当て(leave-one-domain-out 用)
 
 `tabular` / `forecasting` / `cv` / `nlp` / `recsys` / `other`(retrieval・scientific・multimodal)
