@@ -210,8 +210,28 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
     return control_plane
 
 
+#: Prompt templates ship with this repository, not with a run. A campaign's home is the place its
+#: events and artifacts live -- for a real competition that is the competition's own checkout -- and
+#: resolving the templates relative to it made every hand-driven run outside this directory die on a
+#: raw `FileNotFoundError` traceback. Found while driving the documented walkthrough end to end.
+PACKAGED_PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
+
+
+def _prompts_root() -> Path:
+    override = os.environ.get("ERL_PROMPTS_ROOT")
+    candidates = [Path(override)] if override else [_home() / "prompts", PACKAGED_PROMPTS]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    raise typer.BadParameter(
+        "no prompt templates found. Looked in "
+        + ", ".join(str(candidate) for candidate in candidates)
+        + ". Set ERL_PROMPTS_ROOT to the directory holding <agent>/<version>.md."
+    )
+
+
 def _bridge() -> ProposalBridge:
-    return ProposalBridge(_home() / ".proposals", _home() / "prompts")
+    return ProposalBridge(_home() / ".proposals", _prompts_root())
 
 
 def _llm(config: AppConfig, *, run_id: str | None = None) -> StructuredLlm:
@@ -747,7 +767,10 @@ def hypotheses_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     if payload is None:
         raise typer.BadParameter(f"run {run_id} has no world model; run 'erlctl run start' first")
     world_model = CompetitionWorldModel.model_validate(payload)
-    typer.echo(str(_bridge().request_hypotheses(run_id, world_model, _state(run_id))))
+    try:
+        typer.echo(str(_bridge().request_hypotheses(run_id, world_model, _state(run_id))))
+    except FileNotFoundError as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @hypotheses_app.command("record")
@@ -777,16 +800,16 @@ def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
     config = _run_config(run_id)
     # A human filling the proposal slot needs the executor's contract as much as a model does.
-    typer.echo(
-        str(
-            _bridge().request_experiments(
-                run_id,
-                _state(run_id),
-                config.executor.command_allowlist,
-                _executor(config).contract,
-            )
+    try:
+        destination = _bridge().request_experiments(
+            run_id,
+            _state(run_id),
+            config.executor.command_allowlist,
+            _executor(config).contract,
         )
-    )
+    except FileNotFoundError as error:
+        raise typer.BadParameter(str(error)) from error
+    typer.echo(str(destination))
 
 
 @experiments_app.command("propose")

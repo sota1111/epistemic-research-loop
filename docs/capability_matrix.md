@@ -168,6 +168,7 @@ Written after a campaign in which four conclusions were drawn inside the noise a
 | 78 | 層2 の昇格条件は**問題クラス 2 つ**(コンペ 2 つではない)。規則はコードが当てる | enforced | `taxonomy/layer2.py` `PromotionRule`; `docs/controller_reference/layer2_registry.json`; `erlctl taxonomy status` | `tests/unit/test_taxonomy_layer2.py`, `tests/integration/test_cli_measure.py` |
 | 79 | 単一モデルでしか観測されていないクラスは昇格しない | enforced | `PromotionRule.minimum_agent_models`, applied only when every direct observation names a model | `tests/unit/test_taxonomy_layer2.py` |
 | 80 | 登録簿の観測はすべて実在する出典を指す | enforced | test resolves every `source` path in the registry | `tests/unit/test_taxonomy_layer2.py` |
+| 82 | README の `erlctl` 手順が並べたとおり動く — 14 手を別プロセスで通し、replay が一致する | enforced | `scripts/engine_walkthrough.py`; prompt root resolves to the repository, not the run home | `tests/e2e/test_engine_walkthrough.py`, [記録](verification/engine_walkthrough.md) |
 | 81 | novelty は自己申告ではなく archive に対して**測る** — System B の効用に QDContribution が入る | enforced | `scoring/qd_contribution.py`; `research_graph.select_experiments` passes the cell census; `UtilityBreakdown.diversity_method` records which was used | `tests/unit/test_qd_contribution.py` |
 
 **Not claimed here:** the `32/√問数` constant is fitted on one competition's 0--100 scale.
@@ -199,6 +200,10 @@ Research-to-Exploitation transition remain open.
 - **Calibration feedback is conservative rather than a fitted calibration model.** Online records
   shrink future priors toward 0.5 after poor Brier performance; small runs do not justify isotonic or
   Platt-style fitting.
+- **The engine still has no operating record on a competition.** Row 82 shows the documented
+  command sequence runs against a stub worker; it says nothing about whether the 61 enforced
+  capabilities help on real data. That is item 1 of
+  [the course correction](v050_course_correction.md) and it is open.
 - **The strong-B comparison has not been run.** The measured QD-contribution term exists and is
   wired into selection (row 81), but whether an arm carrying it produces more family diversity than
   one that does not is item 11 of [the course correction](v050_course_correction.md) and is
