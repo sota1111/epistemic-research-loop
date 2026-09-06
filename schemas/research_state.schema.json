@@ -114,12 +114,26 @@
       "title": "Preferred State Gaps",
       "type": "object"
     },
+    "preferred_state_missing": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Preferred State Missing",
+      "type": "array"
+    },
     "preferred_state_total_gap": {
-      "default": 0,
-      "maximum": 1,
-      "minimum": 0,
-      "title": "Preferred State Total Gap",
-      "type": "number"
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preferred State Total Gap"
     },
     "qd_occupancy": {
       "maximum": 1,
@@ -135,6 +149,13 @@
     "run_id": {
       "title": "Run Id",
       "type": "string"
+    },
+    "unmeasured_states": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unmeasured States",
+      "type": "array"
     },
     "validation_fidelity": {
       "anyOf": [

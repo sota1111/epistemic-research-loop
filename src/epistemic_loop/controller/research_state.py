@@ -7,20 +7,17 @@ from epistemic_loop.belief.calibration import summarize_calibration
 from epistemic_loop.controller.run_state import RunState
 from epistemic_loop.domain.enums import HypothesisStatus, HypothesisType
 from epistemic_loop.domain.models import ResearchStateSnapshot, StructurePromotionAssessment
+from epistemic_loop.domain.preferred_state import (
+    MEASURED_DIMENSIONS,
+    SPECIFICATION_STATES,
+    UNMEASURED_STATES,
+    unknown_dimensions,
+)
 from epistemic_loop.qd.archive import QDArchive
 from epistemic_loop.qd.descriptors import descriptor_names_for_mode
 from epistemic_loop.validation.worlds import posterior_entropy, validation_fidelity
 
 RESOLVED = {HypothesisStatus.SUPPORTED, HypothesisStatus.CONTESTED, HypothesisStatus.FALSIFIED}
-DEFAULT_PREFERRED_TARGETS = {
-    "validation_fidelity": 0.80,
-    "hypothesis_resolution": 0.70,
-    "falsification_coverage": 0.60,
-    "representation_coverage": 0.35,
-    "error_diversity": 0.50,
-    "robustness": 0.80,
-    "dgp_understanding": 0.50,
-}
 
 
 def derive_research_state(
@@ -79,11 +76,21 @@ def derive_research_state(
         "robustness": 1 / (1 + best.score_variance) if best is not None else 0.0,
         "dgp_understanding": dgp_understanding,
     }
-    targets = dict(preferred_targets or DEFAULT_PREFERRED_TARGETS)
+    # No default vector. A state with no supplied target is *missing*, and a missing state must not
+    # be reported as a gap of zero: that is indistinguishable from a state in perfect health, and it
+    # is how seven hand-written constants stood in for a world model for as long as they did
+    # (`docs/v050_course_correction.md` §1.2). Until an independently coded world model supplies
+    # targets (`docs/world_model/coding_rules.md` §7 forbids wiring the single-coder fit in as a
+    # default), the honest report is that every dimension is unset.
+    targets = dict(preferred_targets or {})
+    unknown = unknown_dimensions(targets)
+    if unknown:
+        raise ValueError(f"preferred-state targets name dimensions the loop cannot compute: {', '.join(unknown)}")
     weights = {name: float((preferred_weights or {}).get(name, 1.0)) for name in targets}
-    gaps = {name: max(0.0, target - current_dimensions.get(name, 0.0)) for name, target in targets.items()}
+    gaps = {name: max(0.0, target - current_dimensions[name]) for name, target in targets.items()}
     weight_total = sum(weights.values())
-    total_gap = sum(weights[name] * gaps[name] for name in gaps) / weight_total if weight_total else 0.0
+    total_gap = sum(weights[name] * gaps[name] for name in gaps) / weight_total if weight_total else None
+    missing = tuple(name for name in MEASURED_DIMENSIONS if name not in targets)
     evidence_ids = sorted(
         {identifier for world in worlds for identifier in world.evidence_ids}
         | {identifier for item in hypotheses for identifier in [*item.evidence_for, *item.evidence_against]}
@@ -109,6 +116,8 @@ def derive_research_state(
         hypothesis_calibration_brier=calibration.brier_score if calibration else None,
         preferred_state_gaps=gaps,
         preferred_state_total_gap=total_gap,
+        preferred_state_missing=list(missing),
+        unmeasured_states=[SPECIFICATION_STATES[key] for key in UNMEASURED_STATES],
         dgp_understanding=dgp_understanding,
         evidence_ids=evidence_ids,
     )

@@ -150,7 +150,7 @@ survivorship / hindsight bias)。**そしてこの 2 つこそ C-lite を B か�
 | 5 | **世界モデルの独立符号化** — 2 系統で一致率を出す | 未 | §1.2。現在 1 名、一致率未測定 |
 | 6 | **`−1` を再現できる形へ** — 縮約付き argmax では反例が消える | 未 | §1.3 |
 | 7 | **cv / nlp に効く context 特徴量** — ただし n=38、増やすなら事前登録し直す | 未 | §1.3 |
-| 8 | **`DEFAULT_PREFERRED_TARGETS` の撤去** — 置き換えられない状態は**定数のままにせず欠測**にする | 未 | §1.2 |
+| 8 | **`DEFAULT_PREFERRED_TARGETS` の撤去** — 置き換えられない状態は**定数のままにせず欠測**にする | **済** | §1.2 |
 | 9 | **層2 taxonomy の改名と昇格条件の引き上げ** | 未 | §2.1。2 コンペで昇格は緩すぎる |
 | 10 | **装置クラスの層2 を新設** — 2 問題クラスで独立観測済み(下記) | 未 | §2.1 |
 | 11 | **強い B** — 効用に novelty / QDContribution を入れて回す | 未 | §1917「弱い B と C を比べてはならない」 |
@@ -160,6 +160,13 @@ survivorship / hindsight bias)。**そしてこの 2 つこそ C-lite を B か�
 「ローカル指標が実は別の量を測っている」/「ローカルは差を誇張する(傾き < 1)」/
 「課題セットが張っていない軸は装置の盲点になる」。
 **これらは解法技術ではなく装置についてのクラスで、本当に出題非依存である。**
+
+**8 の実装:** `DEFAULT_PREFERRED_TARGETS` と config 既定値(および `configs/*.yaml` の 6 行)を削除した。
+目標値が無い状態は **gap 0 ではなく欠測**として `preferred_state_missing` に名前が出る。
+`domain/preferred_state.py` が仕様の 13 状態と、ループが実際に測れる 7 次元(仕様 6 状態 +
+ループ指標 1)の対応を持ち、**測れない 7 状態**を `unmeasured_states` として毎スナップショットに載せる。
+目標値を置くには config に `source:` が要る(出所の無い定数が戻らないように)。
+`coding_rules.md` §7 に従い、**単独符号化の world_model.json は既定値にしていない。**
 
 **2〜4 の実装:** `measurement/resolution.py`(対応ありブートストラップと `ResolutionGateError`)/
 `measurement/task_budget.py`(反復 32・選定 128、反復は毎回引き直し)/

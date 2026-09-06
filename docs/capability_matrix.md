@@ -162,6 +162,9 @@ Written after a campaign in which four conclusions were drawn inside the noise a
 | 72 | 反復用と選定用の問数を分ける(反復は毎回引き直し、選定は固定) | enforced | `measurement/task_budget.py` `TaskBudgetPolicy`; `audit` refuses a purpose that cannot see the difference asked of it | `tests/unit/test_measurement_task_budget.py` |
 | 73 | 課題ごとの生ベクトルを永続化し、合成は導出値として計算する | enforced | `measurement/task_scores.py`: `TaskScore` refuses composite metric names; `erlctl measure recompute` re-derives under new weights | `tests/unit/test_measurement_task_scores.py`, `tests/integration/test_cli_measure.py` |
 | 74 | プローブ行と実個体行を混ぜない | enforced | `TaskScore.kind`; every store query filters by kind and defaults to real candidates | `tests/unit/test_measurement_task_scores.py` |
+| 75 | Preferred-state に既定の目標ベクトルが無い — 供給されない状態は gap 0 ではなく欠測 | enforced | `controller/research_state.py` (no default vector; `preferred_state_missing`), `config.PreferredStateConfig.targets` empty by default | `tests/unit/test_preferred_state_targets.py` |
+| 76 | 仕様 13 状態のうち測れない 7 状態が名前で報告される | derived | `domain/preferred_state.py`; `ResearchStateSnapshot.unmeasured_states` | `tests/unit/test_preferred_state_targets.py` |
+| 77 | 目標値を置くには出所(`source`)が要る | enforced | `config.PreferredStateConfig`; unknown dimension names are refused | `tests/unit/test_preferred_state_targets.py` |
 
 **Not claimed here:** the `32/√問数` constant is fitted on one competition's 0--100 scale.
 `resolution.scale_constant_from_spread` re-fits it; carrying the number itself to another scoring
@@ -184,8 +187,11 @@ Research-to-Exploitation transition remain open.
 
 ## What is *not* claimed
 
-- **Preferred-state targets are not learned.** Their configurable gap affects allocation, but
-  cross-competition leave-one-domain-out target-distribution learning is not part of C-lite.
+- **Preferred-state targets are not learned, and are no longer defaulted either.** A run supplies
+  them with a cited source or has none; a state with no target is reported missing rather than as a
+  closed gap. The leave-one-domain-out fit in `docs/world_model/` is deliberately *not* wired in as
+  a default: it has one coder and no measured inter-coder agreement
+  (`docs/world_model/coding_rules.md` §7).
 - **Calibration feedback is conservative rather than a fitted calibration model.** Online records
   shrink future priors toward 0.5 after poor Brier performance; small runs do not justify isotonic or
   Platt-style fitting.

@@ -19,6 +19,7 @@ from epistemic_loop.domain.enums import (
     ValidationSplitType,
 )
 from epistemic_loop.domain.models import Budget, HoldoutPolicy
+from epistemic_loop.domain.preferred_state import unknown_dimensions
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
 
@@ -325,24 +326,31 @@ class CalibrationConfig(StrictModel):
 
 
 class PreferredStateConfig(StrictModel):
-    targets: dict[str, float] = Field(
-        default_factory=lambda: {
-            "validation_fidelity": 0.80,
-            "hypothesis_resolution": 0.70,
-            "falsification_coverage": 0.60,
-            "representation_coverage": 0.35,
-            "error_diversity": 0.50,
-            "robustness": 0.80,
-            "dgp_understanding": 0.50,
-        }
-    )
+    """Targets for the research state, supplied or absent -- never defaulted.
+
+    Empty by default on purpose. The previous default was seven hand-written constants that no
+    corpus produced (`docs/v050_course_correction.md` §1.2), and
+    `docs/world_model/coding_rules.md` §7 forbids promoting the current single-coder world-model
+    fit into a default until an independent coding has been run against it. A run that wants
+    preferred-state allocation has to say so in its own config, with its own provenance.
+    """
+
+    targets: dict[str, float] = Field(default_factory=dict)
     weights: dict[str, float] = Field(default_factory=dict)
+    #: Where these numbers came from. Required as soon as any target is set, so that a constant
+    #: cannot re-enter the loop without a citable source.
+    source: str | None = None
 
     def model_post_init(self, __context: Any) -> None:
+        unknown = unknown_dimensions(self.targets)
+        if unknown:
+            raise ValueError(f"unknown preferred-state dimension(s): {', '.join(unknown)}")
         if any(value < 0 or value > 1 for value in self.targets.values()):
             raise ValueError("preferred-state targets must be between 0 and 1")
         if any(value < 0 for value in self.weights.values()):
             raise ValueError("preferred-state weights must be non-negative")
+        if self.targets and not self.source:
+            raise ValueError("preferred-state targets require a `source` naming where they came from")
 
 
 class AblationConfig(StrictModel):
