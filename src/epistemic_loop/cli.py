@@ -78,6 +78,15 @@ from epistemic_loop.holdout.leaderboard import LeaderboardGate
 from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
 from epistemic_loop.holdout.violations import HoldoutViolationError
+from epistemic_loop.measurement.resolution import (
+    NEDO_SCALE_CONSTANT,
+    ResolutionGateError,
+    compare_pair,
+    gated_ranking,
+    required_task_count,
+)
+from epistemic_loop.measurement.task_budget import TaskBudgetError, TaskBudgetPolicy
+from epistemic_loop.measurement.task_scores import TaskScoreStore, composite_scores
 from epistemic_loop.oof.diversity import analyze as analyze_oof
 from epistemic_loop.oof.ensemble import build_cross_fitted_ensemble
 from epistemic_loop.oof.store import OOFStore
@@ -105,6 +114,7 @@ archive_app = typer.Typer(help="Inspect the quality-diversity archive", no_args_
 oof_app = typer.Typer(help="Store and analyze row-level OOF predictions", no_args_is_help=True)
 falsifier_app = typer.Typer(help="Generate independent counter-experiments", no_args_is_help=True)
 contamination_app = typer.Typer(help="Build contamination-resistant data variants", no_args_is_help=True)
+measure_app = typer.Typer(help="Resolution-gated comparison of scored candidates", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -119,6 +129,7 @@ app.add_typer(archive_app, name="archive")
 app.add_typer(oof_app, name="oof")
 app.add_typer(falsifier_app, name="falsifier")
 app.add_typer(contamination_app, name="contamination")
+app.add_typer(measure_app, name="measure")
 
 
 def _home() -> Path:
@@ -1706,6 +1717,186 @@ def contamination_anonymize_csv(
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
     _echo({"output": str(destination), "renamed_columns": len(mapping)})
+
+
+@measure_app.command("plan")
+def measure_plan(
+    difference: float = typer.Option(..., "--difference", help="the difference you intend to detect"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    iteration_tasks: int = typer.Option(32, "--iteration-tasks"),
+    selection_tasks: int = typer.Option(128, "--selection-tasks"),
+) -> None:
+    """How many tasks a difference needs, before the round is designed rather than after.
+
+    Ask this first. Every ranking that reversed in `docs/v050_lessons.md` §1.1 was made without it.
+    """
+    policy = TaskBudgetPolicy(
+        iteration_tasks=iteration_tasks,
+        selection_tasks=selection_tasks,
+        scale_constant=scale_constant,
+    )
+    payload: dict[str, Any] = {
+        "target_difference": difference,
+        "required_tasks": required_task_count(difference, scale_constant=scale_constant),
+        "iteration": {
+            "tasks": policy.iteration_tasks,
+            "resolves": round(policy.resolvable_difference("iteration"), 3),
+        },
+        "selection": {
+            "tasks": policy.selection_tasks,
+            "resolves": round(policy.resolvable_difference("selection"), 3),
+        },
+        "throughput_ratio": policy.throughput_ratio,
+        "affordable": {},
+    }
+    for purpose in ("iteration", "selection"):
+        try:
+            policy.audit(purpose, difference)
+        except TaskBudgetError as error:
+            payload["affordable"][purpose] = {"ok": False, "reason": str(error)}
+        else:
+            payload["affordable"][purpose] = {"ok": True}
+    _echo(payload)
+
+
+def _scored_vectors(scores: Path, metric: str, weights: str | None) -> dict[str, dict[str, float]]:
+    """Per-task vectors for one raw metric, or for a composite derived from the raw ones."""
+    store = TaskScoreStore(scores)
+    if not store.load():
+        raise typer.BadParameter(f"{scores} holds no task scores")
+    if weights is None:
+        vectors = store.metric_vectors(metric)
+        if not vectors:
+            raise typer.BadParameter(f"no rows carry metric '{metric}'")
+        return vectors
+    parsed = {name: float(value) for name, value in json.loads(weights).items()}
+    rows = tuple(store.latest().values())
+    per_task: dict[str, dict[str, float]] = {}
+    for row in rows:
+        missing = [name for name in parsed if name not in row.metrics]
+        if missing:
+            raise typer.BadParameter(f"{row.candidate_id}/{row.task_id} is missing {', '.join(sorted(missing))}")
+        per_task.setdefault(row.candidate_id, {})[row.task_id] = sum(
+            weight * row.metrics[name] for name, weight in parsed.items()
+        )
+    return per_task
+
+
+@measure_app.command("compare")
+def measure_compare(  # noqa: PLR0913
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False, help="per-task raw score JSONL"),
+    left: str = typer.Option(..., "--left"),
+    right: str = typer.Option(..., "--right"),
+    metric: str = typer.Option("score", "--metric", help="raw metric name; ignored when --weights is given"),
+    weights: str | None = typer.Option(None, "--weights", help="JSON weights; derives the composite"),
+    direction: str = typer.Option("maximize", "--direction"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    minimum_spread: float | None = typer.Option(None, "--minimum-spread", help="floor on the per-task spread"),
+    seed: int = typer.Option(0, "--seed"),
+) -> None:
+    """Paired-bootstrap one comparison. Reports no winner when the interval spans zero."""
+    vectors = _scored_vectors(scores, metric, weights)
+    for name in (left, right):
+        if name not in vectors:
+            raise typer.BadParameter(f"unknown candidate: {name}")
+    verdict = compare_pair(
+        left,
+        right,
+        vectors[left],
+        vectors[right],
+        metric_direction=direction,
+        scale_constant=scale_constant,
+        seed=seed,
+        minimum_spread=minimum_spread,
+    )
+    _echo(
+        {
+            "left": verdict.left,
+            "right": verdict.right,
+            "tasks": verdict.task_count,
+            "mean_difference": round(verdict.mean_difference, 4),
+            "interval": [round(value, 4) for value in verdict.interval],
+            "measured_half_width": round(verdict.measured_half_width, 4),
+            "planned_half_width": round(verdict.planned_half_width, 4),
+            "separated": verdict.separated,
+            "better": verdict.better,
+            "reason": verdict.reason,
+        }
+    )
+
+
+@measure_app.command("rank")
+def measure_rank(  # noqa: PLR0913
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
+    metric: str = typer.Option("score", "--metric"),
+    weights: str | None = typer.Option(None, "--weights"),
+    direction: str = typer.Option("maximize", "--direction"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    minimum_spread: float | None = typer.Option(None, "--minimum-spread"),
+    seed: int = typer.Option(0, "--seed"),
+    strict: bool = typer.Option(False, "--strict", help="exit non-zero unless a total order is resolved"),
+) -> None:
+    """Rank candidates, returning tiers rather than an order the tasks cannot support.
+
+    This is the command that belongs in front of a selection step. A tier with more than one name
+    means selection has to either buy more tasks or pick on something other than score.
+    """
+    vectors = _scored_vectors(scores, metric, weights)
+    ranking = gated_ranking(
+        vectors,
+        metric_direction=direction,
+        scale_constant=scale_constant,
+        seed=seed,
+        minimum_spread=minimum_spread,
+    )
+    payload: dict[str, Any] = {
+        "shared_tasks": ranking.task_count,
+        "planned_half_width": round(ranking.planned_half_width, 4),
+        "tiers": [list(tier) for tier in ranking.tiers],
+        "resolved": ranking.resolved,
+        "leaders": list(ranking.leaders()),
+        "undecided_pairs": [list(pair) for pair in ranking.undecided_pairs],
+        "comparisons": [item.summary() for item in ranking.comparisons],
+    }
+    if strict:
+        try:
+            payload["total_order"] = list(ranking.total_order())
+        except ResolutionGateError as error:
+            payload["total_order"] = None
+            payload["error"] = str(error)
+            _echo(payload)
+            raise typer.Exit(code=2) from error
+    _echo(payload)
+
+
+@measure_app.command("recompute")
+def measure_recompute(
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
+    weights: str = typer.Option(..., "--weights", help="JSON object of raw metric weights"),
+    tasks: Path | None = typer.Option(None, "--tasks", exists=True, dir_okay=False, help="newline-separated task ids"),
+) -> None:
+    """Re-derive composites under new weights from the stored raw vectors, without re-scoring.
+
+    The scoring system always changes mid-campaign (`docs/v050_lessons.md` §1.6). This is the
+    command that makes that cost a recomputation instead of a re-score of every candidate.
+    """
+    store = TaskScoreStore(scores)
+    rows = tuple(store.latest().values())
+    if not rows:
+        raise typer.BadParameter(f"{scores} holds no task scores")
+    selected = tasks.read_text(encoding="utf-8").split() if tasks is not None else None
+    parsed = {name: float(value) for name, value in json.loads(weights).items()}
+    try:
+        derived = composite_scores(rows, parsed, tasks=selected)
+    except KeyError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(
+        {
+            "weights": parsed,
+            "tasks": len(selected) if selected is not None else len(store.tasks()),
+            "composites": {name: round(value, 4) for name, value in sorted(derived.items())},
+        }
+    )
 
 
 if __name__ == "__main__":

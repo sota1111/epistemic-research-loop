@@ -149,6 +149,24 @@ error-diversity result, is recorded in
 | 68 | IEEE artifacts use one dataset hash, schema SDK, exact full-test sentinel, OOF/fold honesty preflight and first-attempt reliability gate | enforced | `plugins/ieee_cis_artifacts.py`, `scripts/run_ieee_cis_multi_island_v03.py` | `tests/unit/test_v031_evaluation.py`, clean replay in `docs/verification/ieee_cis_v031_measurement.md` |
 | 69 | System acceptance is reported separately for control plane, dynamic structure, competition capability and primary endpoint | enforced | `evaluation/acceptance.py`, `scripts/finalize_ieee_cis_v031.py` | `tests/unit/test_v031_evaluation.py` |
 
+## 12. v0.5.0 measurement discipline
+
+Written after a campaign in which four conclusions were drawn inside the noise and later reversed
+([v0.5.0 の教訓](v050_lessons.md) §1.1). These rows are the part of
+[ERL を完成させるための引き継ぎ書](v050_course_correction.md) §3 that deterministic code can carry.
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 70 | 比較の前に半幅を推定し、区間が 0 をまたぐ比較には順位を返さない | enforced | `measurement/resolution.py`: paired bootstrap, `GatedRanking.total_order` raises `ResolutionGateError`; `erlctl measure rank --strict` exits non-zero | `tests/unit/test_measurement_resolution.py`, `tests/integration/test_cli_measure.py` |
+| 71 | 分解能が乱数種で決まらない — a difference inside the noise is refused deterministically | enforced | deterministic seeded bootstrap; a spread floor blocks the zero-variance early-round false win | `tests/unit/test_measurement_resolution.py` |
+| 72 | 反復用と選定用の問数を分ける(反復は毎回引き直し、選定は固定) | enforced | `measurement/task_budget.py` `TaskBudgetPolicy`; `audit` refuses a purpose that cannot see the difference asked of it | `tests/unit/test_measurement_task_budget.py` |
+| 73 | 課題ごとの生ベクトルを永続化し、合成は導出値として計算する | enforced | `measurement/task_scores.py`: `TaskScore` refuses composite metric names; `erlctl measure recompute` re-derives under new weights | `tests/unit/test_measurement_task_scores.py`, `tests/integration/test_cli_measure.py` |
+| 74 | プローブ行と実個体行を混ぜない | enforced | `TaskScore.kind`; every store query filters by kind and defaults to real candidates | `tests/unit/test_measurement_task_scores.py` |
+
+**Not claimed here:** the `32/√問数` constant is fitted on one competition's 0--100 scale.
+`resolution.scale_constant_from_spread` re-fits it; carrying the number itself to another scoring
+system is not supported by anything in this repository.
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
