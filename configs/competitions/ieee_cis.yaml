@@ -78,13 +78,11 @@ calibration:
   poor_brier_threshold: 0.25
   prior_shrinkage: 0.25
 preferred_state:
-  targets:
-    validation_fidelity: 0.80
-    hypothesis_resolution: 0.70
-    falsification_coverage: 0.60
-    representation_coverage: 0.35
-    error_diversity: 0.50
-    robustness: 0.80
+  # Deliberately empty. The seven constants that used to sit here came from no corpus
+  # (docs/v050_course_correction.md 1.2), and docs/world_model/coding_rules.md 7 forbids
+  # promoting the current single-coder world-model fit into a default. Setting any target
+  # here now also requires `source:` naming where the number came from.
+  targets: {}
   weights: {}
 ablation:
   remove: []

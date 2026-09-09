@@ -196,7 +196,7 @@ prompt arm でも high effort が信頼できることが分かった。**
 機構であり、孤立した marginal ではない」。これは**5件目の独立観測**であり、かつ
 **P1 arm での初めての観測**(過去4件は medium-P1・low-P1×2・high-P3)——effort・
 prompt arm を問わず現れる、より頑健なパターンであることが分かった(sol 限定という
-留保は維持、[層2 taxonomy候補](../controller_reference/meta_technique_taxonomy_layer2.md)参照)。
+留保は維持、[層2 taxonomy候補](../controller_reference/tabular_technique_taxonomy_layer2.md)参照)。
 
 ## 正本
 

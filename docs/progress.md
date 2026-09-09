@@ -545,3 +545,47 @@ xhigh) to carry into Track B, the IEEE-CIS blind bridge that has been designed b
 v0.4.0's original policy. Track B's suite build touches real data and is flagged in the policy
 document itself as requiring explicit user confirmation before execution, consistent with this
 project's practice of pausing at the synthetic-to-real-data boundary.
+
+## 2026-09-06 — v0.5.0 course correction: six of the twelve remaining items
+
+Implemented the parts of [the course correction](v050_course_correction.md) §3 that deterministic
+code can carry, in the order §4 sets out.
+
+**Measurement discipline (items 2-4).** `measurement/resolution.py` estimates the half-width before
+comparing and returns tiers rather than an order; `GatedRanking.total_order` raises instead of
+degrading to the mean. `measurement/task_budget.py` splits the iteration task set (32, redrawn each
+round) from the selection set (128, fixed). `measurement/task_scores.py` persists the raw per-task
+vector and refuses composite metric names, so a change of weights is a recomputation rather than a
+re-score. All of it reachable from `erlctl measure`.
+
+**Preferred state (item 8).** `DEFAULT_PREFERRED_TARGETS` and the config defaults are gone. A state
+with no supplied target is reported missing, not as a closed gap, and setting one requires a cited
+`source`. `domain/preferred_state.py` names the seven specification states the loop does not
+measure at all, and the two the winner corpus can never supply a prior for.
+
+**World model (item 6).** Pre-registered a counterexample-preserving form, fitted it, and recorded
+that it failed both of its own adoption criteria -- 0 of 6 counterexamples, and worse on log loss
+with an interval that does not span zero. All six counterexample cells sit in cv and nlp, where the
+three context features are near-constant: the same hole as item 7. What is adopted is the
+distribution, which carries `p_counterexample` per state per cell.
+[Rules](world_model/coding_rules_v2_counterexample.md), [results](world_model/results_counterexample.md).
+
+**Taxonomy (items 9-10).** The layer-2 bar is two problem classes rather than two competitions, and
+is applied by code against a registry of cited observations (`erlctl taxonomy status`). Applied
+mechanically it demotes both promoted solution classes and promotes two of the three apparatus
+classes; the third does not clear it, and the course-correction document's claim that it did is
+corrected rather than the rule loosened.
+
+**Strong B (item 11, the term only).** Novelty is measured against the archive instead of read off
+`proposal.novelty_score`, with `diversity_method` recording which was used. The comparison itself is
+not run.
+
+**Design of item 12.** `measurement/power.py` computes the arm size the C-against-B experiment
+needs. §4's "five per arm needs six points" is optimistic: five per arm sees 9.54 points at power
+0.80 and 6.89 at power 0.50. Six points needs eleven per arm.
+
+**Engine (item 1, partially).** `scripts/engine_walkthrough.py` drives the documented `erlctl`
+sequence as fourteen separate processes; it found and fixed a defect that only appears when the
+engine is used outside this repository. [Record](verification/engine_walkthrough.md). Item 1 itself
+-- a real competition -- remains open, as do independent coding (5), cv/nlp context features (7),
+running strong B (11) and the C-against-B experiment (12).

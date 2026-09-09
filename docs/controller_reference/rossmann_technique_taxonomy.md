@@ -48,6 +48,6 @@
 
 ## 層2(データ形式非依存メタ技術)との照合
 
-[層2 taxonomy](meta_technique_taxonomy_layer2.md) は preregister 時点から本コンペにも
+[層2 taxonomy](tabular_technique_taxonomy_layer2.md) は preregister 時点から本コンペにも
 適用する(context プーリング・occurrence/sparsity 集約の2クラス)。discovery ログが得られ
 次第、本セクションに照合結果を追記する。

@@ -1,0 +1,220 @@
+{
+  "label": "SIGNATE NEDO Baggage Loading",
+  "context": {
+    "temporal": 0,
+    "entity": 1,
+    "decomposable": 1
+  },
+  "cell": "0,1,1",
+  "cell_observed_in_corpus": false,
+  "corpus_competitions_in_this_cell": [],
+  "sources": {
+    "primary": "docs/world_model/world_model.json",
+    "two_part": "docs/world_model/world_model_counterexample.json",
+    "rules": "docs/world_model/coding_rules.md"
+  },
+  "caveats": [
+    "single coder; inter-coder agreement UNMEASURED",
+    "THIS CONTEXT CELL IS NOT IN THE CORPUS: every number below falls back to the global prior, so the context-conditioned prediction is identical to the checklist",
+    "all 38 corpus competitions submit predictions; an algorithm submission is out of class",
+    "HCAL and FC have zero corpus observations -- their numbers are prior, not evidence",
+    "the point prediction cannot emit -1; read p_counterexample instead"
+  ],
+  "states": [
+    {
+      "state": "VF",
+      "name": "Validation Fidelity",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.2927,
+      "p_mentioned": 0.3,
+      "p_minus_given_mentioned": 0.0769,
+      "p_counterexample": 0.0231,
+      "corpus_observations": {
+        "decisive": 11,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "DGP",
+      "name": "DGP Understanding",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.1463,
+      "p_mentioned": 0.15,
+      "p_minus_given_mentioned": 0.1429,
+      "p_counterexample": 0.0214,
+      "corpus_observations": {
+        "decisive": 5,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "DSU",
+      "name": "Distribution Shift Understanding",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.0976,
+      "p_mentioned": 0.1,
+      "p_minus_given_mentioned": 0.2,
+      "p_counterexample": 0.02,
+      "corpus_observations": {
+        "decisive": 3,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "ETI",
+      "name": "Entity & Temporal Integrity",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.3902,
+      "p_mentioned": 0.4,
+      "p_minus_given_mentioned": 0.0588,
+      "p_counterexample": 0.0235,
+      "corpus_observations": {
+        "decisive": 15,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "DLQ",
+      "name": "Data / Label Quality Understanding",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.1463,
+      "p_mentioned": 0.15,
+      "p_minus_given_mentioned": 0.1429,
+      "p_counterexample": 0.0214,
+      "corpus_observations": {
+        "decisive": 5,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "EU",
+      "name": "Error Understanding",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.0488,
+      "p_mentioned": 0.05,
+      "p_minus_given_mentioned": 0.3333,
+      "p_counterexample": 0.0167,
+      "corpus_observations": {
+        "decisive": 1,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "HC",
+      "name": "Hypothesis Coverage",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.1707,
+      "p_mentioned": 0.175,
+      "p_minus_given_mentioned": 0.125,
+      "p_counterexample": 0.0219,
+      "corpus_observations": {
+        "decisive": 6,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "HCAL",
+      "name": "Hypothesis Calibration",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.0244,
+      "p_mentioned": 0.025,
+      "p_minus_given_mentioned": 0.5,
+      "p_counterexample": 0.0125,
+      "corpus_observations": {
+        "decisive": 0,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "FC",
+      "name": "Falsification Coverage",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.0244,
+      "p_mentioned": 0.025,
+      "p_minus_given_mentioned": 0.5,
+      "p_counterexample": 0.0125,
+      "corpus_observations": {
+        "decisive": 0,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "RMC",
+      "name": "Representation / Model Coverage",
+      "context_prediction": "1",
+      "checklist_prediction": "1",
+      "p_decisive": 0.561,
+      "p_mentioned": 0.625,
+      "p_minus_given_mentioned": 0.1154,
+      "p_counterexample": 0.0721,
+      "corpus_observations": {
+        "decisive": 22,
+        "counterexample": 2,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "SED",
+      "name": "Solution / Error Diversity",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.1463,
+      "p_mentioned": 0.2,
+      "p_minus_given_mentioned": 0.3333,
+      "p_counterexample": 0.0667,
+      "corpus_observations": {
+        "decisive": 5,
+        "counterexample": 2,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "ROB",
+      "name": "Robustness",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.1463,
+      "p_mentioned": 0.15,
+      "p_minus_given_mentioned": 0.1429,
+      "p_counterexample": 0.0214,
+      "corpus_observations": {
+        "decisive": 5,
+        "counterexample": 0,
+        "competitions": 38
+      }
+    },
+    {
+      "state": "PB",
+      "name": "Performance Belief",
+      "context_prediction": "0",
+      "checklist_prediction": "0",
+      "p_decisive": 0.0244,
+      "p_mentioned": 0.075,
+      "p_minus_given_mentioned": 0.75,
+      "p_counterexample": 0.0562,
+      "corpus_observations": {
+        "decisive": 0,
+        "counterexample": 2,
+        "competitions": 38
+      }
+    }
+  ]
+}

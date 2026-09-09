@@ -66,6 +66,7 @@ from epistemic_loop.qd.archive import ArchiveUpdate, QDArchive
 from epistemic_loop.qd.descriptors import descriptor_names_for_mode
 from epistemic_loop.qd.finalizer import select_final_candidate
 from epistemic_loop.scoring.cost import normalized_cost
+from epistemic_loop.scoring.qd_contribution import cell_census
 from epistemic_loop.scoring.robustness import robustness_value
 from epistemic_loop.scoring.selector import ScoredCandidate, evaluate_candidates, select_portfolio
 from epistemic_loop.storage.repositories import ResearchRepository
@@ -341,6 +342,22 @@ class ResearchController:
             # `scoring` from `planning` is only allowed while candidates are actually standing.
             self._advance(run_id, LoopState.PLANNING, LoopState.SCORING, {LoopState.PLANNING})
             state = self.state(run_id)
+        # Novelty is measured against the archive the run already holds, not read off the
+        # proposal's own novelty_score (§2.2 of docs/v050_course_correction.md). Proposals that do
+        # not declare descriptors still fall back to the declared score, and the utility record
+        # says which of the two was used.
+        qd_descriptor_names = descriptor_names_for_mode(state.run.mode)
+        qd_census = (
+            cell_census(
+                state.retained_qd_candidates(
+                    maximum_size=qd_maximum_size,
+                    quality_floor_relative_to_best=qd_quality_floor_relative_to_best,
+                ),
+                qd_descriptor_names,
+            )
+            if qd_descriptor_names
+            else None
+        )
         scored = evaluate_candidates(
             candidates,
             state.gate_context(
@@ -365,6 +382,8 @@ class ResearchController:
             eig_monte_carlo_samples=eig_monte_carlo_samples,
             random_seed=state.run.seed,
             information_value_enabled=information_value_enabled,
+            qd_census=qd_census,
+            qd_descriptor_names=qd_descriptor_names,
         )
         research_state = derive_research_state(
             state,

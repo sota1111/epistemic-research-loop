@@ -22,3 +22,7 @@ benchmark-plan.yaml
 
 # Competition data is downloaded per environment and never committed.
 .data/
+
+# NEDO コンペの成果物は erl-nedo-baggage-loading にある
+apps/nedo_loading_game/
+results/nedo_*

@@ -171,7 +171,7 @@ v0.4.3-e  (優先度低)Jigsaw 追加の検討。
 - **v0.4.3-a:** 完了。[クロスコンペ統合分析](verification/v042_cross_competition_synthesis.md)
   に追記——「context プーリング」は artifact ではなく、2段階ゲート
   (`leave_one_context_out_stable` → `promotion_passed`)に守られた本物の発見と判定。
-- **v0.4.3-b:** 完了。[層2 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+- **v0.4.3-b:** 完了。[層2 taxonomy](controller_reference/tabular_technique_taxonomy_layer2.md)
   を新設し、3コンペ全ての技術クラス参照物に相互参照を追加。
 - **v0.4.3-c:** 部分完了。metric(`_spearman`)・oracle(`HistGradientBoostingRegressor`)・
   matched negative(`_destroy_target_structure` 流用)・回帰用 agent 提出契約

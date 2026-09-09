@@ -149,6 +149,33 @@ error-diversity result, is recorded in
 | 68 | IEEE artifacts use one dataset hash, schema SDK, exact full-test sentinel, OOF/fold honesty preflight and first-attempt reliability gate | enforced | `plugins/ieee_cis_artifacts.py`, `scripts/run_ieee_cis_multi_island_v03.py` | `tests/unit/test_v031_evaluation.py`, clean replay in `docs/verification/ieee_cis_v031_measurement.md` |
 | 69 | System acceptance is reported separately for control plane, dynamic structure, competition capability and primary endpoint | enforced | `evaluation/acceptance.py`, `scripts/finalize_ieee_cis_v031.py` | `tests/unit/test_v031_evaluation.py` |
 
+## 12. v0.5.0 measurement discipline
+
+Written after a campaign in which four conclusions were drawn inside the noise and later reversed
+([v0.5.0 の教訓](v050_lessons.md) §1.1). These rows are the part of
+[ERL を完成させるための引き継ぎ書](v050_course_correction.md) §3 that deterministic code can carry.
+
+| # | Requirement | Status | Where | Proof |
+| --- | --- | --- | --- | --- |
+| 70 | 比較の前に半幅を推定し、区間が 0 をまたぐ比較には順位を返さない | enforced | `measurement/resolution.py`: paired bootstrap, `GatedRanking.total_order` raises `ResolutionGateError`; `erlctl measure rank --strict` exits non-zero | `tests/unit/test_measurement_resolution.py`, `tests/integration/test_cli_measure.py` |
+| 71 | 分解能が乱数種で決まらない — a difference inside the noise is refused deterministically | enforced | deterministic seeded bootstrap; a spread floor blocks the zero-variance early-round false win | `tests/unit/test_measurement_resolution.py` |
+| 72 | 反復用と選定用の問数を分ける(反復は毎回引き直し、選定は固定) | enforced | `measurement/task_budget.py` `TaskBudgetPolicy`; `audit` refuses a purpose that cannot see the difference asked of it | `tests/unit/test_measurement_task_budget.py` |
+| 73 | 課題ごとの生ベクトルを永続化し、合成は導出値として計算する | enforced | `measurement/task_scores.py`: `TaskScore` refuses composite metric names; `erlctl measure recompute` re-derives under new weights | `tests/unit/test_measurement_task_scores.py`, `tests/integration/test_cli_measure.py` |
+| 74 | プローブ行と実個体行を混ぜない | enforced | `TaskScore.kind`; every store query filters by kind and defaults to real candidates | `tests/unit/test_measurement_task_scores.py` |
+| 75 | Preferred-state に既定の目標ベクトルが無い — 供給されない状態は gap 0 ではなく欠測 | enforced | `controller/research_state.py` (no default vector; `preferred_state_missing`), `config.PreferredStateConfig.targets` empty by default | `tests/unit/test_preferred_state_targets.py` |
+| 76 | 仕様 13 状態のうち測れない 7 状態が名前で報告される | derived | `domain/preferred_state.py`; `ResearchStateSnapshot.unmeasured_states` | `tests/unit/test_preferred_state_targets.py` |
+| 77 | 目標値を置くには出所(`source`)が要る | enforced | `config.PreferredStateConfig`; unknown dimension names are refused | `tests/unit/test_preferred_state_targets.py` |
+| 78 | 層2 の昇格条件は**問題クラス 2 つ**(コンペ 2 つではない)。規則はコードが当てる | enforced | `taxonomy/layer2.py` `PromotionRule`; `docs/controller_reference/layer2_registry.json`; `erlctl taxonomy status` | `tests/unit/test_taxonomy_layer2.py`, `tests/integration/test_cli_measure.py` |
+| 79 | 単一モデルでしか観測されていないクラスは昇格しない | enforced | `PromotionRule.minimum_agent_models`, applied only when every direct observation names a model | `tests/unit/test_taxonomy_layer2.py` |
+| 80 | 登録簿の観測はすべて実在する出典を指す | enforced | test resolves every `source` path in the registry | `tests/unit/test_taxonomy_layer2.py` |
+| 83 | 腕の体数を先に決める — 検出力と自由度から必要体数を計算する | enforced | `measurement/power.py`; `erlctl measure arms`; Student-t quantiles verified against published tables | `tests/unit/test_measurement_power.py` |
+| 82 | README の `erlctl` 手順が並べたとおり動く — 14 手を別プロセスで通し、replay が一致する | enforced | `scripts/engine_walkthrough.py`; prompt root resolves to the repository, not the run home | `tests/e2e/test_engine_walkthrough.py`, [記録](verification/engine_walkthrough.md) |
+| 81 | novelty は自己申告ではなく archive に対して**測る** — System B の効用に QDContribution が入る | enforced | `scoring/qd_contribution.py`; `research_graph.select_experiments` passes the cell census; `UtilityBreakdown.diversity_method` records which was used | `tests/unit/test_qd_contribution.py` |
+
+**Not claimed here:** the `32/√問数` constant is fitted on one competition's 0--100 scale.
+`resolution.scale_constant_from_spread` re-fits it; carrying the number itself to another scoring
+system is not supported by anything in this repository.
+
 ## Live verification
 
 The rows above are proved by tests. [IEEE-CIS verification](verification/ieee_cis_autonomous_loop.md)
@@ -166,11 +193,22 @@ Research-to-Exploitation transition remain open.
 
 ## What is *not* claimed
 
-- **Preferred-state targets are not learned.** Their configurable gap affects allocation, but
-  cross-competition leave-one-domain-out target-distribution learning is not part of C-lite.
+- **Preferred-state targets are not learned, and are no longer defaulted either.** A run supplies
+  them with a cited source or has none; a state with no target is reported missing rather than as a
+  closed gap. The leave-one-domain-out fit in `docs/world_model/` is deliberately *not* wired in as
+  a default: it has one coder and no measured inter-coder agreement
+  (`docs/world_model/coding_rules.md` §7).
 - **Calibration feedback is conservative rather than a fitted calibration model.** Online records
   shrink future priors toward 0.5 after poor Brier performance; small runs do not justify isotonic or
   Platt-style fitting.
+- **The engine still has no operating record on a competition.** Row 82 shows the documented
+  command sequence runs against a stub worker; it says nothing about whether the 61 enforced
+  capabilities help on real data. That is item 1 of
+  [the course correction](v050_course_correction.md) and it is open.
+- **The strong-B comparison has not been run.** The measured QD-contribution term exists and is
+  wired into selection (row 81), but whether an arm carrying it produces more family diversity than
+  one that does not is item 11 of [the course correction](v050_course_correction.md) and is
+  unmeasured. Implementing the term is not evidence about the term.
 - **Role-scoped proposal generation remains narrow.** The falsifier has a separately restricted
   context, while most solution proposals still share one experiment-designer role.
 - **The synthetic benchmark is a harness test, not evidence about Kaggle.** Its actions and regrets

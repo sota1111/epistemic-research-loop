@@ -1033,7 +1033,13 @@ class ResearchStateSnapshot(DomainModel):
     expected_hidden_interval: tuple[float, float] | None = None
     hypothesis_calibration_brier: float | None = Field(default=None, ge=0)
     preferred_state_gaps: dict[str, float] = Field(default_factory=dict)
-    preferred_state_total_gap: float = Field(default=0, ge=0, le=1)
+    #: ``None`` when no target was supplied at all. Zero would claim the run has no gap to close,
+    #: which is not the same statement and was made for months by seven hand-written constants.
+    preferred_state_total_gap: float | None = Field(default=None, ge=0, le=1)
+    #: Dimensions the loop can compute but that no target was supplied for.
+    preferred_state_missing: list[str] = Field(default_factory=list)
+    #: Specification states with no measured dimension behind them at all.
+    unmeasured_states: list[str] = Field(default_factory=list)
     dgp_understanding: float = Field(default=0, ge=0, le=1)
     evidence_ids: list[str] = Field(default_factory=list)
     generated_at: datetime = Field(default_factory=utc_now)

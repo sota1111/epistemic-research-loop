@@ -78,6 +78,21 @@ from epistemic_loop.holdout.leaderboard import LeaderboardGate
 from epistemic_loop.holdout.query_ledger import QueryLedger
 from epistemic_loop.holdout.sealed_store import SealedScoreStore
 from epistemic_loop.holdout.violations import HoldoutViolationError
+from epistemic_loop.measurement.power import arm_size_for, plan_arm
+from epistemic_loop.measurement.resolution import (
+    NEDO_SCALE_CONSTANT,
+    ResolutionGateError,
+    compare_pair,
+    gated_ranking,
+    required_task_count,
+)
+from epistemic_loop.measurement.task_budget import TaskBudgetError, TaskBudgetPolicy
+from epistemic_loop.measurement.task_scores import (
+    CompositeSpec,
+    TaskScoreStore,
+    composite_scores,
+    per_task_composite,
+)
 from epistemic_loop.oof.diversity import analyze as analyze_oof
 from epistemic_loop.oof.ensemble import build_cross_fitted_ensemble
 from epistemic_loop.oof.store import OOFStore
@@ -88,6 +103,7 @@ from epistemic_loop.reporting.benchmark_report import write_benchmark_report
 from epistemic_loop.reporting.run_report import write_run_report
 from epistemic_loop.scoring.selector import score_experiment
 from epistemic_loop.storage.repositories import ResearchRepository
+from epistemic_loop.taxonomy.layer2 import load_registry, summarize
 from epistemic_loop.validation.worlds import posterior_entropy
 
 app = typer.Typer(help="Epistemic Research Loop control CLI", no_args_is_help=True)
@@ -105,6 +121,8 @@ archive_app = typer.Typer(help="Inspect the quality-diversity archive", no_args_
 oof_app = typer.Typer(help="Store and analyze row-level OOF predictions", no_args_is_help=True)
 falsifier_app = typer.Typer(help="Generate independent counter-experiments", no_args_is_help=True)
 contamination_app = typer.Typer(help="Build contamination-resistant data variants", no_args_is_help=True)
+measure_app = typer.Typer(help="Resolution-gated comparison of scored candidates", no_args_is_help=True)
+taxonomy_app = typer.Typer(help="Controller-owned layer-2 taxonomy (never shown to agents)", no_args_is_help=True)
 app.add_typer(run_app, name="run")
 app.add_typer(hypotheses_app, name="hypotheses")
 app.add_typer(experiments_app, name="experiments")
@@ -119,6 +137,8 @@ app.add_typer(archive_app, name="archive")
 app.add_typer(oof_app, name="oof")
 app.add_typer(falsifier_app, name="falsifier")
 app.add_typer(contamination_app, name="contamination")
+app.add_typer(measure_app, name="measure")
+app.add_typer(taxonomy_app, name="taxonomy")
 
 
 def _home() -> Path:
@@ -196,8 +216,28 @@ def _executor(config: AppConfig) -> ExecutorAdapter:
     return control_plane
 
 
+#: Prompt templates ship with this repository, not with a run. A campaign's home is the place its
+#: events and artifacts live -- for a real competition that is the competition's own checkout -- and
+#: resolving the templates relative to it made every hand-driven run outside this directory die on a
+#: raw `FileNotFoundError` traceback. Found while driving the documented walkthrough end to end.
+PACKAGED_PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
+
+
+def _prompts_root() -> Path:
+    override = os.environ.get("ERL_PROMPTS_ROOT")
+    candidates = [Path(override)] if override else [_home() / "prompts", PACKAGED_PROMPTS]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    raise typer.BadParameter(
+        "no prompt templates found. Looked in "
+        + ", ".join(str(candidate) for candidate in candidates)
+        + ". Set ERL_PROMPTS_ROOT to the directory holding <agent>/<version>.md."
+    )
+
+
 def _bridge() -> ProposalBridge:
-    return ProposalBridge(_home() / ".proposals", _home() / "prompts")
+    return ProposalBridge(_home() / ".proposals", _prompts_root())
 
 
 def _llm(config: AppConfig, *, run_id: str | None = None) -> StructuredLlm:
@@ -733,7 +773,10 @@ def hypotheses_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     if payload is None:
         raise typer.BadParameter(f"run {run_id} has no world model; run 'erlctl run start' first")
     world_model = CompetitionWorldModel.model_validate(payload)
-    typer.echo(str(_bridge().request_hypotheses(run_id, world_model, _state(run_id))))
+    try:
+        typer.echo(str(_bridge().request_hypotheses(run_id, world_model, _state(run_id))))
+    except FileNotFoundError as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @hypotheses_app.command("record")
@@ -763,16 +806,16 @@ def experiments_request(run_id: str = typer.Option(..., "--run-id")) -> None:
     """Write the experiment-design prompt, context, and JSON Schema for the proposing agent."""
     config = _run_config(run_id)
     # A human filling the proposal slot needs the executor's contract as much as a model does.
-    typer.echo(
-        str(
-            _bridge().request_experiments(
-                run_id,
-                _state(run_id),
-                config.executor.command_allowlist,
-                _executor(config).contract,
-            )
+    try:
+        destination = _bridge().request_experiments(
+            run_id,
+            _state(run_id),
+            config.executor.command_allowlist,
+            _executor(config).contract,
         )
-    )
+    except FileNotFoundError as error:
+        raise typer.BadParameter(str(error)) from error
+    typer.echo(str(destination))
 
 
 @experiments_app.command("propose")
@@ -1706,6 +1749,292 @@ def contamination_anonymize_csv(
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
     _echo({"output": str(destination), "renamed_columns": len(mapping)})
+
+
+@measure_app.command("plan")
+def measure_plan(
+    difference: float = typer.Option(..., "--difference", help="the difference you intend to detect"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    iteration_tasks: int = typer.Option(32, "--iteration-tasks"),
+    selection_tasks: int = typer.Option(128, "--selection-tasks"),
+) -> None:
+    """How many tasks a difference needs, before the round is designed rather than after.
+
+    Ask this first. Every ranking that reversed in `docs/v050_lessons.md` §1.1 was made without it.
+    """
+    policy = TaskBudgetPolicy(
+        iteration_tasks=iteration_tasks,
+        selection_tasks=selection_tasks,
+        scale_constant=scale_constant,
+    )
+    payload: dict[str, Any] = {
+        "target_difference": difference,
+        "required_tasks": required_task_count(difference, scale_constant=scale_constant),
+        "iteration": {
+            "tasks": policy.iteration_tasks,
+            "resolves": round(policy.resolvable_difference("iteration"), 3),
+        },
+        "selection": {
+            "tasks": policy.selection_tasks,
+            "resolves": round(policy.resolvable_difference("selection"), 3),
+        },
+        "throughput_ratio": policy.throughput_ratio,
+        "affordable": {},
+    }
+    for purpose in ("iteration", "selection"):
+        try:
+            policy.audit(purpose, difference)
+        except TaskBudgetError as error:
+            payload["affordable"][purpose] = {"ok": False, "reason": str(error)}
+        else:
+            payload["affordable"][purpose] = {"ok": True}
+    _echo(payload)
+
+
+@measure_app.command("arms")
+def measure_arms(  # noqa: PLR0913
+    difference: float | None = typer.Option(None, "--difference", help="difference between arm means to detect"),
+    arm_size: int | None = typer.Option(None, "--arm-size", help="individuals per arm, to ask what it can see"),
+    individual_spread: float = typer.Option(4.5, "--individual-spread", help="spread between individuals"),
+    half_width: float = typer.Option(2.8, "--half-width", help="resolution of one individual's score"),
+    power: float = typer.Option(0.8, "--power"),
+    alpha: float = typer.Option(0.05, "--alpha"),
+) -> None:
+    """How many individuals an arm needs, or what the arm you have can see.
+
+    Run this before the arms are built. Both sources of spread are counted -- the individuals differ
+    from each other, and each individual's own score is an estimate -- and the quantiles are
+    Student's t, because an arm of five has eight degrees of freedom.
+    """
+    if (difference is None) == (arm_size is None):
+        raise typer.BadParameter("provide exactly one of --difference or --arm-size")
+    if arm_size is None:
+        assert difference is not None
+        needed = arm_size_for(
+            difference,
+            individual_spread=individual_spread,
+            measurement_half_width=half_width,
+            power=power,
+            alpha=alpha,
+        )
+        plan = plan_arm(
+            needed,
+            individual_spread=individual_spread,
+            measurement_half_width=half_width,
+            power=power,
+            alpha=alpha,
+        )
+        _echo(
+            {
+                "target_difference": difference,
+                "individuals_per_arm": needed,
+                "detectable_difference": round(plan.detectable_difference, 3),
+                "standard_error": round(plan.standard_error, 3),
+                "power": power,
+                "alpha": alpha,
+                "summary": plan.summary(),
+            }
+        )
+        return
+    plan = plan_arm(
+        arm_size,
+        individual_spread=individual_spread,
+        measurement_half_width=half_width,
+        power=power,
+        alpha=alpha,
+    )
+    _echo(
+        {
+            "individuals_per_arm": plan.arm_size,
+            "detectable_difference": round(plan.detectable_difference, 3),
+            "standard_error": round(plan.standard_error, 3),
+            "power": power,
+            "alpha": alpha,
+            "summary": plan.summary(),
+        }
+    )
+
+
+def _composite_spec(weights: str | None, spec: Path | None) -> CompositeSpec | None:
+    """Weights inline, or a specification file that can also carry a per-task gate."""
+    if weights is not None and spec is not None:
+        raise typer.BadParameter("provide at most one of --weights and --spec")
+    if spec is not None:
+        return CompositeSpec.from_mapping(json.loads(spec.read_text(encoding="utf-8")))
+    if weights is not None:
+        return CompositeSpec.from_mapping(json.loads(weights))
+    return None
+
+
+def _scored_vectors(scores: Path, metric: str, composite: CompositeSpec | None) -> dict[str, dict[str, float]]:
+    """Per-task vectors for one raw metric, or for a composite derived from the raw ones."""
+    store = TaskScoreStore(scores)
+    if not store.load():
+        raise typer.BadParameter(f"{scores} holds no task scores")
+    if composite is None:
+        vectors = store.metric_vectors(metric)
+        if not vectors:
+            raise typer.BadParameter(f"no rows carry metric '{metric}'")
+        return vectors
+    try:
+        return per_task_composite(tuple(store.latest().values()), composite)
+    except KeyError as error:
+        raise typer.BadParameter(str(error)) from error
+
+
+@measure_app.command("compare")
+def measure_compare(  # noqa: PLR0913
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False, help="per-task raw score JSONL"),
+    left: str = typer.Option(..., "--left"),
+    right: str = typer.Option(..., "--right"),
+    metric: str = typer.Option("score", "--metric", help="raw metric name; ignored when --weights is given"),
+    weights: str | None = typer.Option(None, "--weights", help="JSON weights; derives the composite"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
+    direction: str = typer.Option("maximize", "--direction"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    minimum_spread: float | None = typer.Option(None, "--minimum-spread", help="floor on the per-task spread"),
+    seed: int = typer.Option(0, "--seed"),
+) -> None:
+    """Paired-bootstrap one comparison. Reports no winner when the interval spans zero."""
+    vectors = _scored_vectors(scores, metric, _composite_spec(weights, spec))
+    for name in (left, right):
+        if name not in vectors:
+            raise typer.BadParameter(f"unknown candidate: {name}")
+    verdict = compare_pair(
+        left,
+        right,
+        vectors[left],
+        vectors[right],
+        metric_direction=direction,
+        scale_constant=scale_constant,
+        seed=seed,
+        minimum_spread=minimum_spread,
+    )
+    _echo(
+        {
+            "left": verdict.left,
+            "right": verdict.right,
+            "tasks": verdict.task_count,
+            "mean_difference": round(verdict.mean_difference, 4),
+            "interval": [round(value, 4) for value in verdict.interval],
+            "measured_half_width": round(verdict.measured_half_width, 4),
+            "planned_half_width": round(verdict.planned_half_width, 4),
+            "separated": verdict.separated,
+            "better": verdict.better,
+            "reason": verdict.reason,
+        }
+    )
+
+
+@measure_app.command("rank")
+def measure_rank(  # noqa: PLR0913
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
+    metric: str = typer.Option("score", "--metric"),
+    weights: str | None = typer.Option(None, "--weights"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
+    direction: str = typer.Option("maximize", "--direction"),
+    scale_constant: float = typer.Option(NEDO_SCALE_CONSTANT, "--scale-constant"),
+    minimum_spread: float | None = typer.Option(None, "--minimum-spread"),
+    seed: int = typer.Option(0, "--seed"),
+    strict: bool = typer.Option(False, "--strict", help="exit non-zero unless a total order is resolved"),
+) -> None:
+    """Rank candidates, returning tiers rather than an order the tasks cannot support.
+
+    This is the command that belongs in front of a selection step. A tier with more than one name
+    means selection has to either buy more tasks or pick on something other than score.
+    """
+    vectors = _scored_vectors(scores, metric, _composite_spec(weights, spec))
+    ranking = gated_ranking(
+        vectors,
+        metric_direction=direction,
+        scale_constant=scale_constant,
+        seed=seed,
+        minimum_spread=minimum_spread,
+    )
+    payload: dict[str, Any] = {
+        "shared_tasks": ranking.task_count,
+        "planned_half_width": round(ranking.planned_half_width, 4),
+        "tiers": [list(tier) for tier in ranking.tiers],
+        "resolved": ranking.resolved,
+        "leaders": list(ranking.leaders()),
+        "undecided_pairs": [list(pair) for pair in ranking.undecided_pairs],
+        "comparisons": [item.summary() for item in ranking.comparisons],
+    }
+    if strict:
+        try:
+            payload["total_order"] = list(ranking.total_order())
+        except ResolutionGateError as error:
+            payload["total_order"] = None
+            payload["error"] = str(error)
+            _echo(payload)
+            raise typer.Exit(code=2) from error
+    _echo(payload)
+
+
+@measure_app.command("recompute")
+def measure_recompute(
+    scores: Path = typer.Option(..., "--scores", exists=True, dir_okay=False),
+    weights: str | None = typer.Option(None, "--weights", help="JSON object of raw metric weights"),
+    spec: Path | None = typer.Option(None, "--spec", exists=True, dir_okay=False, help="weights plus a task gate"),
+    tasks: Path | None = typer.Option(None, "--tasks", exists=True, dir_okay=False, help="newline-separated task ids"),
+) -> None:
+    """Re-derive composites under new weights from the stored raw vectors, without re-scoring.
+
+    The scoring system always changes mid-campaign (`docs/v050_lessons.md` §1.6). This is the
+    command that makes that cost a recomputation instead of a re-score of every candidate.
+    """
+    store = TaskScoreStore(scores)
+    rows = tuple(store.latest().values())
+    if not rows:
+        raise typer.BadParameter(f"{scores} holds no task scores")
+    selected = tasks.read_text(encoding="utf-8").split() if tasks is not None else None
+    composite = _composite_spec(weights, spec)
+    if composite is None:
+        raise typer.BadParameter("provide --weights or --spec")
+    try:
+        derived = composite_scores(rows, composite, tasks=selected)
+    except KeyError as error:
+        raise typer.BadParameter(str(error)) from error
+    _echo(
+        {
+            "spec": composite.to_dict(),
+            "tasks": len(selected) if selected is not None else len(store.tasks()),
+            "composites": {name: round(value, 4) for name, value in sorted(derived.items())},
+        }
+    )
+
+
+DEFAULT_REGISTRY = Path("docs/controller_reference/layer2_registry.json")
+
+
+@taxonomy_app.command("status")
+def taxonomy_status(
+    registry_path: Path = typer.Option(DEFAULT_REGISTRY, "--registry", exists=True, dir_okay=False),
+    layer: str | None = typer.Option(None, "--layer", help="solution | apparatus"),
+    promoted_only: bool = typer.Option(False, "--promoted-only"),
+) -> None:
+    """Assess every layer-2 class against the promotion bar and say which ones a raise demoted.
+
+    Controller-owned output. It must not be pasted into a prompt, a contract, or anything an agent
+    can read: a taxonomy handed to the agents being measured stops measuring them.
+    """
+    registry = load_registry(registry_path)
+    rows = summarize(registry)
+    if layer is not None:
+        if layer not in ("solution", "apparatus"):
+            raise typer.BadParameter("layer must be 'solution' or 'apparatus'")
+        rows = [row for row in rows if row["layer"] == layer]
+    if promoted_only:
+        rows = [row for row in rows if row["status"] == "promoted"]
+    _echo(
+        {
+            "registry": str(registry_path),
+            "rule": registry.rule.__dict__,
+            "promoted": sorted(str(row["id"]) for row in rows if row["status"] == "promoted"),
+            "demoted_by_this_rule": sorted(str(row["id"]) for row in rows if row["demoted"]),
+            "classes": rows,
+        }
+    )
 
 
 if __name__ == "__main__":

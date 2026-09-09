@@ -292,7 +292,7 @@ Controller 側の独立検証が正しく機能することを実地で確認し
    結果、**独立4件**(両コンペ、3種の effort/arm 構成)まで確認数が伸びた——ただし
    4件全てが sol 単独ラウンドでのみ観測され、元の opus+sol 混合バッチには1件も
    出現しなかった。「データ形式非依存の構造発見」ではなく「sol 特有の仮説生成
-   スタイル」である可能性が排除できないため、[層2 taxonomy](controller_reference/meta_technique_taxonomy_layer2.md)
+   スタイル」である可能性が排除できないため、[層2 taxonomy](controller_reference/tabular_technique_taxonomy_layer2.md)
    には**候補**として記録し、opus での再現が確認されるまで正式な層2クラスへの
    昇格を保留した。
 3. **実行構成の選定は「合成側の最良構成」ではなく「複数コンペでの頑健性」で判断すべき。**

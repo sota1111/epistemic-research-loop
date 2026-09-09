@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Literal
 
@@ -13,6 +13,7 @@ from epistemic_loop.scoring.cost import normalized_cost
 from epistemic_loop.scoring.diversity import diversity_value, experiment_similarity
 from epistemic_loop.scoring.epistemic import epistemic_value_v1, epistemic_value_v2, evsi_proxy_value
 from epistemic_loop.scoring.pragmatic import robust_score_gain
+from epistemic_loop.scoring.qd_contribution import qd_contribution
 from epistemic_loop.scoring.robustness import robustness_value
 
 
@@ -38,6 +39,10 @@ class UtilityBreakdown:
     risk: float
     total: float
     epistemic_method: str = "rubric_v1"
+    #: Whether the diversity term was measured against the archive or taken from the proposal.
+    #: A self-declared novelty score is an opinion; keeping the distinction in the record is what
+    #: stops a "quality-diversity" arm from being a performance arm with an opinion (§2.2).
+    diversity_method: str = "declared_novelty_v1"
     #: The gain before rescaling, kept because the rescaled figure is only meaningful next to the
     #: candidates it was scaled against, and the record has to survive that context being lost.
     pragmatic_raw: float = 0.0
@@ -62,6 +67,8 @@ def score_experiment(
     eig_monte_carlo_samples: int = 4000,
     random_seed: int = 101,
     information_value_enabled: bool = True,
+    qd_census: Mapping[str, int] | None = None,
+    qd_descriptor_names: Sequence[str] = (),
 ) -> UtilityBreakdown:
     policy = capabilities(mode)
     pragmatic = robust_score_gain(proposal.expected_score_gain)
@@ -96,7 +103,12 @@ def score_experiment(
         if mode not in {RunMode.SYSTEM_A, RunMode.EXPLOITER_ONLY}
         else 0.0
     )
-    diversity = diversity_value(proposal) if policy.solution_qd else 0.0
+    diversity, diversity_method = _diversity(
+        proposal,
+        policy.solution_qd,
+        census=qd_census,
+        descriptor_names=qd_descriptor_names,
+    )
     structural_leverage = min(1.0, proposal.structural_leverage / len(StructuralDimension))
     discrimination = proposal.robust_discrimination_value
     validation_debt_reduction = proposal.validation_debt_reduction
@@ -118,12 +130,30 @@ def score_experiment(
             risk=risk,
             total=0.0,
             epistemic_method=epistemic_method,
+            diversity_method=diversity_method,
             pragmatic_raw=pragmatic,
         ),
         weights,
         cost_lambda,
         risk_lambda,
     )
+
+
+def _diversity(
+    proposal: ExperimentProposal,
+    solution_qd: bool,
+    *,
+    census: Mapping[str, int] | None,
+    descriptor_names: Sequence[str],
+) -> tuple[float, str]:
+    """Prefer the measured contribution; fall back to the declared score and say which was used."""
+    if not solution_qd:
+        return 0.0, "disabled_by_system_mode"
+    if census is not None:
+        measured = qd_contribution(proposal, census, descriptor_names)
+        if measured is not None:
+            return measured, "qd_contribution_v1"
+    return diversity_value(proposal), "declared_novelty_v1"
 
 
 def _relative_gain(values: list[float]) -> list[float]:
@@ -170,6 +200,8 @@ def evaluate_candidates(
     eig_monte_carlo_samples: int = 4000,
     random_seed: int = 101,
     information_value_enabled: bool = True,
+    qd_census: Mapping[str, int] | None = None,
+    qd_descriptor_names: Sequence[str] = (),
 ) -> list[ScoredCandidate]:
     result = []
     for proposal in proposals:
@@ -186,6 +218,8 @@ def evaluate_candidates(
                 eig_monte_carlo_samples=eig_monte_carlo_samples,
                 random_seed=random_seed,
                 information_value_enabled=information_value_enabled,
+                qd_census=qd_census,
+                qd_descriptor_names=qd_descriptor_names,
             )
             if gate.passed
             else None

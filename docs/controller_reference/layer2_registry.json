@@ -1,0 +1,153 @@
+{
+  "_purpose": "Layer-2 technique classes and the observations behind them. Controller-owned; never copied into a prompt, contract, or agent-visible file.",
+  "_rule_source": "docs/v050_course_correction.md 3 items 9 and 10; assessed by src/epistemic_loop/taxonomy/layer2.py",
+  "_previous_rule": "two competitions, same problem class allowed (docs/controller_reference/tabular_technique_taxonomy_layer2.md, v0.4.3-b)",
+  "promotion_rule": {
+    "minimum_problem_classes": 2,
+    "minimum_competitions": 2,
+    "minimum_agent_models": 2
+  },
+  "problem_classes": {
+    "tabular_prediction": "submission is a prediction vector over rows (IEEE-CIS, Santander, Rossmann)",
+    "algorithm_submission": "submission is an algorithm scored by running it (SIGNATE NEDO loading)",
+    "agent_competition": "submission is a policy played against other entrants (Kaggle kaggriculture)"
+  },
+  "classes": [
+    {
+      "id": "context_pooling",
+      "title": "Context pooling / leave-one-context-out generalisation",
+      "layer": "solution",
+      "previous_status": "promoted",
+      "observations": [
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/verification/v042_cross_competition_synthesis.md (v041-trackb-03: 17 of 27 promoted packs)",
+          "strength": "direct",
+          "agent_model": "opus"
+        },
+        {
+          "competition": "Santander Customer Transaction Prediction",
+          "problem_class": "tabular_prediction",
+          "source": "docs/verification/v042_cross_competition_synthesis.md (v042-mc-b02: 38 of 38 promoted packs)",
+          "strength": "direct",
+          "agent_model": "opus"
+        }
+      ]
+    },
+    {
+      "id": "occurrence_sparsity_profile",
+      "title": "Occurrence / sparsity-profile aggregation",
+      "layer": "solution",
+      "previous_status": "promoted",
+      "observations": [
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/verification/v042_cross_competition_synthesis.md (agent-01-s42, agent-02-s42, agent-02-s93, v041-trackb-01 opus x P3)",
+          "strength": "direct",
+          "agent_model": "opus",
+          "note": "Reproduced across runs, models and seeds -- but all inside one competition. Promoted under the old rule on a single competition, which even that rule did not permit."
+        }
+      ]
+    },
+    {
+      "id": "beyond_additive_marginals",
+      "title": "Limits of additivity / feature independence",
+      "layer": "solution",
+      "previous_status": "candidate",
+      "observations": [
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/controller_reference/tabular_technique_taxonomy_layer2.md (v042-mc-c01, v042-mc-e01, v042-mc-f01)",
+          "strength": "direct",
+          "agent_model": "sol"
+        },
+        {
+          "competition": "Santander Customer Transaction Prediction",
+          "problem_class": "tabular_prediction",
+          "source": "docs/controller_reference/tabular_technique_taxonomy_layer2.md (v042-mc-c02, v042-mc-d02)",
+          "strength": "direct",
+          "agent_model": "sol"
+        }
+      ]
+    },
+    {
+      "id": "local_metric_measures_something_else",
+      "title": "The local metric is measuring a different quantity from the one that decides the result",
+      "layer": "apparatus",
+      "observations": [
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/handover_archive.md (correlation reversal between the local number and the hidden endpoint)",
+          "strength": "direct"
+        },
+        {
+          "competition": "SIGNATE NEDO loading contest 2",
+          "problem_class": "algorithm_submission",
+          "source": "docs/handover_archive.md 2 (evaluator drops grounded items; a self-invented stability test returned a constant while four metrics were being ranked on)",
+          "strength": "direct"
+        },
+        {
+          "competition": "Kaggle kaggriculture",
+          "problem_class": "agent_competition",
+          "source": "docs/handover_archive.md 5.5 (replay league reversed the real leaderboard order; an August rating read against a September distribution)",
+          "strength": "direct"
+        }
+      ]
+    },
+    {
+      "id": "local_differences_are_exaggerated",
+      "title": "Local scores exaggerate differences: the local-to-real slope is below 1",
+      "layer": "apparatus",
+      "observations": [
+        {
+          "competition": "SIGNATE NEDO loading contest 2",
+          "problem_class": "algorithm_submission",
+          "source": "docs/v050_lessons.md 1.2 (public ~ 0.589 x local + 28.18, n=9, RMSE 3.39)",
+          "strength": "direct"
+        },
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/v050_lessons.md 1.2 (same direction)",
+          "strength": "direct"
+        },
+        {
+          "competition": "Santander Customer Transaction Prediction",
+          "problem_class": "tabular_prediction",
+          "source": "docs/v050_lessons.md 1.2 (same direction)",
+          "strength": "direct"
+        }
+      ]
+    },
+    {
+      "id": "unspanned_axis_is_an_apparatus_blind_spot",
+      "title": "An axis the task set does not span becomes a blind spot of the apparatus, not a weakness of the agent",
+      "layer": "apparatus",
+      "observations": [
+        {
+          "competition": "SIGNATE NEDO loading contest 2",
+          "problem_class": "algorithm_submission",
+          "source": "docs/handover_archive.md 2.3 (the task generator never emitted requirement 5, so an index/position confusion was undetectable: local 12/12 and composite 66.05 against a real score of 0)",
+          "strength": "direct"
+        },
+        {
+          "competition": "SIGNATE NEDO loading contest 2",
+          "problem_class": "algorithm_submission",
+          "source": "docs/v050_lessons.md 1.4 (probes spanned only 43.5-55.2% fill and did not extrapolate to the 59-66% band the candidates were in) and 1.5 (the agent task set scored +1.71 above the ranking set)",
+          "strength": "direct"
+        },
+        {
+          "competition": "IEEE-CIS Fraud Detection",
+          "problem_class": "tabular_prediction",
+          "source": "docs/progress.md (a recurring single-suite-instance false-promotion pattern, seen four times independently across studies)",
+          "strength": "arguable",
+          "note": "Recorded as arguable on purpose. The suite-instance pattern is about one instance behaving differently, which is close to but not the same statement as an axis the task set fails to span. Someone should either find the direct tabular instance or accept that this class rests on one problem class."
+        }
+      ]
+    }
+  ]
+}
