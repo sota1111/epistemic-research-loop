@@ -1,5 +1,7 @@
 # Epistemic Research Loop 引き継ぎ書
 
+**2026-09-11 追補:** NEDOの新規実装用資料は [NEDO：仕様・ツール・条件付き実験台帳とサブエージェント依頼文](../../erl-nedo-baggage-loading/docs/nedo_rebuild/README.md) を参照。既存の推測を実験結果から分離し、条件変更時の再実験を明記している。
+
 **更新:** 2026-09-06(§3 の 12 件のうち 6 件を実装)
 
 ## 現在地
